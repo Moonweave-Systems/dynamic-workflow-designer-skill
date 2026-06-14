@@ -1,7 +1,7 @@
 {
   "fixture_id": "neg-review-small-diff",
   "raw_kind": "workflow-output",
-  "rendered_blueprint": "# neg-review-small-diff\n\nObjective: Route the request to the smallest sufficient workflow without emitting a large dynamic workflow.\nActivation: downgrade (A small review needs findings-first direct review, not workflow design.)\nPatterns: none\n\n## First Slice\n\nUse direct-codex instead of dynamic-workflow-designer for this request.\n\nCompletion check: no dynamic workflow artifact is needed\n",
+  "rendered_blueprint": "# neg-review-small-diff\n\nObjective: Route the request to the smallest sufficient workflow without emitting a large dynamic workflow.\nActivation: downgrade (A small review needs findings-first direct review, not workflow design.)\nPatterns: none\n\n## First Slice\n\nUse direct-codex instead of dynamic-workflow-designer for this request.\n\nCompletion check: no dynamic workflow artifact is needed\n\n## Risk Gates\n\n- scope expands into destructive, external, or multi-agent execution: stop and re-evaluate activation before acting\n",
   "source_prompt": "Review this 40-line diff.",
   "workflow_plan": {
     "activation": {

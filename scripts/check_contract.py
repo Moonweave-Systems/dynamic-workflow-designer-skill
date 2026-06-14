@@ -325,6 +325,8 @@ def main() -> None:
             "samples/v0.5/candidates/",
             "samples/v0.5/raw/",
             "samples/v0.5/consumer/",
+            "source-hashed normalization-failure records",
+            "exits nonzero",
             "docs/v0.5-decision.md",
         ],
     )
@@ -337,6 +339,8 @@ def main() -> None:
             "claude-agent-workflow-designer",
             "samples/v0.5/raw/",
             "samples/v0.5/consumer/",
+            "source-hashed normalization failure",
+            "does not claim runtime execution or live model generation",
             "out/v0.5/summary.json",
         ],
     )

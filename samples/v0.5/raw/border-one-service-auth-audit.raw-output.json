@@ -1,7 +1,7 @@
 {
   "fixture_id": "border-one-service-auth-audit",
   "raw_kind": "workflow-output",
-  "rendered_blueprint": "# border-one-service-auth-audit\n\nObjective: Route the request to the smallest sufficient workflow without emitting a large dynamic workflow.\nActivation: downgrade (The work is broad but bounded to one service and one agent; route through the smaller workflow.)\nPatterns: none\n\n## First Slice\n\nUse workflow-router instead of dynamic-workflow-designer for this request.\n\nCompletion check: no dynamic workflow artifact is needed\n",
+  "rendered_blueprint": "# border-one-service-auth-audit\n\nObjective: Route the request to the smallest sufficient workflow without emitting a large dynamic workflow.\nActivation: downgrade (The work is broad but bounded to one service and one agent; route through the smaller workflow.)\nPatterns: none\n\n## First Slice\n\nUse workflow-router instead of dynamic-workflow-designer for this request.\n\nCompletion check: no dynamic workflow artifact is needed\n\n## Risk Gates\n\n- scope expands into destructive, external, or multi-agent execution: stop and re-evaluate activation before acting\n",
   "source_prompt": "Plan an auth audit for one service where one agent can inspect all routes.",
   "workflow_plan": {
     "activation": {

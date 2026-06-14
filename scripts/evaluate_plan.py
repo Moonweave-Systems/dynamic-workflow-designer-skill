@@ -71,6 +71,8 @@ EXECUTION_MODES = {
     "backlog",
 }
 CONSUMERS = {"human", "codex-agent", "runtime"}
+ALLOWED_BLINDED_INPUTS = {"workflow.plan.json", "blueprint.md", "original prompt", "repository path"}
+BASELINE_ADAPTER_VERSION = "0.5-source-contract-v1"
 ARTIFACT_FORMATS = {
     "json",
     "markdown",
@@ -133,6 +135,10 @@ def hash_file(path: Path) -> str:
 
 def rel(path: Path) -> str:
     return str(path.relative_to(ROOT))
+
+
+def same_items(left: Any, right: Any) -> bool:
+    return isinstance(left, list) and sorted(left) == sorted(right)
 
 
 def validate_activation(plan: dict[str, Any], expected: dict[str, Any] | None) -> None:
@@ -342,6 +348,35 @@ def validate_handoffs(plan: dict[str, Any], activated: bool) -> None:
         require(non_empty_string(schema["validation_command"]), "validation_command is empty")
 
 
+def validate_phase_graph(plan: dict[str, Any], activated: bool) -> None:
+    phases = plan["phases"]
+    phase_ids = [phase["id"] for phase in phases]
+    require(len(phase_ids) == len(set(phase_ids)), "phase ids must be unique")
+    phase_outputs = {
+        phase["id"]: set(phase["outputs"])
+        for phase in phases
+    }
+    for phase in phases:
+        for dependency in phase["depends_on"]:
+            require(dependency in phase_outputs, f"phase depends on unknown phase: {dependency}")
+
+    for handoff in plan["handoffs"]:
+        from_phase = handoff["from_phase"]
+        to_phase = handoff["to_phase"]
+        require(from_phase in phase_outputs, f"handoff from unknown phase: {from_phase}")
+        require(to_phase in phase_outputs, f"handoff to unknown phase: {to_phase}")
+        require(
+            handoff["artifact"] in phase_outputs[from_phase],
+            f"handoff artifact not produced by source phase: {handoff['artifact']}",
+        )
+
+    restart_points = plan["resume"]["restart_points"]
+    for restart_point in restart_points:
+        require(restart_point in phase_outputs, f"resume restart point is not a phase: {restart_point}")
+    if not activated:
+        require(not restart_points, "downgrade artifacts must not define restart points")
+
+
 def validate_parallelism(plan: dict[str, Any], activated: bool) -> None:
     parallelism = plan["parallelism"]
     require(isinstance(parallelism, dict), "parallelism must be an object")
@@ -373,6 +408,8 @@ def validate_verification(plan: dict[str, Any], activated: bool) -> None:
 def validate_risk_gates(plan: dict[str, Any], expected: dict[str, Any] | None) -> None:
     gates = plan["risk_gates"]
     require(isinstance(gates, list), "risk_gates must be a list")
+    activated = plan["activation"]["decision"] == "activate"
+    require(gates or not activated, "activated plans need risk gates")
     triggers = []
     for gate in gates:
         require(isinstance(gate, dict), "risk gate must be an object")
@@ -385,6 +422,23 @@ def validate_risk_gates(plan: dict[str, Any], expected: dict[str, Any] | None) -
         joined = " ".join(triggers)
         for required in expected.get("required_risk_gates", []):
             require(required.lower() in joined, f"missing required risk gate: {required}")
+    required_gate_terms: set[str] = set()
+    for worker in plan["workers"]:
+        permissions = worker["tool_permissions"]
+        if permissions["write"]:
+            required_gate_terms.add("write")
+        if permissions["shell"]:
+            required_gate_terms.add("shell")
+        if permissions["network"]:
+            required_gate_terms.add("network")
+        for escalation in permissions["requires_escalation_for"]:
+            required_gate_terms.add(str(escalation).replace("-", " "))
+    for surface in plan["surfaces"]:
+        if surface["access_mode"] != "read-only":
+            required_gate_terms.add("write")
+    joined = " ".join(triggers)
+    for term in sorted(required_gate_terms):
+        require(term in joined, f"missing risk gate for {term}")
 
 
 def validate_budget_resume_execution(plan: dict[str, Any], activated: bool) -> None:
@@ -423,10 +477,10 @@ def validate_budget_resume_execution(plan: dict[str, Any], activated: bool) -> N
         "first_slice",
     )
     require(non_empty_string(first_slice["instruction"]), "first_slice.instruction is empty")
-    require(isinstance(first_slice["inputs"], list), "first_slice.inputs must be a list")
+    require(non_empty_list(first_slice["inputs"]), "first_slice.inputs must be non-empty")
     require(non_empty_string(first_slice["expected_output"]), "first_slice.expected_output is empty")
     require(non_empty_string(first_slice["completion_check"]), "first_slice.completion_check is empty")
-    require(isinstance(first_slice["forbidden_actions"], list), "first_slice.forbidden_actions must be a list")
+    require(non_empty_list(first_slice["forbidden_actions"]), "first_slice.forbidden_actions must be non-empty")
 
 
 def validate_plan(
@@ -478,6 +532,7 @@ def validate_plan(
     validate_verification(plan, activated)
     validate_risk_gates(plan, expected)
     validate_budget_resume_execution(plan, activated)
+    validate_phase_graph(plan, activated)
 
 
 def render_blueprint(plan: dict[str, Any]) -> str:
@@ -528,14 +583,44 @@ def candidate_scores(
     }
 
 
-def validate_scores(scores: dict[str, Any], where: str) -> dict[str, int]:
-    require_keys(scores, METRICS, where)
-    clean: dict[str, int] = {}
-    for metric in METRICS:
-        value = scores[metric]
-        require(isinstance(value, int) and 0 <= value <= 2, f"{where}.{metric} must be 0..2")
-        clean[metric] = value
-    return clean
+def score_baseline_failure(failure: dict[str, Any], expected: dict[str, Any]) -> dict[str, int]:
+    require("scores" not in failure, "normalization failure records must not contain hand-authored scores")
+    require(failure.get("adapter_version") == BASELINE_ADAPTER_VERSION, "baseline adapter version mismatch")
+    require(non_empty_string(failure.get("source_sha256")), "baseline source hash is empty")
+    observations = failure.get("observations")
+    require(isinstance(observations, dict), "baseline observations must be an object")
+    require_keys(
+        observations,
+        [
+            "activation_decision",
+            "handoff_guidance",
+            "verification_guidance",
+            "safety_gates",
+            "resume_guidance",
+            "consumer_can_route",
+        ],
+        "baseline observations",
+    )
+    for key in ["handoff_guidance", "verification_guidance", "safety_gates", "resume_guidance", "consumer_can_route"]:
+        require(isinstance(observations[key], bool), f"baseline observation {key} must be bool")
+
+    observed_decision = observations["activation_decision"]
+    require(observed_decision in {"activate", "downgrade", "ambiguous"}, "invalid baseline activation decision")
+    if observed_decision == expected["activation"]:
+        activation_score = 2
+    elif observed_decision == "ambiguous":
+        activation_score = 1
+    else:
+        activation_score = 0
+    return {
+        "activation_discipline": activation_score,
+        "executable_artifact": 0,
+        "handoff_clarity": 1 if observations["handoff_guidance"] else 0,
+        "verification_strength": 1 if observations["verification_guidance"] else 0,
+        "safety_gating": 2 if observations["safety_gates"] else 0,
+        "resume_value": 1 if observations["resume_guidance"] else 0,
+        "downstream_consumer_success": 1 if observations["consumer_can_route"] else 0,
+    }
 
 
 def load_baseline(
@@ -569,7 +654,8 @@ def load_baseline(
         require(failure.get("baseline") == name, f"{failure_path} baseline mismatch")
         require(failure.get("fixture_id") == fixture_id, f"{failure_path} fixture mismatch")
         require(failure.get("prompt") == prompt_text, f"{failure_path} prompt mismatch")
-        scores = validate_scores(failure["scores"], f"{name}.scores")
+        require(failure.get("source_sha256") == hash_file(source_path), f"{failure_path} source hash mismatch")
+        scores = score_baseline_failure(failure, expected)
         return {
             "name": name,
             "normalized": False,
@@ -581,15 +667,16 @@ def load_baseline(
     raise EvaluationError(f"baseline {name} lacks normalized_plan or normalization_failure for {fixture_id}")
 
 
-def validate_raw_output(raw_path: Path, plan_path: Path, plan: dict[str, Any], fixture_id: str) -> str:
+def validate_raw_output(raw_path: Path, plan_path: Path, plan: dict[str, Any], fixture_id: str, prompt_text: str) -> str:
     raw_text = raw_path.read_text()
     plan_text = plan_path.read_text()
     require(raw_text != plan_text, f"{fixture_id} raw output duplicates parsed plan")
     raw = read_json(raw_path)
     require(raw.get("fixture_id") == fixture_id, f"{fixture_id} raw output fixture mismatch")
+    require(raw.get("source_prompt") == prompt_text, f"{fixture_id} raw output prompt mismatch")
     require(raw.get("raw_kind") == "workflow-output", f"{fixture_id} raw output has wrong kind")
     require(raw.get("workflow_plan") == plan, f"{fixture_id} raw output does not contain parsed plan")
-    require(non_empty_string(raw.get("rendered_blueprint")), f"{fixture_id} raw output missing rendered blueprint")
+    require(raw.get("rendered_blueprint") == render_blueprint(plan), f"{fixture_id} raw blueprint drift")
     return raw_text
 
 
@@ -602,19 +689,34 @@ def validate_consumer_report(
     require(report.get("fixture_id") == plan["plan_id"], f"{report_path} fixture mismatch")
     require(report.get("consumer_verdict") == "pass", f"{report_path} consumer did not pass")
     require(report.get("received_spec_or_expected_answer") is False, f"{report_path} is not blinded")
+    blinded_inputs = report.get("blinded_inputs")
+    require(isinstance(blinded_inputs, list), f"{report_path} blinded_inputs must be a list")
+    require(set(blinded_inputs) <= ALLOWED_BLINDED_INPUTS, f"{report_path} has forbidden blinded inputs")
+    require({"workflow.plan.json", "blueprint.md", "original prompt"} <= set(blinded_inputs), f"{report_path} missing required blinded inputs")
     first_slice = plan["execution_path"]["first_slice"]
     require(report.get("first_slice") == first_slice["instruction"], f"{report_path} first slice mismatch")
-    require(non_empty_list(report.get("inputs_needed")), f"{report_path} missing inputs")
+    require(same_items(report.get("inputs_needed"), first_slice["inputs"]), f"{report_path} inputs mismatch")
     require(report.get("expected_output") == first_slice["expected_output"], f"{report_path} expected output mismatch")
     require(report.get("completion_check") == first_slice["completion_check"], f"{report_path} completion check mismatch")
-    require(non_empty_list(report.get("forbidden_actions_identified")), f"{report_path} missing forbidden actions")
+    require(
+        same_items(report.get("forbidden_actions_identified"), first_slice["forbidden_actions"]),
+        f"{report_path} forbidden actions mismatch",
+    )
+    require(
+        same_items(report.get("risk_gates_identified"), [gate["trigger"] for gate in plan["risk_gates"]]),
+        f"{report_path} risk gates mismatch",
+    )
+    require(
+        report.get("safe_defaults_identified") == {
+            gate["trigger"]: gate["safe_default"] for gate in plan["risk_gates"]
+        },
+        f"{report_path} safe defaults mismatch",
+    )
     if plan["activation"]["decision"] == "downgrade":
         require(
             report.get("agreed_downgrade_target") == expected.get("downgrade_target"),
             f"{report_path} downgrade target disagreement",
         )
-    else:
-        require(non_empty_list(report.get("risk_gates_identified")), f"{report_path} missing risk gates")
     return 2
 
 
@@ -634,11 +736,12 @@ def evaluate_fixture(
     prompt_path = ROOT / fixture["prompt_path"]
     raw_path = ROOT / fixture["raw_output"]
     consumer_path = ROOT / fixture["consumer_report"]
+    prompt_text = prompt_path.read_text().strip()
     plan = read_json(plan_path)
     validate_plan(plan, expected)
-    raw_text = validate_raw_output(raw_path, plan_path, plan, fixture_id)
+    raw_text = validate_raw_output(raw_path, plan_path, plan, fixture_id, prompt_text)
     require(
-        plan["source_prompt"].strip() == prompt_path.read_text().strip(),
+        plan["source_prompt"].strip() == prompt_text,
         f"{fixture_id} plan source_prompt does not match prompt file",
     )
     consumer_score = validate_consumer_report(consumer_path, plan, expected)
@@ -658,7 +761,7 @@ def evaluate_fixture(
         "scores": candidate_scores(plan, expected, consumer_score),
     }
     baseline_records = [
-        load_baseline(baseline, fixture_id, prompt_path.read_text().strip(), expected)
+        load_baseline(baseline, fixture_id, prompt_text, expected)
         for baseline in baselines
     ]
     scorecard = {
@@ -672,7 +775,8 @@ def evaluate_fixture(
     consumer_out = out_root / "consumer" / f"{fixture_id}.json"
     consumer_out.parent.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(consumer_path, consumer_out)
-    scorecard["consumer_report"] = rel(consumer_out)
+    scorecard["consumer_report"] = fixture["consumer_report"]
+    scorecard["consumer_report_sha256"] = hash_file(consumer_path)
     write_json(fixture_out / "scorecard.json", scorecard)
     return scorecard
 
@@ -800,8 +904,8 @@ def valid_plan_fixture(decision: str = "activate") -> dict[str, Any]:
         ] if decision == "activate" else [],
         "risk_gates": [
             {
-                "trigger": "write action",
-                "safe_default": "stop before writing",
+                "trigger": "write, shell, or network action",
+                "safe_default": "stop before writing or using elevated tools",
                 "requires_user_approval": True,
             }
         ],
@@ -865,7 +969,7 @@ def self_test() -> None:
         raise EvaluationError("self-test failed: non-boolean tool permission passed")
 
     bad_gate = json.loads(json.dumps(active))
-    bad_gate["risk_gates"][0]["safe_default"] = ""
+    bad_gate["risk_gates"] = []
     try:
         validate_plan(bad_gate, {"activation": "activate"})
     except EvaluationError:
@@ -877,12 +981,16 @@ def self_test() -> None:
         "fixture_id": active["plan_id"],
         "consumer_verdict": "pass",
         "received_spec_or_expected_answer": False,
+        "blinded_inputs": ["workflow.plan.json", "blueprint.md", "original prompt"],
         "first_slice": active["execution_path"]["first_slice"]["instruction"],
         "inputs_needed": ["prompt"],
         "expected_output": active["execution_path"]["first_slice"]["expected_output"],
         "completion_check": active["execution_path"]["first_slice"]["completion_check"],
         "forbidden_actions_identified": ["write files"],
-        "risk_gates_identified": ["write action"],
+        "risk_gates_identified": ["write, shell, or network action"],
+        "safe_defaults_identified": {
+            "write, shell, or network action": "stop before writing or using elevated tools"
+        },
     }
     tmp_report = ROOT / "out" / "v0.5-self-test-consumer.json"
     write_json(tmp_report, valid_report)
@@ -896,6 +1004,24 @@ def self_test() -> None:
         pass
     else:
         raise EvaluationError("self-test failed: failing consumer report passed")
+    bad_report = dict(valid_report)
+    bad_report["blinded_inputs"] = ["workflow.plan.json", "blueprint.md", "original prompt", "expected answers"]
+    write_json(tmp_report, bad_report)
+    try:
+        validate_consumer_report(tmp_report, active, {"activation": "activate"})
+    except EvaluationError:
+        pass
+    else:
+        raise EvaluationError("self-test failed: forbidden blinded input passed")
+    bad_report = dict(valid_report)
+    bad_report["inputs_needed"] = ["wrong input"]
+    write_json(tmp_report, bad_report)
+    try:
+        validate_consumer_report(tmp_report, active, {"activation": "activate"})
+    except EvaluationError:
+        pass
+    else:
+        raise EvaluationError("self-test failed: wrong consumer inputs passed")
     tmp_report.unlink(missing_ok=True)
 
     tmp_plan = ROOT / "out" / "v0.5-self-test-plan.json"
@@ -903,7 +1029,7 @@ def self_test() -> None:
     write_json(tmp_plan, active)
     write_json(tmp_raw, active)
     try:
-        validate_raw_output(tmp_raw, tmp_plan, active, active["plan_id"])
+        validate_raw_output(tmp_raw, tmp_plan, active, active["plan_id"], active["source_prompt"])
     except EvaluationError:
         pass
     else:
@@ -913,11 +1039,61 @@ def self_test() -> None:
         {
             "raw_kind": "workflow-output",
             "fixture_id": active["plan_id"],
-            "rendered_blueprint": "blueprint",
+            "source_prompt": active["source_prompt"],
+            "rendered_blueprint": "stale blueprint",
             "workflow_plan": active,
         },
     )
-    validate_raw_output(tmp_raw, tmp_plan, active, active["plan_id"])
+    try:
+        validate_raw_output(tmp_raw, tmp_plan, active, active["plan_id"], active["source_prompt"])
+    except EvaluationError:
+        pass
+    else:
+        raise EvaluationError("self-test failed: stale raw blueprint passed")
+    write_json(
+        tmp_raw,
+        {
+            "raw_kind": "workflow-output",
+            "fixture_id": active["plan_id"],
+            "source_prompt": active["source_prompt"],
+            "rendered_blueprint": render_blueprint(active),
+            "workflow_plan": active,
+        },
+    )
+    validate_raw_output(tmp_raw, tmp_plan, active, active["plan_id"], active["source_prompt"])
+    bad_phase = json.loads(json.dumps(active))
+    bad_phase["phases"][0]["depends_on"] = ["missing-phase"]
+    try:
+        validate_plan(bad_phase, {"activation": "activate"})
+    except EvaluationError:
+        pass
+    else:
+        raise EvaluationError("self-test failed: dangling phase reference passed")
+
+    baseline_failure = {
+        "baseline": "baseline",
+        "fixture_id": active["plan_id"],
+        "prompt": active["source_prompt"],
+        "adapter_version": BASELINE_ADAPTER_VERSION,
+        "source_sha256": "0" * 64,
+        "normalized": False,
+        "observations": {
+            "activation_decision": "ambiguous",
+            "handoff_guidance": True,
+            "verification_guidance": True,
+            "safety_gates": True,
+            "resume_guidance": False,
+            "consumer_can_route": True,
+        },
+    }
+    score_baseline_failure(baseline_failure, {"activation": "activate"})
+    baseline_failure["scores"] = {"activation_discipline": 2}
+    try:
+        score_baseline_failure(baseline_failure, {"activation": "activate"})
+    except EvaluationError:
+        pass
+    else:
+        raise EvaluationError("self-test failed: hand-authored baseline scores passed")
     tmp_plan.unlink(missing_ok=True)
     tmp_raw.unlink(missing_ok=True)
 
@@ -943,6 +1119,8 @@ def main() -> None:
         if args.manifest:
             summary = evaluate_manifest(ROOT / args.manifest, ROOT / args.out)
             print(f"manifest evaluated: {summary['fixture_count']} fixtures, decision={summary['decision']}")
+            if summary["decision"] != "keep":
+                raise SystemExit(1)
             return
         parser.error("use --self-test, --plan, or --manifest")
     except EvaluationError as exc:

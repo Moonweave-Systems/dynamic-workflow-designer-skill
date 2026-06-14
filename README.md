@@ -92,7 +92,8 @@ The contract check requires passing fixture records under
 [`docs/fixture-smoke/`](docs/fixture-smoke/).
 
 The V0.5 evaluator regenerates `out/v0.5/` from tracked fixtures and samples.
-That directory is verification evidence, not source of truth.
+That directory is verification evidence, not source of truth. The manifest run
+exits nonzero if the keep/kill decision is not `keep`.
 
 The V0.5 keep/kill decision is
 [`docs/v0.5-decision.md`](docs/v0.5-decision.md).

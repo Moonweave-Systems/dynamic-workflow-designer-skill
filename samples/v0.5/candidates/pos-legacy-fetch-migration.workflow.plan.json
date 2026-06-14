@@ -157,7 +157,7 @@
     {
       "requires_user_approval": true,
       "safe_default": "stop with a read-only report and ask for approval",
-      "trigger": "write or destructive action"
+      "trigger": "write, shell, or destructive action"
     },
     {
       "requires_user_approval": true,

@@ -18,5 +18,11 @@
   "inputs_needed": [
     "user prompt"
   ],
-  "received_spec_or_expected_answer": false
+  "received_spec_or_expected_answer": false,
+  "risk_gates_identified": [
+    "scope expands into destructive, external, or multi-agent execution"
+  ],
+  "safe_defaults_identified": {
+    "scope expands into destructive, external, or multi-agent execution": "stop and re-evaluate activation before acting"
+  }
 }

@@ -1,16 +1,18 @@
 {
+  "adapter_version": "0.5-source-contract-v1",
   "baseline": "workflow-router-skill",
   "fixture_id": "border-small-migration",
+  "normalization_failure_kind": "no-schema-valid-artifact",
   "normalized": false,
+  "observations": {
+    "activation_decision": "downgrade",
+    "consumer_can_route": true,
+    "handoff_guidance": true,
+    "resume_guidance": false,
+    "safety_gates": true,
+    "verification_guidance": true
+  },
   "prompt": "Create a migration plan for 12 call sites in one package.",
-  "reason": "The local workflow-router output for this prompt is a routing decision, not a per-fixture workflow.plan.json artifact with worker handoffs.",
-  "scores": {
-    "activation_discipline": 2,
-    "downstream_consumer_success": 2,
-    "executable_artifact": 0,
-    "handoff_clarity": 1,
-    "resume_value": 0,
-    "safety_gating": 2,
-    "verification_strength": 1
-  }
+  "reason": "The local workflow-router source can route this prompt, but it does not emit a schema-valid workflow.plan.json artifact with durable worker handoffs.",
+  "source_sha256": "0f2c7b361dbf7f5f14a78d50ab55de2ed743b83c670482529650b0ef3906dde3"
 }

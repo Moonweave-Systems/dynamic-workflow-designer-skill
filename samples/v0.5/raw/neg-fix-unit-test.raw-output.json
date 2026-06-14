@@ -1,7 +1,7 @@
 {
   "fixture_id": "neg-fix-unit-test",
   "raw_kind": "workflow-output",
-  "rendered_blueprint": "# neg-fix-unit-test\n\nObjective: Route the request to the smallest sufficient workflow without emitting a large dynamic workflow.\nActivation: downgrade (A single failing test should be reproduced and fixed directly; no resumable multi-agent artifact is needed.)\nPatterns: none\n\n## First Slice\n\nUse direct-codex instead of dynamic-workflow-designer for this request.\n\nCompletion check: no dynamic workflow artifact is needed\n",
+  "rendered_blueprint": "# neg-fix-unit-test\n\nObjective: Route the request to the smallest sufficient workflow without emitting a large dynamic workflow.\nActivation: downgrade (A single failing test should be reproduced and fixed directly; no resumable multi-agent artifact is needed.)\nPatterns: none\n\n## First Slice\n\nUse direct-codex instead of dynamic-workflow-designer for this request.\n\nCompletion check: no dynamic workflow artifact is needed\n\n## Risk Gates\n\n- scope expands into destructive, external, or multi-agent execution: stop and re-evaluate activation before acting\n",
   "source_prompt": "Fix this failing unit test.",
   "workflow_plan": {
     "activation": {

@@ -1,7 +1,7 @@
 {
   "fixture_id": "neg-one-file-plan",
   "raw_kind": "workflow-output",
-  "rendered_blueprint": "# neg-one-file-plan\n\nObjective: Route the request to the smallest sufficient workflow without emitting a large dynamic workflow.\nActivation: downgrade (One-file planning does not need handoffs, fan-out, or resume boundaries.)\nPatterns: none\n\n## First Slice\n\nUse simple-plan instead of dynamic-workflow-designer for this request.\n\nCompletion check: no dynamic workflow artifact is needed\n",
+  "rendered_blueprint": "# neg-one-file-plan\n\nObjective: Route the request to the smallest sufficient workflow without emitting a large dynamic workflow.\nActivation: downgrade (One-file planning does not need handoffs, fan-out, or resume boundaries.)\nPatterns: none\n\n## First Slice\n\nUse simple-plan instead of dynamic-workflow-designer for this request.\n\nCompletion check: no dynamic workflow artifact is needed\n\n## Risk Gates\n\n- scope expands into destructive, external, or multi-agent execution: stop and re-evaluate activation before acting\n",
   "source_prompt": "Draft a simple implementation plan for one file.",
   "workflow_plan": {
     "activation": {

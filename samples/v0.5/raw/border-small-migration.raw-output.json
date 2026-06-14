@@ -1,7 +1,7 @@
 {
   "fixture_id": "border-small-migration",
   "raw_kind": "workflow-output",
-  "rendered_blueprint": "# border-small-migration\n\nObjective: Route the request to the smallest sufficient workflow without emitting a large dynamic workflow.\nActivation: downgrade (Twelve call sites in one package need bounded implementation routing, not dynamic workflow design.)\nPatterns: none\n\n## First Slice\n\nUse workflow-router instead of dynamic-workflow-designer for this request.\n\nCompletion check: no dynamic workflow artifact is needed\n",
+  "rendered_blueprint": "# border-small-migration\n\nObjective: Route the request to the smallest sufficient workflow without emitting a large dynamic workflow.\nActivation: downgrade (Twelve call sites in one package need bounded implementation routing, not dynamic workflow design.)\nPatterns: none\n\n## First Slice\n\nUse workflow-router instead of dynamic-workflow-designer for this request.\n\nCompletion check: no dynamic workflow artifact is needed\n\n## Risk Gates\n\n- scope expands into destructive, external, or multi-agent execution: stop and re-evaluate activation before acting\n",
   "source_prompt": "Create a migration plan for 12 call sites in one package.",
   "workflow_plan": {
     "activation": {

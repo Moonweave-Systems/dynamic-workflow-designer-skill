@@ -1,7 +1,7 @@
 {
   "fixture_id": "pos-cross-source-research",
   "raw_kind": "workflow-output",
-  "rendered_blueprint": "# pos-cross-source-research\n\nObjective: Coordinate cross-source research and filter claims through independent source verification.\nActivation: activate (The prompt needs a reusable artifact with downstream handoffs, verification, and gated execution.)\nPatterns: Parallel Fan-Out / Fan-In, Adversarial Verify, Judge Panel, Resume And Cache\n\n## First Slice\n\nDefine the source classes, claim schema, and freshness constraints before collecting evidence.\n\nCompletion check: inventory validates and every gap is either resolved or recorded\n",
+  "rendered_blueprint": "# pos-cross-source-research\n\nObjective: Coordinate cross-source research and filter claims through independent source verification.\nActivation: activate (The prompt needs a reusable artifact with downstream handoffs, verification, and gated execution.)\nPatterns: Parallel Fan-Out / Fan-In, Adversarial Verify, Judge Panel, Resume And Cache\n\n## First Slice\n\nDefine the source classes, claim schema, and freshness constraints before collecting evidence.\n\nCompletion check: inventory validates and every gap is either resolved or recorded\n\n## Risk Gates\n\n- write, shell, or destructive action: stop with a read-only report and ask for approval\n- dependency, paid external API, or network expansion: use local evidence or document the missing source\n- public API, production, database, secret, external message, runtime, or history rewrite action: preserve artifacts and ask before proceeding\n",
   "source_prompt": "Research the current state of on-device LLM inference across papers, repos, and product docs with claim verification.",
   "workflow_plan": {
     "activation": {
@@ -160,7 +160,7 @@
       {
         "requires_user_approval": true,
         "safe_default": "stop with a read-only report and ask for approval",
-        "trigger": "write or destructive action"
+        "trigger": "write, shell, or destructive action"
       },
       {
         "requires_user_approval": true,

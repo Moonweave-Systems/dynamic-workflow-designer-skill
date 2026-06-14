@@ -26,8 +26,10 @@ Positioning:
   work before execution.
 - Future `workflow-orchestrator` plugin/runtime: execute saved workflow plans
   with resumability, monitoring, and subagent coordination.
-- V0.5 continuation gate: prove the skill can emit a machine-readable
-  `workflow.plan.json` plus an evaluator before plugin/runtime work begins.
+- V0.5 continuation gate: prove the machine-readable `workflow.plan.json`
+  contract, deterministic fixture corpus, and evaluator before plugin/runtime
+  work begins. V0.5 validates tracked sample artifacts; it does not run a live
+  model against `SKILL.md`.
 
 ## Users
 
@@ -241,14 +243,17 @@ V0.5 is releasable when:
 - tracked candidate samples under `samples/v0.5/candidates/` validate as
   schema-valid plans or valid downgrade artifacts.
 - tracked raw outputs under `samples/v0.5/raw/` are distinct from parsed plans
-  and contain the parsed `workflow_plan` plus rendered blueprint.
+  and contain the prompt, parsed `workflow_plan`, and rendered blueprint that
+  matches the parsed plan.
 - each fixture has a blinded consumer report under `samples/v0.5/consumer/`.
 - both confirmed local baselines, `workflow-router-skill` and Claude
   `agent-workflow-designer`, are scored per fixture through normalized
-  artifacts or explicit normalization-failure records.
+  artifacts or source-hashed normalization-failure records whose scores are
+  derived by the evaluator from structured observations.
 - `python scripts/evaluate_plan.py --manifest fixtures/v0.5/manifest.json --out
   out/v0.5` regenerates scorecards, parsed plans, raw outputs, skill hashes,
-  rendered blueprints, and the consumer report.
+  rendered blueprints, and consumer reports; the command exits nonzero if the
+  keep/kill decision is not `keep`.
 - `docs/v0.5-decision.md` records the keep/kill outcome.
 
 ### Reproducible Check

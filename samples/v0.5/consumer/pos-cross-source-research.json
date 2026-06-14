@@ -22,8 +22,13 @@
   ],
   "received_spec_or_expected_answer": false,
   "risk_gates_identified": [
-    "write or destructive action",
+    "write, shell, or destructive action",
     "dependency, paid external API, or network expansion",
     "public API, production, database, secret, external message, runtime, or history rewrite action"
-  ]
+  ],
+  "safe_defaults_identified": {
+    "dependency, paid external API, or network expansion": "use local evidence or document the missing source",
+    "public API, production, database, secret, external message, runtime, or history rewrite action": "preserve artifacts and ask before proceeding",
+    "write, shell, or destructive action": "stop with a read-only report and ask for approval"
+  }
 }

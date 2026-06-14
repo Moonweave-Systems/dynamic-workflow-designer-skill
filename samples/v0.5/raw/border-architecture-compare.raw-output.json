@@ -1,7 +1,7 @@
 {
   "fixture_id": "border-architecture-compare",
   "raw_kind": "workflow-output",
-  "rendered_blueprint": "# border-architecture-compare\n\nObjective: Route the request to the smallest sufficient workflow without emitting a large dynamic workflow.\nActivation: downgrade (No downstream consumer or resumable execution is expected; use the router or a compact comparison.)\nPatterns: none\n\n## First Slice\n\nUse workflow-router instead of dynamic-workflow-designer for this request.\n\nCompletion check: no dynamic workflow artifact is needed\n",
+  "rendered_blueprint": "# border-architecture-compare\n\nObjective: Route the request to the smallest sufficient workflow without emitting a large dynamic workflow.\nActivation: downgrade (No downstream consumer or resumable execution is expected; use the router or a compact comparison.)\nPatterns: none\n\n## First Slice\n\nUse workflow-router instead of dynamic-workflow-designer for this request.\n\nCompletion check: no dynamic workflow artifact is needed\n\n## Risk Gates\n\n- scope expands into destructive, external, or multi-agent execution: stop and re-evaluate activation before acting\n",
   "source_prompt": "Compare two architecture options without downstream execution.",
   "workflow_plan": {
     "activation": {
