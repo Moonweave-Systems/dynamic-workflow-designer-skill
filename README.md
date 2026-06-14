@@ -79,7 +79,7 @@ what not to vendor.
 Run from the repository root:
 
 ```bash
-uv run python "$HOME/.codex/skills/.system/skill-creator/scripts/quick_validate.py" .
+uv run --with PyYAML python "$HOME/.codex/skills/.system/skill-creator/scripts/quick_validate.py" .
 python scripts/check_contract.py
 python scripts/check_contract.py --self-test
 python scripts/evaluate_plan.py --self-test

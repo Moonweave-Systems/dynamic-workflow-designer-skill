@@ -75,7 +75,17 @@ CONSUMERS = {"human", "codex-agent", "runtime"}
 ALLOWED_BLINDED_INPUTS = {"workflow.plan.json", "blueprint.md", "original prompt", "repository path"}
 BASELINE_ADAPTER_VERSION = "0.5-source-contract-v1"
 EXPECTED_BASELINES = {"workflow-router-skill", "claude-agent-workflow-designer"}
-UNSAFE_DEFAULT_TERMS = {"continue", "proceed", "automatically", "after writing", "after shell"}
+UNSAFE_DEFAULT_TERMS = {
+    "continue",
+    "proceed",
+    "automatically",
+    "after writing",
+    "after shell",
+    "afterward",
+    "afterwards",
+    "otherwise",
+    "then",
+}
 FORBIDDEN_PROVENANCE_TERMS = {
     "expected answer",
     "expected-answer",
@@ -182,6 +192,8 @@ def safe_default_blocks_before_action(text: str) -> bool:
     normalized = " ".join(text.lower().split())
     if any(term in normalized for term in UNSAFE_DEFAULT_TERMS):
         return False
+    if re.search(r"\bor\b", normalized):
+        return False
     allowed = [
         r"^stop before [a-z0-9 ,/.-]+ and ask for approval$",
         r"^do not [a-z0-9 ,/.-]+ without approval$",
@@ -194,12 +206,18 @@ def normalized_provenance_text(text: str) -> str:
     return " ".join(re.findall(r"[a-z0-9]+", text.lower()))
 
 
+def collapsed_provenance_text(text: str) -> str:
+    return "".join(re.findall(r"[a-z0-9]+", text.lower()))
+
+
 def forbid_provenance_leaks(text: str, where: str) -> None:
     normalized = normalized_provenance_text(text)
+    collapsed = collapsed_provenance_text(text)
     for forbidden in FORBIDDEN_PROVENANCE_TERMS:
         normalized_forbidden = normalized_provenance_text(forbidden)
+        collapsed_forbidden = collapsed_provenance_text(forbidden)
         require(
-            normalized_forbidden not in normalized,
+            normalized_forbidden not in normalized and collapsed_forbidden not in collapsed,
             f"{where} references forbidden provenance source: {forbidden}",
         )
 
@@ -233,6 +251,12 @@ def validate_activation(plan: dict[str, Any], expected: dict[str, Any] | None) -
     require(
         all(non_empty_string(item) for item in activation["matched_thresholds"]),
         "activation.matched_thresholds contains an empty value",
+    )
+    allowed_thresholds = EXCLUSIVE_THRESHOLDS | SUPPORTING_THRESHOLDS
+    unknown_thresholds = thresholds - allowed_thresholds
+    require(
+        not unknown_thresholds,
+        f"activation.matched_thresholds contains unknown values: {sorted(unknown_thresholds)}",
     )
 
     if decision == "activate":
@@ -621,6 +645,12 @@ def validate_budget_resume_execution(plan: dict[str, Any], activated: bool) -> N
     require(non_empty_string(first_slice["expected_output"]), "first_slice.expected_output is empty")
     require(non_empty_string(first_slice["completion_check"]), "first_slice.completion_check is empty")
     require(non_empty_list(first_slice["forbidden_actions"]), "first_slice.forbidden_actions must be non-empty")
+    if not activated:
+        target = plan["activation"]["downgrade_target"]
+        require(
+            target in first_slice["instruction"].lower(),
+            "downgrade first_slice.instruction must name the downgrade target",
+        )
 
 
 def validate_plan(
@@ -974,7 +1004,7 @@ def validate_decision_doc(summary: dict[str, Any], decision_path: Path | None = 
     raw_text = decision_path.read_text()
     text = " ".join(raw_text.lower().split())
 
-    decisions = re.findall(r"(?im)^decision:\s*([a-z0-9-]+)\s*$", raw_text)
+    decisions = re.findall(r"(?i)\bdecision:\s*([a-z0-9-]+)\b", raw_text)
     require(decisions == [summary["decision"]], "docs/v0.5-decision.md has contradictory decision values")
 
     fixture_matches = re.findall(r"(?i)(\d+)\s+fixtures evaluated\.", raw_text)
@@ -996,10 +1026,36 @@ def validate_decision_doc(summary: dict[str, Any], decision_path: Path | None = 
             f"docs/v0.5-decision.md baseline average mismatch for {name}",
         )
     require("aggregate keep/kill average" in text, "docs/v0.5-decision.md omits aggregate average boundary")
+    margin = (summary["candidate_keep_kill_average"] / max(summary["baseline_keep_kill_averages"].values())) - 1
+    claimed_margins = re.findall(r"(?i)more\s+than\s+(\d+(?:\.\d+)?)\s+percent", raw_text)
+    require(claimed_margins, "docs/v0.5-decision.md omits measured margin claim")
+    for claimed_margin in claimed_margins:
+        require(
+            float(claimed_margin) / 100 < margin,
+            "docs/v0.5-decision.md overstates aggregate keep/kill margin",
+        )
     if "per-metric margin" in text:
         require(
             "does not claim a per-metric margin" in text,
             "docs/v0.5-decision.md contains unsupported per-metric margin claim",
+        )
+    required_claims = [
+        "Four positive fixtures activate.",
+        "Four negative fixtures downgrade.",
+        "Three borderline fixtures downgrade to `workflow-router`.",
+        "The meta/runtime fixture activates to a backlog-oriented execution path.",
+        "Every fixture has a schema-valid artifact or valid downgrade artifact.",
+        "`workflow-router-skill`: source-hashed normalization failure",
+        "`claude-agent-workflow-designer`: source-hashed normalization failure",
+        "not a live blinded-review runner",
+        "does not claim runtime execution or live model generation",
+        "does not claim fresh baseline execution",
+    ]
+    for claim in required_claims:
+        normalized_claim = " ".join(claim.lower().split())
+        require(
+            normalized_claim in text,
+            f"docs/v0.5-decision.md omits required claim: {claim}",
         )
 
 
@@ -1222,7 +1278,11 @@ def valid_plan_fixture(decision: str = "activate") -> dict[str, Any]:
         "execution_path": {
             "mode": "subagent-plan" if decision == "activate" else "direct-codex",
             "first_slice": {
-                "instruction": "Inspect the prompt and list required inputs.",
+                "instruction": (
+                    "Inspect the prompt and list required inputs."
+                    if decision == "activate"
+                    else "Use direct-codex instead and produce a bounded response."
+                ),
                 "inputs": ["original prompt"],
                 "expected_output": "input ledger",
                 "completion_check": "ledger has inputs",
@@ -1238,6 +1298,14 @@ def self_test() -> None:
     validate_plan(active, {"activation": "activate", "required_thresholds": ["resumable-handoffs"]})
     downgrade = valid_plan_fixture("downgrade")
     validate_plan(downgrade, {"activation": "downgrade", "downgrade_target": "direct-codex"})
+    bad_activation = json.loads(json.dumps(active))
+    bad_activation["activation"]["matched_thresholds"].append("totally-made-up-threshold")
+    try:
+        validate_plan(bad_activation, {"activation": "activate"})
+    except EvaluationError:
+        pass
+    else:
+        raise EvaluationError("self-test failed: unknown activation threshold passed")
 
     wrong_creator = json.loads(json.dumps(active))
     wrong_creator["created_by"] = "other-workflow-tool"
@@ -1309,6 +1377,9 @@ def self_test() -> None:
         "ask before shell use, stop for approval, then run the shell command",
         "stop before writing and ask for approval, otherwise write files",
         "do not write without approval; write files afterward",
+        "preserve evidence and ask before writing, then delete files",
+        "preserve context and ask before network use, then send the request",
+        "preserve logs and ask before editing files or running shell commands",
     ]:
         bad_gate = json.loads(json.dumps(active))
         bad_gate["risk_gates"][0]["safe_default"] = unsafe_default
@@ -1431,6 +1502,24 @@ def self_test() -> None:
     else:
         raise EvaluationError("self-test failed: spaced provenance source leak passed")
     bad_report = json.loads(json.dumps(valid_report))
+    bad_report["provenance"]["field_support"]["safe_defaults"] += "; score-card"
+    write_json(tmp_report, bad_report)
+    try:
+        validate_consumer_report(tmp_report, active, {"activation": "activate"})
+    except EvaluationError:
+        pass
+    else:
+        raise EvaluationError("self-test failed: hyphenated provenance source leak passed")
+    bad_report = json.loads(json.dumps(valid_report))
+    bad_report["provenance"]["field_support"]["safe_defaults"] += "; score/card"
+    write_json(tmp_report, bad_report)
+    try:
+        validate_consumer_report(tmp_report, active, {"activation": "activate"})
+    except EvaluationError:
+        pass
+    else:
+        raise EvaluationError("self-test failed: slashed provenance source leak passed")
+    bad_report = json.loads(json.dumps(valid_report))
     bad_report["provenance"]["field_support"]["risk_gates"] = "risk_gates omitted"
     write_json(tmp_report, bad_report)
     try:
@@ -1540,6 +1629,15 @@ def self_test() -> None:
         pass
     else:
         raise EvaluationError("self-test failed: contradictory downgrade execution mode passed")
+    bad_downgrade = json.loads(json.dumps(downgrade))
+    bad_downgrade["activation"]["downgrade_target"] = "workflow-router"
+    bad_downgrade["execution_path"]["first_slice"]["instruction"] = "Use simple-plan instead and produce a minimal checklist."
+    try:
+        validate_plan(bad_downgrade, {"activation": "downgrade", "downgrade_target": "workflow-router"})
+    except EvaluationError:
+        pass
+    else:
+        raise EvaluationError("self-test failed: contradictory downgrade first slice passed")
 
     source_text = (
         "Classify the task using references/router-map.md.\n"
@@ -1682,7 +1780,7 @@ def self_test() -> None:
     tmp_decision.write_text(
         "# Decision\n\n"
         "Decision: keep\n\n"
-        "Decision: kill-or-merge\n\n"
+        "- Decision: kill-or-merge\n\n"
         "- 12 fixtures evaluated.\n"
         "- Candidate keep/kill average: 1.883.\n"
         "- `workflow-router-skill` baseline average: 1.317.\n"
@@ -1696,6 +1794,33 @@ def self_test() -> None:
         pass
     else:
         raise EvaluationError("self-test failed: contradictory decision doc passed")
+    tmp_decision.write_text(
+        "# Decision\n\n"
+        "Decision: keep\n\n"
+        "- 12 fixtures evaluated.\n"
+        "- Candidate keep/kill average: 1.883.\n"
+        "- `workflow-router-skill` baseline average: 1.317.\n"
+        "- `claude-agent-workflow-designer` baseline average: 0.8.\n"
+        "The candidate aggregate keep/kill average beats each baseline aggregate by more "
+        "than 90 percent across the evaluator's keep/kill metric set. "
+        "V0.5 does not claim a per-metric margin.\n"
+        "- Four positive fixtures activate.\n"
+        "- Four negative fixtures downgrade.\n"
+        "- Three borderline fixtures downgrade to `workflow-router`.\n"
+        "- The meta/runtime fixture activates to a backlog-oriented execution path.\n"
+        "- Every fixture has a schema-valid artifact or valid downgrade artifact.\n"
+        "- `workflow-router-skill`: source-hashed normalization failure.\n"
+        "- `claude-agent-workflow-designer`: source-hashed normalization failure.\n"
+        "The consumer evidence format is not a live blinded-review runner.\n"
+        "V0.5 does not claim runtime execution or live model generation from `SKILL.md`. "
+        "It also does not claim fresh baseline execution.\n"
+    )
+    try:
+        validate_decision_doc(good_summary, tmp_decision)
+    except EvaluationError:
+        pass
+    else:
+        raise EvaluationError("self-test failed: overstated decision margin passed")
     tmp_decision.unlink(missing_ok=True)
     try:
         resolve_out_root("/tmp/v0.5-outside-repo")

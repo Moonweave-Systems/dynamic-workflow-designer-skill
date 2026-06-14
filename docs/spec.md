@@ -247,8 +247,8 @@ V0.5 is releasable when:
   and contain the prompt, parsed `workflow_plan`, and rendered blueprint that
   matches the parsed plan.
 - each fixture has a structured consumer report under `samples/v0.5/consumer/`.
-- both confirmed local baselines, `workflow-router-skill` and Claude
-  `agent-workflow-designer`, are scored per fixture through normalized
+- both confirmed local baselines, `workflow-router-skill` and
+  `claude-agent-workflow-designer`, are scored per fixture through normalized
   artifacts or source-hashed normalization-failure records whose scores are
   derived by the evaluator from structured observations.
 - `python scripts/evaluate_plan.py --manifest fixtures/v0.5/manifest.json --out
@@ -262,7 +262,7 @@ V0.5 is releasable when:
 Run from the repository root:
 
 ```bash
-uv run python "$HOME/.codex/skills/.system/skill-creator/scripts/quick_validate.py" .
+uv run --with PyYAML python "$HOME/.codex/skills/.system/skill-creator/scripts/quick_validate.py" .
 ```
 
 ```bash
