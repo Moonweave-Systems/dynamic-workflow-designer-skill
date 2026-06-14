@@ -13,7 +13,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 SKIP_DIRS = {".git", ".pytest_cache", ".ruff_cache", "__pycache__", "out"}
 SECRET_PATTERN = re.compile(
-    r"(?i)(api[_-]?key|secret|token|password)\s*[:=]\s*['\"][^'\"]{8,}|"
+    r"(?i)['\"]?(api[_-]?key|secret|token|password)['\"]?\s*[:=]\s*['\"][^'\"]{8,}|"
     r"-----BEGIN (RSA|OPENSSH) PRIVATE KEY-----"
 )
 PLACEHOLDER_PATTERN = re.compile(r"T[O]DO|T[B]D|PLACE[H]OLDER|FIX[M]E")
@@ -92,6 +92,16 @@ def self_test() -> None:
             pass
         else:
             raise TextCheckError("self-test failed: shell secret file passed")
+    with tempfile.TemporaryDirectory() as tmp:
+        root = Path(tmp)
+        json_secret = '{"pass' + 'word": "1234567890abcdef"}\n'
+        (root / "config.json").write_text(json_secret)
+        try:
+            check_files(root)
+        except TextCheckError:
+            pass
+        else:
+            raise TextCheckError("self-test failed: JSON secret file passed")
     print("release text check self-test: pass")
 
 

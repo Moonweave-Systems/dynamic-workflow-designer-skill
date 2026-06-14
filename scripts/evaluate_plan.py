@@ -158,6 +158,8 @@ BASELINE_OBSERVATION_TERMS = {
     "resume_guidance": {"resume", "restartable", "cache", "phase output", "recovery"},
     "consumer_can_route": {"consumer", "route", "downstream", "start"},
 }
+ACTIVATION_INTERPRETATION_TERMS = {"describes", "routes", "decide", "emit", "artifact", "schema form"}
+VACUOUS_INTERPRETATION_TERMS = {"banana", "vibes"}
 EXPECTED_CATEGORY_RULES = {
     "positive": ("activate", None),
     "negative": ("downgrade", None),
@@ -264,6 +266,13 @@ def contains_phrase(text: str, phrase: str) -> bool:
 def interpretation_mentions_observation(key: str, interpretation: str) -> bool:
     normalized = interpretation.lower()
     return any(term in normalized for term in BASELINE_OBSERVATION_TERMS[key])
+
+
+def activation_interpretation_is_meaningful(interpretation: str) -> bool:
+    normalized = interpretation.lower()
+    if any(term in normalized for term in VACUOUS_INTERPRETATION_TERMS):
+        return False
+    return any(term in normalized for term in ACTIVATION_INTERPRETATION_TERMS)
 
 
 def gate_matches_term(gate: dict[str, Any], term: str) -> bool:
@@ -474,8 +483,8 @@ def validate_workers(plan: dict[str, Any], activated: bool) -> None:
         )
         require(non_empty_string(worker["id"]), "worker.id is empty")
         require(non_empty_string(worker["role"]), "worker.role is empty")
-        require(isinstance(worker["forbidden_actions"], list), "forbidden_actions must be a list")
-        require(isinstance(worker["ownership"], list), "ownership must be a list")
+        require(non_empty_list(worker["forbidden_actions"]), "forbidden_actions must be non-empty")
+        require(non_empty_list(worker["ownership"]), "ownership must be non-empty")
 
         permissions = worker["tool_permissions"]
         require(isinstance(permissions, dict), "tool_permissions must be an object")
@@ -506,7 +515,7 @@ def validate_workers(plan: dict[str, Any], activated: bool) -> None:
         )
         require(isinstance(budget["max_files"], int) and budget["max_files"] >= 0, "bad max_files")
         require(isinstance(budget["max_tokens"], int) and budget["max_tokens"] > 0, "bad max_tokens")
-        require(isinstance(budget["must_include"], list), "must_include must be a list")
+        require(non_empty_list(budget["must_include"]), "must_include must be non-empty")
         require(isinstance(budget["must_exclude"], list), "must_exclude must be a list")
 
         contract = worker["prompt_contract"]
@@ -986,6 +995,10 @@ def score_baseline_failure(
                 "baseline evidence activation_decision interpretation omits the observation topic",
             )
             require(
+                activation_interpretation_is_meaningful(item["interpretation"]),
+                "baseline evidence activation_decision interpretation lacks evidence action",
+            )
+            require(
                 item["activation_support"] in {"activate", "downgrade", "ambiguous"},
                 "baseline evidence activation_decision support is invalid",
             )
@@ -1235,6 +1248,11 @@ def validate_decision_doc(summary: dict[str, Any], decision_path: Path | None = 
     raw_text = decision_path.read_text()
     text = " ".join(raw_text.lower().split())
     forbidden_boundary_claims = [
+        r"\bfresh baseline re-execution\b",
+        r"\bbaseline re-execution\b",
+        r"\breran the baseline\b",
+        r"\blive source\b",
+        r"\bruntime evidence\b",
         r"\bbaseline skills?\b.{0,120}\brerun live\b",
         r"\blive\b.{0,120}\bfor this gate\b",
         r"\brerun live\b",
@@ -1702,6 +1720,23 @@ def self_test() -> None:
         pass
     else:
         raise EvaluationError("self-test failed: unknown escalation target passed")
+    for field in ["forbidden_actions", "ownership"]:
+        bad_worker = json.loads(json.dumps(active))
+        bad_worker["workers"][0][field] = []
+        try:
+            validate_plan(bad_worker, {"activation": "activate"})
+        except EvaluationError:
+            pass
+        else:
+            raise EvaluationError(f"self-test failed: empty worker {field} passed")
+    bad_worker = json.loads(json.dumps(active))
+    bad_worker["workers"][0]["context_budget"]["must_include"] = []
+    try:
+        validate_plan(bad_worker, {"activation": "activate"})
+    except EvaluationError:
+        pass
+    else:
+        raise EvaluationError("self-test failed: empty worker must_include passed")
     bad_worker = json.loads(json.dumps(active))
     bad_worker["workers"].append(json.loads(json.dumps(active["workers"][0])))
     try:
@@ -2284,6 +2319,22 @@ def self_test() -> None:
     }
     score_baseline_failure(baseline_failure, {"activation": "activate"}, source_text)
     bad_baseline_failure = json.loads(json.dumps(baseline_failure))
+    bad_baseline_failure["observation_evidence"]["activation_decision"]["interpretation"] = "Activation route schema banana."
+    try:
+        score_baseline_failure(bad_baseline_failure, {"activation": "activate"}, source_text)
+    except EvaluationError:
+        pass
+    else:
+        raise EvaluationError("self-test failed: vacuous baseline activation interpretation passed")
+    bad_baseline_failure = json.loads(json.dumps(baseline_failure))
+    bad_baseline_failure["observation_evidence"]["activation_decision"]["interpretation"] = "Route only."
+    try:
+        score_baseline_failure(bad_baseline_failure, {"activation": "activate"}, source_text)
+    except EvaluationError:
+        pass
+    else:
+        raise EvaluationError("self-test failed: actionless baseline activation interpretation passed")
+    bad_baseline_failure = json.loads(json.dumps(baseline_failure))
     bad_baseline_failure["observation_evidence"]["handoff_guidance"]["interpretation"] = (
         "The handoff guidance capability is absent."
     )
@@ -2546,6 +2597,40 @@ def self_test() -> None:
         pass
     else:
         raise EvaluationError("self-test failed: live baseline rerun claim passed")
+    tmp_decision.write_text(
+        "# Decision\n\n"
+        "Decision: keep\n\n"
+        "- 12 fixtures evaluated.\n"
+        "- Candidate keep/kill average: 1.8.\n"
+        "- `workflow-router-skill` baseline average: 1.5.\n"
+        "- `claude-agent-workflow-designer` baseline average: 1.0.\n"
+        "The candidate aggregate keep/kill average beats each baseline aggregate by at least "
+        "20 percent across the evaluator's keep/kill metric set. "
+        "This gate relies on fresh baseline re-execution against sibling sources.\n"
+    )
+    try:
+        validate_decision_doc(exact_margin_summary, tmp_decision)
+    except EvaluationError:
+        pass
+    else:
+        raise EvaluationError("self-test failed: fresh baseline re-execution claim passed")
+    tmp_decision.write_text(
+        "# Decision\n\n"
+        "Decision: keep\n\n"
+        "- 12 fixtures evaluated.\n"
+        "- Candidate keep/kill average: 1.8.\n"
+        "- `workflow-router-skill` baseline average: 1.5.\n"
+        "- `claude-agent-workflow-designer` baseline average: 1.0.\n"
+        "The candidate aggregate keep/kill average beats each baseline aggregate by at least "
+        "20 percent across the evaluator's keep/kill metric set. "
+        "We reran the baseline against the live source and used that runtime evidence.\n"
+    )
+    try:
+        validate_decision_doc(exact_margin_summary, tmp_decision)
+    except EvaluationError:
+        pass
+    else:
+        raise EvaluationError("self-test failed: runtime evidence claim passed")
     tmp_decision.unlink(missing_ok=True)
     try:
         resolve_out_root("/tmp/v0.5-outside-repo")
