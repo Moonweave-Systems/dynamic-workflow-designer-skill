@@ -263,6 +263,8 @@ V1 is releasable when:
 
 - `docs/v1-first-slice-compiler-spec.md` defines the compile and resume-check
   behavior.
+- V1 `source_plan_path` must be repository-relative in V1; off-repo
+  `workflow.plan.json` inputs are rejected at compile time.
 - `scripts/compile_workflow.py --self-test` passes.
 - `python scripts/compile_workflow.py --manifest fixtures/v1/manifest.json --out
   out/v1/<suite_id>` passes and writes `summary.json`.

@@ -947,6 +947,10 @@ def render_resume(status: dict[str, Any], packet: dict[str, Any] | None = None) 
 
 def compile_plan(plan_path: Path, out_dir: Path, *, run_id: str | None = None, mode: str = "compile") -> dict[str, Any]:
     plan_path = plan_path.resolve(strict=False)
+    try:
+        plan_path.relative_to(ROOT.resolve())
+    except ValueError as exc:
+        raise CompileError("ERR_PLAN_INVALID", "plan path must resolve under the repository root", path=plan_path) from exc
     run_id = run_id or out_dir.name
     out_dir = resolve_v1_out(out_dir)
     plan, source_plan_hash = load_plan(plan_path)
@@ -1773,6 +1777,16 @@ def self_test() -> None:
             or duplicate_summary["skipped"] != 0
         ):
             raise CompileError("ERR_SELF_TEST_WRONG_REASON", "duplicate optional fixture summary was not fatal and complete")
+        with tempfile.TemporaryDirectory(prefix="compile-workflow-external-plan-") as external_tmp:
+            external_plan = Path(external_tmp) / "external.workflow.plan.json"
+            write_json_atomic(external_plan, read_json(ROOT / "fixtures" / "v1" / "plans" / "ready-readonly.workflow.plan.json"))
+            try:
+                compile_plan(external_plan, tmp_path / "external-plan", run_id="external-plan", mode="fixture")
+            except CompileError as exc:
+                if exc.code != "ERR_PLAN_INVALID":
+                    raise
+            else:
+                raise CompileError("ERR_SELF_TEST_WRONG_REASON", "external plan path was not rejected")
         invalid_id_manifest = {
             "suite_id": "invalid-id",
             "fixtures": [fixtures["positive-ready-readonly"], {**fixtures["positive-repo-migration"], "id": "../escape"}],

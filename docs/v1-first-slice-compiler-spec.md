@@ -113,6 +113,10 @@ Mode semantics:
 There is no `first-slice` execution mode in V1. The first slice is compiled, not
 run.
 
+The `--plan` path must resolve under the repository root. V1 stores
+`run.json.source_plan_path` as a repository-relative path and rejects tampered
+absolute or parent-traversal source-plan paths during resume.
+
 ## Output Path Safety
 
 By default, `--out` must resolve under the repository-local `out/v1/` directory.
@@ -301,6 +305,8 @@ Required fields:
 `source_plan_hash` is the canonical hash of the original file at
 `source_plan_path` at compile time. `plan_hash` is the canonical hash of
 `plan.snapshot.json`.
+
+`source_plan_path` must be repository-relative in V1.
 
 `risk_policy` is fixed to `block-all` in V1. Approved execution is outside V1;
 approval files exist only to make manual gates explicit and machine-checkable.

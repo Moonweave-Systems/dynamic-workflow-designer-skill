@@ -130,6 +130,9 @@ python scripts/compile_workflow.py --self-test
 python scripts/compile_workflow.py --manifest fixtures/v1/manifest.json --out out/v1/final
 ```
 
+V1 expects `workflow.plan.json` to live under this repository root; resume treats
+absolute or parent-traversal source-plan paths as stale.
+
 The V1 keep/kill decision is
 [`docs/v1-decision.md`](docs/v1-decision.md).
 

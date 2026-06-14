@@ -453,6 +453,7 @@ def main() -> None:
             "python scripts/check_release_text.py --self-test",
             "python scripts/compile_workflow.py --plan workflow.plan.json --out out/v1/<run_id>",
             "python scripts/compile_workflow.py --resume out/v1/<run_id>",
+            "workflow.plan.json` to live under this repository root",
         ],
     )
     require_terms("docs/v0.5-plan-schema-evaluator-spec.md", V05_REQUIRED_TERMS)
@@ -472,6 +473,7 @@ def main() -> None:
             "python scripts/compile_workflow.py --resume out/v1/<run_id>",
             "python scripts/compile_workflow.py --self-test",
             "python scripts/compile_workflow.py --manifest fixtures/v1/manifest.json --out out/v1/<suite_id>",
+            "`source_plan_path` must be repository-relative in v1",
         ],
     )
     require_terms(
