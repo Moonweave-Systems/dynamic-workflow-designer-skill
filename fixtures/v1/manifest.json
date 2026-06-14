@@ -54,6 +54,13 @@
     },
     {
       "expected_error": "ERR_OUT_PATH_UNSAFE",
+      "id": "negative-run-path-traversal",
+      "out_override": "out/v1/traversal-parent/../traversal-child",
+      "plan": "fixtures/v1/plans/ready-readonly.workflow.plan.json",
+      "type": "error"
+    },
+    {
+      "expected_error": "ERR_OUT_PATH_UNSAFE",
       "id": "negative-fixture-input-outside",
       "input_files": [
         {
@@ -464,6 +471,13 @@
       "type": "resume"
     },
     {
+      "expected_invalidator": "ERR_RESUME_STALE_PLAN",
+      "id": "resume-source-plan-path-absolute",
+      "mutate_artifact": "run_source_path_absolute",
+      "plan": "fixtures/v1/plans/ready-readonly.workflow.plan.json",
+      "type": "resume"
+    },
+    {
       "expected_invalidator": "ERR_RESUME_STALE_GATE",
       "id": "resume-gate-empty-object",
       "mutate_artifact": "gate_empty_object",
@@ -534,6 +548,7 @@
     "negative-downgrade",
     "negative-outside-out",
     "negative-symlink-run-path",
+    "negative-run-path-traversal",
     "negative-fixture-input-outside",
     "negative-fixture-input-symlink-parent",
     "risk-write",
@@ -568,6 +583,7 @@
     "resume-stale-live-input",
     "resume-stale-gate",
     "resume-stale-status-hash",
+    "resume-source-plan-path-absolute",
     "resume-gate-empty-object",
     "resume-stale-compiler",
     "resume-symlink-gate",

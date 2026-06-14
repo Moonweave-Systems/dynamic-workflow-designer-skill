@@ -187,6 +187,20 @@ def run_source_path(value: str) -> Path:
     return path if path.is_absolute() else ROOT / path
 
 
+def safe_resume_source_plan_path(value: str) -> Path:
+    path = Path(value)
+    if path.is_absolute():
+        raise CompileError("ERR_OUT_PATH_UNSAFE", "resume source plan path must be repo-relative", path=path)
+    reject_traversal_parts(path, message="resume source plan path escapes repository")
+    candidate = ROOT / path
+    resolved = candidate.resolve(strict=False)
+    try:
+        resolved.relative_to(ROOT.resolve())
+    except ValueError as exc:
+        raise CompileError("ERR_OUT_PATH_UNSAFE", "resume source plan path escapes repository", path=path) from exc
+    return candidate
+
+
 def read_json(path: Path) -> dict[str, Any]:
     try:
         data = json.loads(path.read_text())
@@ -289,6 +303,7 @@ def ensure_safe_artifact_read(root: Path, path: Path) -> None:
 
 def resolve_v1_out(value: str | Path) -> Path:
     raw = Path(value)
+    reject_traversal_parts(raw, message="output path must not contain parent traversal")
     candidate = raw if raw.is_absolute() else ROOT / raw
     resolved = candidate.resolve(strict=False)
     out_root = OUT_ROOT.resolve(strict=False)
@@ -1121,7 +1136,11 @@ def resume_run(run_dir: Path) -> dict[str, Any]:
         raise CompileError("ERR_OUT_PATH_NOT_OWNED", "resume sentinel does not match run metadata", path=run_dir)
     invalidators: list[dict[str, Any]] = []
     snapshots = old_status["snapshots"]
-    source_plan = run_source_path(run["source_plan_path"])
+    try:
+        source_plan = safe_resume_source_plan_path(run["source_plan_path"])
+    except CompileError:
+        source_plan = ROOT / "__unsafe_resume_source_plan__"
+        invalidators.append(hash_invalidator("plan", run["source_plan_path"], run.get("source_plan_hash"), None, "source plan path is unsafe"))
     source_hash = None
     if not source_plan.is_file() or source_plan.is_symlink():
         invalidators.append(hash_invalidator("plan", str(source_plan), run.get("source_plan_hash"), None, "source plan is missing"))
@@ -1572,6 +1591,11 @@ def mutate_run_artifact(run_dir: Path, plan_path: Path, mutation: str) -> None:
         data = json.loads(path.read_text())
         data["plan_hash"] = "0" * 64
         data["source_plan_hash"] = "1" * 64
+        write_json_atomic(path, data)
+    elif mutation == "run_source_path_absolute":
+        path = run_dir / "run.json"
+        data = json.loads(path.read_text())
+        data["source_plan_path"] = str((ROOT / "fixtures" / "v1" / "plans" / "ready-readonly.workflow.plan.json").resolve())
         write_json_atomic(path, data)
     elif mutation == "status_handoff_traversal":
         path = run_dir / "status.json"
