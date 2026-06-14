@@ -6,10 +6,10 @@
   "normalized": false,
   "observation_evidence": {
     "activation_decision": {
+      "activation_support": "ambiguous",
       "interpretation": "Routes requests, but does not emit a fixture-specific schema activation artifact.",
       "observation": "activation_decision",
-      "source_excerpt": "Classify the task using `references/router-map.md`.",
-      "supports_observation": "ambiguous"
+      "source_excerpt": "Classify the task using `references/router-map.md`."
     },
     "consumer_can_route": {
       "interpretation": "Provides routing or workflow guidance a consumer can follow.",

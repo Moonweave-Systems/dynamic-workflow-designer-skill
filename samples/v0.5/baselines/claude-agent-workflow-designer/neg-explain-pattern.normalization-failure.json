@@ -6,10 +6,10 @@
   "normalized": false,
   "observation_evidence": {
     "activation_decision": {
+      "activation_support": "ambiguous",
       "interpretation": "Describes when workflow design may apply, but does not decide fixture activation in schema form.",
       "observation": "activation_decision",
-      "source_excerpt": "A single prompt is insufficient for task complexity",
-      "supports_observation": "ambiguous"
+      "source_excerpt": "A single prompt is insufficient for task complexity"
     },
     "consumer_can_route": {
       "interpretation": "Provides routing or workflow guidance a consumer can follow.",

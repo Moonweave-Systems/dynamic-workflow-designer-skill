@@ -59,7 +59,10 @@ Supporting thresholds:
 - `human-gates`
 
 Downgrade artifacts must name a downgrade target, keep `parallelism.shape` as
-`"none"`, and use an empty `workers` list.
+`"none"`, use empty `workers`, `phases`, `handoffs`, and
+`resume.restart_points` lists, set `execution_path.mode` to `direct-codex`, set
+`execution_path.consumer` to `human`, and use this exact first-slice instruction:
+`Use <downgrade_target> instead of dynamic-workflow-designer for this request.`
 
 ## Surfaces
 
@@ -146,3 +149,5 @@ them as required risk gates.
 
 The first slice must be small enough for another agent to start without
 reinterpretation and must identify forbidden actions before execution.
+Repo-bound plans must include `repository path` in `first_slice.inputs`;
+non-repo plans must not include it.

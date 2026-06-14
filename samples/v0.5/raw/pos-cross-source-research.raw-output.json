@@ -49,8 +49,7 @@
         "inputs": [
           "workflow.plan.json",
           "blueprint.md",
-          "original prompt",
-          "repository path"
+          "original prompt"
         ],
         "instruction": "Define the source classes, claim schema, and freshness constraints before collecting evidence."
       },

@@ -85,7 +85,7 @@ python scripts/check_contract.py
 python scripts/check_contract.py --self-test
 python scripts/evaluate_plan.py --self-test
 python scripts/evaluate_plan.py --manifest fixtures/v0.5/manifest.json --out out/v0.5
-git diff --check "$(git hash-object -t tree /dev/null)" HEAD
+python scripts/check_whitespace.py .
 rg -n --pcre2 "(?i)(api[_-]?key|secret|token|password)\s*[:=]\s*['\"][^'\"]{8,}|-----BEGIN (RSA|OPENSSH) PRIVATE KEY-----" --glob '!LICENSE' .; test $? -eq 1
 rg -n "T[O]DO|T[B]D|PLACE[H]OLDER|FIX[M]E" --glob '*.md' .; test $? -eq 1
 ```

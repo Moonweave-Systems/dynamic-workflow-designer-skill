@@ -17,6 +17,9 @@ ALLOWED_FRONTMATTER_KEYS = {"name", "description", "license", "allowed-tools", "
 REQUIRED_FILES = [
     "SKILL.md",
     "README.md",
+    "agents/openai.yaml",
+    "docs/github-research.md",
+    "docs/fixture-smoke/v0-smoke.md",
     "docs/spec.md",
     "references/workflow-patterns.md",
     "references/workflow-plan-schema.md",

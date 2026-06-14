@@ -92,6 +92,8 @@
       "consumer_report": "samples/v0.5/consumer/pos-api-auth-audit.json",
       "expected": {
         "activation": "activate",
+        "downgrade_target": null,
+        "forbidden_patterns": [],
         "required_patterns": [
           "Pipeline",
           "Adversarial Verify"
@@ -114,6 +116,8 @@
       "consumer_report": "samples/v0.5/consumer/pos-legacy-fetch-migration.json",
       "expected": {
         "activation": "activate",
+        "downgrade_target": null,
+        "forbidden_patterns": [],
         "required_patterns": [
           "Pipeline",
           "Resume And Cache"
@@ -136,6 +140,8 @@
       "consumer_report": "samples/v0.5/consumer/pos-unsupported-claim-audit.json",
       "expected": {
         "activation": "activate",
+        "downgrade_target": null,
+        "forbidden_patterns": [],
         "required_patterns": [
           "Adversarial Verify"
         ],
@@ -156,6 +162,8 @@
       "consumer_report": "samples/v0.5/consumer/pos-cross-source-research.json",
       "expected": {
         "activation": "activate",
+        "downgrade_target": null,
+        "forbidden_patterns": [],
         "required_patterns": [
           "Parallel Fan-Out / Fan-In",
           "Adversarial Verify"
@@ -178,9 +186,12 @@
       "expected": {
         "activation": "downgrade",
         "downgrade_target": "direct-codex",
+        "forbidden_patterns": [],
+        "required_patterns": [],
         "required_risk_gates": [
           "source edit"
-        ]
+        ],
+        "required_thresholds": []
       },
       "id": "neg-fix-unit-test",
       "prompt_path": "fixtures/v0.5/prompts/neg-fix-unit-test.txt",
@@ -193,9 +204,12 @@
       "expected": {
         "activation": "downgrade",
         "downgrade_target": "direct-codex",
+        "forbidden_patterns": [],
+        "required_patterns": [],
         "required_risk_gates": [
           "external review"
-        ]
+        ],
+        "required_thresholds": []
       },
       "id": "neg-review-small-diff",
       "prompt_path": "fixtures/v0.5/prompts/neg-review-small-diff.txt",
@@ -208,9 +222,12 @@
       "expected": {
         "activation": "downgrade",
         "downgrade_target": "simple-plan",
+        "forbidden_patterns": [],
+        "required_patterns": [],
         "required_risk_gates": [
           "multi-agent"
-        ]
+        ],
+        "required_thresholds": []
       },
       "id": "neg-one-file-plan",
       "prompt_path": "fixtures/v0.5/prompts/neg-one-file-plan.txt",
@@ -223,9 +240,12 @@
       "expected": {
         "activation": "downgrade",
         "downgrade_target": "direct-codex",
+        "forbidden_patterns": [],
+        "required_patterns": [],
         "required_risk_gates": [
           "workflow execution"
-        ]
+        ],
+        "required_thresholds": []
       },
       "id": "neg-explain-pattern",
       "prompt_path": "fixtures/v0.5/prompts/neg-explain-pattern.txt",
@@ -238,9 +258,12 @@
       "expected": {
         "activation": "downgrade",
         "downgrade_target": "workflow-router",
+        "forbidden_patterns": [],
+        "required_patterns": [],
         "required_risk_gates": [
           "multi-agent"
-        ]
+        ],
+        "required_thresholds": []
       },
       "id": "border-one-service-auth-audit",
       "prompt_path": "fixtures/v0.5/prompts/border-one-service-auth-audit.txt",
@@ -253,9 +276,12 @@
       "expected": {
         "activation": "downgrade",
         "downgrade_target": "workflow-router",
+        "forbidden_patterns": [],
+        "required_patterns": [],
         "required_risk_gates": [
           "migration source edit"
-        ]
+        ],
+        "required_thresholds": []
       },
       "id": "border-small-migration",
       "prompt_path": "fixtures/v0.5/prompts/border-small-migration.txt",
@@ -268,9 +294,12 @@
       "expected": {
         "activation": "downgrade",
         "downgrade_target": "workflow-router",
+        "forbidden_patterns": [],
+        "required_patterns": [],
         "required_risk_gates": [
           "implementation decision"
-        ]
+        ],
+        "required_thresholds": []
       },
       "id": "border-architecture-compare",
       "prompt_path": "fixtures/v0.5/prompts/border-architecture-compare.txt",
@@ -282,6 +311,8 @@
       "consumer_report": "samples/v0.5/consumer/meta-runtime-design.json",
       "expected": {
         "activation": "activate",
+        "downgrade_target": null,
+        "forbidden_patterns": [],
         "required_patterns": [
           "Judge Panel",
           "Human Gate"

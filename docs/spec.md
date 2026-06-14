@@ -267,7 +267,7 @@ python scripts/quick_validate_skill.py --self-test
 ```
 
 ```bash
-git diff --check "$(git hash-object -t tree /dev/null)" HEAD
+python scripts/check_whitespace.py .
 ```
 
 ```bash
