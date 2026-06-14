@@ -91,12 +91,15 @@ FORBIDDEN_PROVENANCE_TERMS = {
     "answer key",
     "expected answer",
     "expected-answer",
+    "author commentary",
+    "cheat sheet",
     "gold answer",
     "ground truth",
     "marking pass",
     "rubric",
     "scorecard",
     "separate note",
+    "solution key",
     "docs/spec",
     "docs slash spec",
     "reviewed against docs",
@@ -158,7 +161,6 @@ BASELINE_OBSERVATION_TERMS = {
     "resume_guidance": {"resume", "restartable", "cache", "phase output", "recovery"},
     "consumer_can_route": {"consumer", "route", "downstream", "start"},
 }
-ACTIVATION_INTERPRETATION_TERMS = {"describes", "routes", "decide", "emit", "artifact", "schema form"}
 VACUOUS_INTERPRETATION_TERMS = {"banana", "vibes"}
 EXPECTED_CATEGORY_RULES = {
     "positive": ("activate", None),
@@ -166,6 +168,7 @@ EXPECTED_CATEGORY_RULES = {
     "borderline": ("downgrade", "workflow-router"),
     "meta": ("activate", None),
 }
+EXPECTED_CATEGORY_COUNTS = {"positive": 4, "negative": 4, "borderline": 3, "meta": 1}
 FIXTURE_ID_CATEGORY_PREFIXES = {
     "pos": "positive",
     "neg": "negative",
@@ -272,7 +275,10 @@ def activation_interpretation_is_meaningful(interpretation: str) -> bool:
     normalized = interpretation.lower()
     if any(term in normalized for term in VACUOUS_INTERPRETATION_TERMS):
         return False
-    return any(term in normalized for term in ACTIVATION_INTERPRETATION_TERMS)
+    routes_or_describes = "routes" in normalized or "describes" in normalized
+    schema_boundary = "schema" in normalized and ("does not" in normalized or "not " in normalized)
+    decision_boundary = any(term in normalized for term in ["decide", "emit", "artifact"])
+    return routes_or_describes and schema_boundary and decision_boundary
 
 
 def gate_matches_term(gate: dict[str, Any], term: str) -> bool:
@@ -1249,10 +1255,15 @@ def validate_decision_doc(summary: dict[str, Any], decision_path: Path | None = 
     text = " ".join(raw_text.lower().split())
     forbidden_boundary_claims = [
         r"\bfresh baseline re-execution\b",
+        r"\bfreshly rechecked\b.{0,120}\bsibling baseline\b",
+        r"\bfresh rerun\b.{0,120}\b(peer|sibling) baseline\b",
+        r"\bfreshly rerun\b.{0,120}\b(peer|sibling) baseline\b",
         r"\bbaseline re-execution\b",
         r"\breran the baseline\b",
         r"\blive source\b",
         r"\bruntime evidence\b",
+        r"\bruntime-backed evidence\b",
+        r"\bcompares\b.{0,120}\bsibling baselines live\b",
         r"\bbaseline skills?\b.{0,120}\brerun live\b",
         r"\blive\b.{0,120}\bfor this gate\b",
         r"\brerun live\b",
@@ -1416,6 +1427,24 @@ def evaluate_manifest(manifest_path: Path, out_root: Path) -> dict[str, Any]:
     ]
     for fixture in manifest["fixtures"]:
         validate_fixture_manifest_entry(fixture)
+    expected_candidate_paths = {fixture["candidate_plan"] for fixture in manifest["fixtures"]}
+    expected_raw_paths = {fixture["raw_output"] for fixture in manifest["fixtures"]}
+    expected_consumer_paths = {fixture["consumer_report"] for fixture in manifest["fixtures"]}
+    actual_candidate_paths = {
+        rel(path)
+        for path in sorted((ROOT / "samples" / "v0.5" / "candidates").glob("*.workflow.plan.json"))
+    }
+    actual_raw_paths = {
+        rel(path)
+        for path in sorted((ROOT / "samples" / "v0.5" / "raw").glob("*.raw-output.json"))
+    }
+    actual_consumer_paths = {
+        rel(path)
+        for path in sorted((ROOT / "samples" / "v0.5" / "consumer").glob("*.json"))
+    }
+    require(expected_candidate_paths == actual_candidate_paths, "manifest candidate paths must match tracked candidate corpus")
+    require(expected_raw_paths == actual_raw_paths, "manifest raw-output paths must match tracked raw corpus")
+    require(expected_consumer_paths == actual_consumer_paths, "manifest consumer paths must match tracked consumer corpus")
     out_root.mkdir(parents=True, exist_ok=True)
     skill_hash = hash_file(ROOT / "SKILL.md")
     scorecards = [
@@ -1424,10 +1453,10 @@ def evaluate_manifest(manifest_path: Path, out_root: Path) -> dict[str, Any]:
     ]
     categories = {card["category"] for card in scorecards}
     require({"positive", "negative", "borderline", "meta"} <= categories, "manifest misses categories")
-    require(sum(1 for card in scorecards if card["category"] == "positive") >= 4, "need four positives")
-    require(sum(1 for card in scorecards if card["category"] == "negative") >= 4, "need four negatives")
-    require(sum(1 for card in scorecards if card["category"] == "borderline") >= 3, "need three borderline fixtures")
-    require(sum(1 for card in scorecards if card["category"] == "meta") >= 1, "need one meta fixture")
+    require(len(scorecards) == sum(EXPECTED_CATEGORY_COUNTS.values()), "manifest must contain exactly 12 fixtures")
+    for category, expected_count in EXPECTED_CATEGORY_COUNTS.items():
+        actual_count = sum(1 for card in scorecards if card["category"] == category)
+        require(actual_count == expected_count, f"need exactly {expected_count} {category} fixtures")
 
     candidate_avg = sum(average(card["candidate"]["scores"], KEEP_KILL_METRICS) for card in scorecards) / len(scorecards)
     baseline_avgs: dict[str, float] = {}
@@ -1942,6 +1971,20 @@ def self_test() -> None:
         pass
     else:
         raise EvaluationError("self-test failed: ground-truth consumer provenance leak passed")
+    for note in [
+        "I had the solution key while reviewing.",
+        "A cheat sheet was available during review.",
+        "I reviewed the author commentary before deciding pass.",
+    ]:
+        bad_report = json.loads(json.dumps(valid_report))
+        bad_report["provenance"]["reviewer_note"] = note
+        write_json(tmp_report, bad_report)
+        try:
+            validate_consumer_report(tmp_report, active, {"activation": "activate"})
+        except EvaluationError:
+            pass
+        else:
+            raise EvaluationError("self-test failed: consumer provenance synonym leak passed")
     bad_report = json.loads(json.dumps(valid_report))
     bad_report["provenance"]["field_support"]["safe_defaults"] += "; docs / spec"
     write_json(tmp_report, bad_report)
@@ -2335,6 +2378,14 @@ def self_test() -> None:
     else:
         raise EvaluationError("self-test failed: actionless baseline activation interpretation passed")
     bad_baseline_failure = json.loads(json.dumps(baseline_failure))
+    bad_baseline_failure["observation_evidence"]["activation_decision"]["interpretation"] = "This schema artifact exists."
+    try:
+        score_baseline_failure(bad_baseline_failure, {"activation": "activate"}, source_text)
+    except EvaluationError:
+        pass
+    else:
+        raise EvaluationError("self-test failed: content-free baseline activation interpretation passed")
+    bad_baseline_failure = json.loads(json.dumps(baseline_failure))
     bad_baseline_failure["observation_evidence"]["handoff_guidance"]["interpretation"] = (
         "The handoff guidance capability is absent."
     )
@@ -2631,6 +2682,30 @@ def self_test() -> None:
         pass
     else:
         raise EvaluationError("self-test failed: runtime evidence claim passed")
+    for claim in [
+        "It freshly rechecked sibling baseline sources for this gate.",
+        "This gate compares sibling baselines live during evaluation.",
+        "The keep gate uses runtime-backed evidence from sibling baselines.",
+        "The decision cites a fresh rerun of peer baselines.",
+        "It also compares against freshly rerun sibling baselines before deciding.",
+    ]:
+        tmp_decision.write_text(
+            "# Decision\n\n"
+            "Decision: keep\n\n"
+            "- 12 fixtures evaluated.\n"
+            "- Candidate keep/kill average: 1.8.\n"
+            "- `workflow-router-skill` baseline average: 1.5.\n"
+            "- `claude-agent-workflow-designer` baseline average: 1.0.\n"
+            "The candidate aggregate keep/kill average beats each baseline aggregate by at least "
+            "20 percent across the evaluator's keep/kill metric set. "
+            f"{claim}\n"
+        )
+        try:
+            validate_decision_doc(exact_margin_summary, tmp_decision)
+        except EvaluationError:
+            pass
+        else:
+            raise EvaluationError("self-test failed: baseline rerun paraphrase claim passed")
     tmp_decision.unlink(missing_ok=True)
     try:
         resolve_out_root("/tmp/v0.5-outside-repo")

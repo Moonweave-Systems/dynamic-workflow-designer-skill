@@ -81,10 +81,10 @@ Each activated worker requires:
 - `id`
 - `role`
 - `tool_permissions`
-- `forbidden_actions`
+- `forbidden_actions`: non-empty list
 - `context_budget`
 - `prompt_contract`
-- `ownership`
+- `ownership`: non-empty list
 
 `tool_permissions` requires typed boolean fields `read`, `write`, `shell`, and
 `network`, plus `mcp_connectors` and `requires_escalation_for`.
@@ -93,14 +93,14 @@ Each activated worker requires:
 
 - `max_files`
 - `max_tokens`
-- `must_include`
+- `must_include`: non-empty list
 - `must_exclude`
 
 `prompt_contract` requires:
 
-- `inputs`
+- `inputs`: non-empty list
 - `required_output_schema`
-- `stop_conditions`
+- `stop_conditions`: non-empty list
 
 ## Handoffs
 
@@ -117,6 +117,9 @@ Each activated handoff requires:
   `other`
 - `required_fields`
 - `validation_command`
+
+Activated handoff fields must be non-empty. `artifact_schema.required_fields`
+must be a non-empty list.
 
 ## Verification And Gates
 
@@ -142,10 +145,10 @@ them as required risk gates.
 `execution_path.first_slice` requires:
 
 - `instruction`
-- `inputs`
+- `inputs`: non-empty list
 - `expected_output`
 - `completion_check`
-- `forbidden_actions`
+- `forbidden_actions`: non-empty list
 
 The first slice must be small enough for another agent to start without
 reinterpretation and must identify forbidden actions before execution.
