@@ -1215,6 +1215,11 @@ def resume_run(run_dir: Path) -> dict[str, Any]:
         expected = snapshots["prompt_hashes"].get(prompt_rel)
         if actual != expected:
             invalidators.append(hash_invalidator("prompt", prompt_rel, expected, actual, "prompt hash changed"))
+        if packet is not None:
+            try:
+                verify_prompt_packet(prompt_text, packet)
+            except CompileError:
+                invalidators.append(hash_invalidator("prompt", prompt_rel, expected, actual, "prompt and packet contract disagree"))
     handoff_schemas = []
     for handoff_id, expected in snapshots["handoff_schema_hashes"].items():
         path = run_dir / "handoffs" / f"{handoff_id}.schema.json"
@@ -1523,6 +1528,15 @@ def mutate_run_artifact(run_dir: Path, plan_path: Path, mutation: str) -> None:
         data = json.loads(path.read_text())
         data["objective"] += " changed"
         write_json_atomic(path, data)
+    elif mutation == "packet_status_rehash":
+        path = run_dir / "packets" / "001-first-slice.packet.json"
+        data = json.loads(path.read_text())
+        data["objective"] += " changed"
+        write_json_atomic(path, data)
+        status_path = run_dir / "status.json"
+        status = json.loads(status_path.read_text())
+        status["snapshots"]["packet_hashes"][PACKET_ID] = canonical_hash(data)
+        write_json_atomic(status_path, status)
     elif mutation == "malformed_packet":
         path = run_dir / "packets" / "001-first-slice.packet.json"
         write_text_atomic(path, "{not-json\n")
@@ -1604,6 +1618,8 @@ def evaluate_manifest(manifest_path: Path, out_dir: Path) -> dict[str, Any]:
     required = manifest["required_fixture_ids"]
     fixtures = manifest["fixtures"]
     fixture_ids = [fixture["id"] for fixture in fixtures]
+    duplicate = sorted({item for item in fixture_ids if fixture_ids.count(item) > 1})
+    duplicate_occurrences = [item for item in fixture_ids if item in set(duplicate)]
     failures = []
     passed = 0
     passed_required: set[str] = set()
@@ -1625,7 +1641,7 @@ def evaluate_manifest(manifest_path: Path, out_dir: Path) -> dict[str, Any]:
     temp_root = suite_dir / "_fixture-plans"
     temp_root.mkdir(parents=True, exist_ok=True)
     for fixture in fixtures:
-        if fixture["id"] in invalid_fixture_ids:
+        if fixture["id"] in invalid_fixture_ids or fixture["id"] in duplicate:
             continue
         result = run_fixture(fixture, suite_dir, temp_root)
         if result["status"] == "passed":
@@ -1635,10 +1651,9 @@ def evaluate_manifest(manifest_path: Path, out_dir: Path) -> dict[str, Any]:
         else:
             failures.append(result["error"])
     missing = sorted(set(required) - set(fixture_ids))
-    duplicate = sorted({item for item in fixture_ids if fixture_ids.count(item) > 1})
     for fixture_id in missing:
         failures.append({"code": "ERR_PLAN_INVALID", "message": "required fixture missing", "fixture_id": fixture_id})
-    for fixture_id in duplicate:
+    for fixture_id in duplicate_occurrences:
         failures.append({"code": "ERR_PLAN_INVALID", "message": "duplicate fixture ID", "fixture_id": fixture_id})
     for fixture_id in required_duplicates:
         failures.append({"code": "ERR_PLAN_INVALID", "message": "duplicate required fixture ID", "fixture_id": fixture_id})
@@ -1725,7 +1740,14 @@ def self_test() -> None:
         else:
             raise CompileError("ERR_SELF_TEST_WRONG_REASON", "duplicate optional fixture ID did not kill manifest")
         duplicate_summary = json.loads((duplicate_optional_out / "summary.json").read_text())
-        if duplicate_summary["decision"] != "kill" or duplicate_summary["fixture_count"] != 3:
+        if (
+            duplicate_summary["decision"] != "kill"
+            or duplicate_summary["fixture_count"] != 3
+            or duplicate_summary["passed"] != 1
+            or duplicate_summary["failed"] != 2
+            or duplicate_summary["required_passed"] != 1
+            or duplicate_summary["skipped"] != 0
+        ):
             raise CompileError("ERR_SELF_TEST_WRONG_REASON", "duplicate optional fixture summary was not fatal and complete")
         invalid_id_manifest = {
             "suite_id": "invalid-id",

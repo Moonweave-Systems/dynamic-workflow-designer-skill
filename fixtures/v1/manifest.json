@@ -379,6 +379,13 @@
       "type": "resume"
     },
     {
+      "expected_invalidator": "ERR_RESUME_STALE_PROMPT",
+      "id": "resume-prompt-packet-disagree",
+      "mutate_artifact": "packet_status_rehash",
+      "plan": "fixtures/v1/plans/ready-readonly.workflow.plan.json",
+      "type": "resume"
+    },
+    {
       "expected_invalidator": "ERR_RESUME_STALE_PACKET",
       "id": "resume-malformed-packet",
       "mutate_artifact": "malformed_packet",
@@ -551,6 +558,7 @@
     "resume-stale-source-plan",
     "resume-stale-plan-snapshot",
     "resume-stale-packet",
+    "resume-prompt-packet-disagree",
     "resume-malformed-packet",
     "resume-packet-array",
     "resume-malformed-packet-inputs",
