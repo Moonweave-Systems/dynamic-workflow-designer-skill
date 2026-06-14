@@ -375,10 +375,10 @@ Overclaims execution: no
 
     v1_summary = {
         "suite_id": "final",
-        "fixture_count": 61,
-        "required_fixture_count": 61,
-        "required_passed": 61,
-        "passed": 61,
+        "fixture_count": 62,
+        "required_fixture_count": 62,
+        "required_passed": 62,
+        "passed": 62,
         "failed": 0,
         "skipped": 0,
         "decision": "keep",
@@ -387,10 +387,10 @@ Overclaims execution: no
         "Decision: keep\n"
         "python scripts/compile_workflow.py --manifest fixtures/v1/manifest.json --out out/v1/final\n"
         "- `suite_id`: `final`\n"
-        "- `fixture_count`: 61\n"
-        "- `required_fixture_count`: 61\n"
-        "- `required_passed`: 61\n"
-        "- `passed`: 61\n"
+        "- `fixture_count`: 62\n"
+        "- `required_fixture_count`: 62\n"
+        "- `required_passed`: 62\n"
+        "- `passed`: 62\n"
         "- `failed`: 0\n"
         "- `skipped`: 0\n"
         "- `decision`: `keep`\n"
@@ -398,7 +398,7 @@ Overclaims execution: no
     )
     require_v1_decision_summary_text(v1_summary, good_v1_decision)
     try:
-        require_v1_decision_summary_text(v1_summary, good_v1_decision.replace("61", "60", 1))
+        require_v1_decision_summary_text(v1_summary, good_v1_decision.replace("62", "61", 1))
     except SystemExit:
         pass
     else:

@@ -379,35 +379,50 @@
       "type": "resume"
     },
     {
-      "expected_invalidator": "ERR_RESUME_STALE_PACKET",
+      "expected_invalidators": [
+        "ERR_RESUME_STALE_PACKET",
+        "ERR_RESUME_STALE_PROMPT"
+      ],
       "id": "resume-stale-packet",
       "mutate_artifact": "packet",
       "plan": "fixtures/v1/plans/ready-readonly.workflow.plan.json",
       "type": "resume"
     },
     {
-      "expected_invalidator": "ERR_RESUME_STALE_PROMPT",
+      "expected_invalidators": [
+        "ERR_RESUME_STALE_PACKET",
+        "ERR_RESUME_STALE_PROMPT"
+      ],
       "id": "resume-prompt-packet-disagree",
       "mutate_artifact": "packet_status_rehash",
       "plan": "fixtures/v1/plans/ready-readonly.workflow.plan.json",
       "type": "resume"
     },
     {
-      "expected_invalidator": "ERR_RESUME_STALE_PROMPT",
+      "expected_invalidators": [
+        "ERR_RESUME_STALE_PACKET",
+        "ERR_RESUME_STALE_PROMPT"
+      ],
       "id": "resume-packet-prompt-hash",
       "mutate_artifact": "packet_prompt_hash_rehash",
       "plan": "fixtures/v1/plans/ready-readonly.workflow.plan.json",
       "type": "resume"
     },
     {
-      "expected_invalidator": "ERR_RESUME_STALE_PROMPT",
+      "expected_invalidators": [
+        "ERR_RESUME_STALE_PACKET",
+        "ERR_RESUME_STALE_PROMPT"
+      ],
       "id": "resume-packet-prompt-path",
       "mutate_artifact": "packet_prompt_path_rehash",
       "plan": "fixtures/v1/plans/ready-readonly.workflow.plan.json",
       "type": "resume"
     },
     {
-      "expected_invalidator": "ERR_RESUME_STALE_PACKET",
+      "expected_invalidators": [
+        "ERR_RESUME_STALE_PACKET",
+        "ERR_RESUME_STALE_PROMPT"
+      ],
       "id": "resume-coherent-packet-status-forgery",
       "mutate_artifact": "coherent_packet_prompt_status",
       "plan": "fixtures/v1/plans/ready-readonly.workflow.plan.json",
@@ -428,7 +443,10 @@
       "type": "resume"
     },
     {
-      "expected_invalidator": "ERR_RESUME_STALE_INPUT",
+      "expected_invalidators": [
+        "ERR_RESUME_STALE_INPUT",
+        "ERR_RESUME_STALE_PACKET"
+      ],
       "id": "resume-malformed-packet-inputs",
       "mutate_artifact": "packet_malformed_inputs",
       "plan": "fixtures/v1/plans/ready-readonly.workflow.plan.json",
@@ -449,7 +467,10 @@
       "type": "resume-repair"
     },
     {
-      "expected_invalidator": "ERR_RESUME_STALE_INPUT",
+      "expected_invalidators": [
+        "ERR_RESUME_STALE_INPUT",
+        "ERR_RESUME_STALE_PACKET"
+      ],
       "id": "resume-stale-input",
       "mutate_artifact": "input",
       "plan": "fixtures/v1/plans/ready-readonly.workflow.plan.json",
@@ -463,7 +484,11 @@
       "type": "resume"
     },
     {
-      "expected_invalidator": "ERR_RESUME_STALE_INPUT",
+      "expected_invalidators": [
+        "ERR_RESUME_STALE_INPUT",
+        "ERR_RESUME_STALE_PACKET",
+        "ERR_RESUME_STALE_PLAN"
+      ],
       "id": "resume-stale-live-input",
       "input_files": [
         {
@@ -514,6 +539,15 @@
       "expected_invalidator": "ERR_RESUME_STALE_PACKET",
       "id": "resume-status-packet-status",
       "mutate_artifact": "status_packet_status",
+      "plan": "fixtures/v1/plans/ready-readonly.workflow.plan.json",
+      "type": "resume"
+    },
+    {
+      "expected_invalidators": [
+        "ERR_RESUME_STALE_PACKET"
+      ],
+      "id": "resume-status-forged-previous-invalidated",
+      "mutate_artifact": "status_forged_previous_invalidated",
       "plan": "fixtures/v1/plans/ready-readonly.workflow.plan.json",
       "type": "resume"
     },
@@ -609,7 +643,10 @@
       "type": "resume"
     },
     {
-      "expected_invalidator": "ERR_RESUME_MISSING_ARTIFACT",
+      "expected_invalidators": [
+        "ERR_RESUME_MISSING_ARTIFACT",
+        "ERR_RESUME_STALE_HANDOFF"
+      ],
       "id": "resume-handoff-traversal",
       "mutate_artifact": "status_handoff_traversal",
       "plan": "fixtures/v1/plans/ready-readonly.workflow.plan.json",
@@ -664,6 +701,7 @@
     "resume-gate-status-rehash",
     "resume-stale-status-hash",
     "resume-status-packet-status",
+    "resume-status-forged-previous-invalidated",
     "resume-status-gate-status",
     "resume-status-run-id",
     "resume-status-snapshot-compiler",

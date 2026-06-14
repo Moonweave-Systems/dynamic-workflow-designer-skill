@@ -821,6 +821,7 @@ IDs must be unique. A skipped fixture is a failure. The manifest run writes
 - stale gate hash resume failure
 - coordinated gate/status forgery resume failure
 - status metadata or snapshot drift resume failure
+- forged previous-invalidated status sections do not bypass resume invalidation
 - repo-relative source-plan retargeting resume failure
 - repaired artifact can return a previously invalidated run to `resumable`
 - missing handoff schema resume failure

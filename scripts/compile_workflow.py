@@ -933,6 +933,23 @@ def sentinel_payload(run_id: str, mode: str, run: dict[str, Any] | None = None, 
     return payload
 
 
+def anchored_status_sections(sentinel: dict[str, Any], *, invalidated: bool) -> dict[str, Any]:
+    packet_statuses = copy.deepcopy(sentinel["packet_statuses"])
+    handoff_statuses = copy.deepcopy(sentinel["handoff_statuses"])
+    gate_statuses = copy.deepcopy(sentinel["gate_statuses"])
+    if invalidated:
+        for item in packet_statuses:
+            item["status"] = "invalidated"
+            item["reason"] = "resume invalidated"
+        for item in gate_statuses:
+            item["status"] = "invalidated"
+    return {
+        "packet_statuses": packet_statuses,
+        "handoff_statuses": handoff_statuses,
+        "gate_statuses": gate_statuses,
+    }
+
+
 def render_readme(status: dict[str, Any], gates: list[dict[str, Any]]) -> str:
     packet_status = status["packet_statuses"][0]["status"]
     blocked = [gate for gate in gates if gate["status"] == "blocked"]
@@ -1428,30 +1445,33 @@ def resume_run(run_dir: Path) -> dict[str, Any]:
                 invalidators.append(hash_invalidator("gate", gate_id, expected_gate, actual_gate, "gate approval hash changed"))
             gates.append(gate)
         approval_state = {**approval_state, "gates": gates}
-    previous_invalidated = (
+    clean_sections = anchored_status_sections(sentinel, invalidated=False)
+    invalidated_sections = anchored_status_sections(sentinel, invalidated=True)
+    prior_tool_invalidated = (
         old_status.get("resume_state") == "invalidated"
         and old_status.get("last_resume_result") == "invalidated"
         and isinstance(old_status.get("invalidators"), list)
         and bool(old_status.get("invalidators"))
     )
-    if not previous_invalidated:
-        for section, kind in [
-            ("packet_statuses", "packet"),
-            ("gate_statuses", "gate"),
-            ("handoff_statuses", "handoff"),
-        ]:
-            actual_section = old_status.get(section)
-            expected_section = sentinel.get(section)
-            if actual_section != expected_section:
-                invalidators.append(
-                    hash_invalidator(
-                        kind,
-                        f"status.json.{section}",
-                        canonical_hash(expected_section),
-                        canonical_hash(actual_section),
-                        f"status {section} changed",
-                    )
+    for section, kind in [
+        ("packet_statuses", "packet"),
+        ("gate_statuses", "gate"),
+        ("handoff_statuses", "handoff"),
+    ]:
+        actual_section = old_status.get(section)
+        allowed_sections = [clean_sections[section]]
+        if prior_tool_invalidated:
+            allowed_sections.append(invalidated_sections[section])
+        if actual_section not in allowed_sections:
+            invalidators.append(
+                hash_invalidator(
+                    kind,
+                    f"status.json.{section}",
+                    canonical_hash(clean_sections[section]),
+                    canonical_hash(actual_section),
+                    f"status {section} changed",
                 )
+            )
     if run.get("compiler_version") != COMPILER_VERSION:
         invalidators.append(hash_invalidator("compiler", TOOL, run.get("compiler_version"), COMPILER_VERSION, "compiler version changed"))
     if trusted_snapshots.get("compiler_version") != COMPILER_VERSION:
@@ -1481,6 +1501,10 @@ def resume_run(run_dir: Path) -> dict[str, Any]:
         resume_result=resume_state,
     )
     status["snapshots"] = copy.deepcopy(trusted_snapshots)
+    status_sections = anchored_status_sections(sentinel, invalidated=bool(invalidators))
+    status["packet_statuses"] = status_sections["packet_statuses"]
+    status["handoff_statuses"] = status_sections["handoff_statuses"]
+    status["gate_statuses"] = status_sections["gate_statuses"]
     write_json_atomic(status_path, status, root=run_dir)
     write_text_atomic(run_dir / "resume.md", render_resume(status, packet or (expected_artifacts["packet"] if expected_artifacts is not None else None)), root=run_dir)
     return status
@@ -1705,9 +1729,17 @@ def run_fixture(fixture: dict[str, Any], suite_dir: Path, temp_root: Path) -> di
                 if status["resume_state"] != fixture["expected_resume_state"]:
                     raise CompileError("ERR_SELF_TEST_WRONG_REASON", f"expected resume state {fixture['expected_resume_state']}, got {status['resume_state']}", fixture_id=fixture_id)
                 return {"id": fixture_id, "status": "passed"}
-            codes = [item["code"] for item in status["invalidators"]]
-            if fixture["expected_invalidator"] not in codes:
-                raise CompileError(fixture["expected_invalidator"], f"resume invalidator not found: {codes}", fixture_id=fixture_id)
+            codes = sorted({item["code"] for item in status["invalidators"]})
+            if "expected_invalidators" in fixture:
+                expected_codes = sorted(set(fixture["expected_invalidators"]))
+            else:
+                expected_codes = [fixture["expected_invalidator"]]
+            if codes != expected_codes:
+                raise CompileError(
+                    "ERR_SELF_TEST_WRONG_REASON",
+                    f"expected resume invalidators {expected_codes}, got {codes}",
+                    fixture_id=fixture_id,
+                )
         elif fixture_type == "resume-repair":
             plan_path = write_fixture_plan(temp_root, fixture)
             result = compile_plan(plan_path, fixture_run_dir(suite_dir, fixture_id), run_id=f"{suite_dir.name}/{fixture_id}", mode="fixture")
@@ -1853,6 +1885,22 @@ def mutate_run_artifact(run_dir: Path, plan_path: Path, mutation: str) -> None:
         data = json.loads(path.read_text())
         data["snapshots"]["compiler_version"] = "0.0.0-forged"
         write_json_atomic(path, data)
+    elif mutation == "status_forged_previous_invalidated":
+        path = run_dir / "status.json"
+        data = json.loads(path.read_text())
+        data["resume_state"] = "invalidated"
+        data["last_resume_result"] = "invalidated"
+        data["invalidators"] = [
+            hash_invalidator(
+                "prompt",
+                "packets/001-first-slice.prompt.md",
+                "0" * 64,
+                "1" * 64,
+                "forged prior invalidator",
+            )
+        ]
+        data["packet_statuses"][0]["status"] = "forged"
+        write_json_atomic(path, data)
     elif mutation == "gate_status_rehash":
         approval_path = run_dir / "gates" / "approval-state.json"
         approval_state = json.loads(approval_path.read_text())
@@ -1981,7 +2029,10 @@ def evaluate_manifest(manifest_path: Path, out_dir: Path) -> dict[str, Any]:
         failures.append({"code": "ERR_PLAN_INVALID", "message": "duplicate fixture ID", "fixture_id": fixture_id})
     for fixture_id in required_duplicates:
         failures.append({"code": "ERR_PLAN_INVALID", "message": "duplicate required fixture ID", "fixture_id": fixture_id})
-    skipped = len(set(required) - set(fixture_ids))
+    skipped_required = set(required) - set(fixture_ids)
+    skipped_required.update(set(required) & invalid_fixture_ids)
+    skipped_required.update(set(required) & set(duplicate))
+    skipped = len(skipped_required)
     required_set = set(required)
     required_failures = [
         failure
@@ -2101,6 +2152,57 @@ def self_test() -> None:
         invalid_summary = json.loads((invalid_out / "summary.json").read_text())
         if invalid_summary["decision"] != "kill":
             raise CompileError("ERR_SELF_TEST_WRONG_REASON", "invalid fixture ID summary did not record kill")
+        required_invalid_id_manifest = {
+            "suite_id": "required-invalid-id",
+            "fixtures": [fixtures["positive-ready-readonly"], {**fixtures["positive-repo-migration"], "id": "../escape"}],
+            "required_fixture_ids": ["positive-ready-readonly", "../escape"],
+        }
+        required_invalid_path = tmp_path / "required-invalid-id-manifest.json"
+        required_invalid_out = tmp_path / "required-invalid-id"
+        write_json_atomic(required_invalid_path, required_invalid_id_manifest)
+        try:
+            evaluate_manifest(required_invalid_path, required_invalid_out)
+        except CompileError as exc:
+            if exc.code != "ERR_PLAN_INVALID":
+                raise
+        else:
+            raise CompileError("ERR_SELF_TEST_WRONG_REASON", "required invalid fixture ID did not kill manifest")
+        required_invalid_summary = json.loads((required_invalid_out / "summary.json").read_text())
+        if (
+            required_invalid_summary["decision"] != "kill"
+            or required_invalid_summary["required_fixture_count"] != 2
+            or required_invalid_summary["required_passed"] != 1
+            or required_invalid_summary["passed"] != 1
+            or required_invalid_summary["skipped"] != 1
+        ):
+            raise CompileError("ERR_SELF_TEST_WRONG_REASON", "required invalid fixture summary did not count skipped required fixture")
+        required_duplicate_manifest = {
+            "suite_id": "required-duplicate",
+            "fixtures": [
+                {**fixtures["positive-ready-readonly"], "id": "required-duplicate-fixture"},
+                {**fixtures["positive-ready-readonly"], "id": "required-duplicate-fixture"},
+            ],
+            "required_fixture_ids": ["required-duplicate-fixture"],
+        }
+        required_duplicate_path = tmp_path / "required-duplicate-manifest.json"
+        required_duplicate_out = tmp_path / "required-duplicate"
+        write_json_atomic(required_duplicate_path, required_duplicate_manifest)
+        try:
+            evaluate_manifest(required_duplicate_path, required_duplicate_out)
+        except CompileError as exc:
+            if exc.code != "ERR_PLAN_INVALID":
+                raise
+        else:
+            raise CompileError("ERR_SELF_TEST_WRONG_REASON", "required duplicate fixture ID did not kill manifest")
+        required_duplicate_summary = json.loads((required_duplicate_out / "summary.json").read_text())
+        if (
+            required_duplicate_summary["decision"] != "kill"
+            or required_duplicate_summary["required_fixture_count"] != 1
+            or required_duplicate_summary["required_passed"] != 0
+            or required_duplicate_summary["passed"] != 0
+            or required_duplicate_summary["skipped"] != 1
+        ):
+            raise CompileError("ERR_SELF_TEST_WRONG_REASON", "required duplicate fixture summary did not count skipped required fixture")
         symlink_root = tmp_path / "symlink-write"
         prepare_owned_dir(symlink_root, "symlink-write", "fixture", clear=True)
         symlink_target = symlink_root / "packets-target"
