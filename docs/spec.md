@@ -81,6 +81,11 @@ Package the skill with reusable helper assets:
 
 The plugin must remain useful even without a durable runtime.
 
+The first V1 target is the plugin runner adapter specified in
+`docs/v1-plugin-runner-spec.md`: compile a `workflow.plan.json` into execution
+packets, prompts, handoff schemas, risk gates, and resume/status files without
+claiming full automatic orchestration.
+
 ### V2: Runtime Prototype
 
 Only after V0/V1 prove useful, consider a runtime with:
@@ -259,6 +264,17 @@ V0.5 is releasable when:
   `docs/v0.5-decision.md` drifts from the regenerated summary.
 - `docs/v0.5-decision.md` records the keep/kill outcome.
 
+V1 is releasable when:
+
+- `docs/v1-plugin-runner-spec.md` defines the compile, first-slice, and resume
+  behavior.
+- `scripts/compile_workflow.py --self-test` passes.
+- Existing V0/V0.5 release checks still pass.
+- at least six V1 compiler fixtures pass, covering activated plans, downgrade
+  refusal, output path safety, risk gate blocking, and resume invalidation.
+- generated packet prompts agree with packet JSON.
+- `docs/v1-decision.md` records the keep/kill outcome.
+
 ### Reproducible Check
 
 Run from the repository root:
@@ -296,9 +312,10 @@ and verifies that `docs/v0.5-decision.md` matches the freshly generated summary.
 
 ## Open Questions
 
-- Whether v1 should be a Codex plugin, a Claude plugin, or both.
+- Whether v1 should remain a Codex-first plugin runner or also target Claude
+  plugin packaging.
 - Whether a future runtime should wrap existing projects such as
-  `claude-dynamic-workflows-codex` or start with a smaller local adapter.
+  `claude-dynamic-workflows-codex` after the smaller local adapter proves useful.
 - Whether the V0.5 JSON schema should later compile to JavaScript workflow
   scripts, MCP runtime plans, or both.
 - Whether forward-testing should use live subagents or fixture-only review for

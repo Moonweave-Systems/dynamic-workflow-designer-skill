@@ -52,6 +52,7 @@ Use $dynamic-workflow-designer to plan a 500-file migration with verification ga
 ├── docs/v0.5-plan-schema-evaluator-spec.md
 │                                      # V0.5 evaluator spec
 ├── docs/v0.5-decision.md             # Keep/kill decision
+├── docs/v1-plugin-runner-spec.md     # Next runner-adapter spec
 ├── docs/github-research.md          # Prior-art survey and import decisions
 ├── docs/spec.md                     # Product spec and release criteria
 ├── agents/openai.yaml               # UI metadata
@@ -107,6 +108,12 @@ freshly regenerated summary.
 
 The V0.5 keep/kill decision is
 [`docs/v0.5-decision.md`](docs/v0.5-decision.md).
+
+The next implementation target is the V1 plugin runner adapter described in
+[`docs/v1-plugin-runner-spec.md`](docs/v1-plugin-runner-spec.md). V1 should
+compile `workflow.plan.json` into execution packets, prompts, handoff schemas,
+risk gates, and resume/status files without claiming a full automatic workflow
+runtime.
 
 ## License
 
