@@ -1,17 +1,19 @@
-# dynamic-workflow-designer
+# DWM
 
-> Design ultracode-style, situation-aware multi-agent workflows for large tasks before execution starts.
+> Deterministic Workflow Machine: a control-plane for agentic work that turns large goals into hashed packets, evidence, reviews, and resumable runtime state.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-4F46E5.svg)](LICENSE)
 [![Agent skill](https://img.shields.io/badge/agent%20skill-Codex-4F46E5.svg)](SKILL.md)
 
-`dynamic-workflow-designer` is a Codex skill for designing large workflows:
-phases, workers, parallelism, handoffs, verification gates, risk gates, budgets,
-and resume strategy.
+**DWM** stands for **Deterministic Workflow Machine**. It is the product name
+for this repo's workflow control-plane. The installed Codex skill is still named
+`dynamic-workflow-designer` for compatibility, but the system has grown beyond a
+single skill: it now designs, compiles, dispatches, records, reviews, ingests,
+and resumes workflow artifacts.
 
 It is deliberately not the same as `workflow-router`. The router chooses the
-smallest suitable workflow. This skill designs a larger workflow when the task
-itself needs dynamic orchestration.
+smallest suitable workflow. DWM designs a larger workflow when the task itself
+needs dynamic orchestration.
 
 ## Why
 
@@ -20,12 +22,13 @@ the plan can live outside the chat as an inspectable workflow. Codex does not
 currently have the same native workflow runtime in this environment, so this
 repo starts with the part we can make checkable now: a workflow design contract.
 
-The first slice defines the skill contract and deterministic V0.5 sample
-evidence for workflow blueprints and specs. The next slice is a first-slice
-compiler, not a plugin runtime; plugin or runtime work can follow once compile
-and resume contracts prove useful.
+DWM starts from a skill contract but treats artifacts, not model claims, as the
+source of truth. Plans, packets, dispatches, worker results, reviews, and
+runtime states are explicit, hash-bound, and resumable.
 
 ## Use
+
+The product name is DWM. The current skill invocation remains:
 
 Example prompts:
 
@@ -80,6 +83,7 @@ Use $dynamic-workflow-designer to plan a 500-file migration with verification ga
 ├── docs/v7-controlled-frontier-result-spec.md
 │                                      # V7 controlled-frontier-result spec
 ├── docs/github-research.md          # Prior-art survey and import decisions
+├── docs/dwm-branding.md             # Product naming and compatibility rules
 ├── docs/spec.md                     # Product spec and release criteria
 ├── agents/openai.yaml               # UI metadata
 ├── LICENSE
@@ -181,8 +185,8 @@ The V1 keep/kill decision is
 
 The large-task automation roadmap is
 [`docs/automation-roadmap.md`](docs/automation-roadmap.md). The current
-implementation target is the V2 first-slice execution adapter described in
-[`docs/v2-execution-adapter-spec.md`](docs/v2-execution-adapter-spec.md).
+DWM implementation started with the V2 first-slice execution adapter described
+in [`docs/v2-execution-adapter-spec.md`](docs/v2-execution-adapter-spec.md).
 V2 Slice 1 adds `scripts/execute_packet.py` dry-run evidence generation and V1
 trust precondition checks. V2 Slice 2 adds manifest-scoped `local-shell`
 execution fixtures, deterministic worktree creation, stdout/stderr capture, and

@@ -8,7 +8,7 @@
   "producer": "dynamic-workflow-designer",
   "raw_kind": "workflow-output",
   "rendered_blueprint": "# border-one-service-auth-audit\n\nObjective: Route the request to the smallest sufficient workflow without emitting a large dynamic workflow.\nActivation: downgrade (The work is broad but bounded to one service and one agent; route through the smaller workflow.)\nPatterns: none\n\n## First Slice\n\nUse workflow-router instead of dynamic-workflow-designer for this request.\n\nCompletion check: no dynamic workflow artifact is needed\n\n## Risk Gates\n\n- multi-agent expansion: stop before multi-agent expansion and ask for approval\n",
-  "skill_sha256": "b3a20daf5e7e6c1d826f1167f39f64ab295836a83cce6f82d54ffa120842326a",
+  "skill_sha256": "835ad8fef13ecc473ea88de6d8820bc6e6b3dd2287522ab49bb811dd5f38dbda",
   "source_prompt": "Plan an auth audit for one service where one agent can inspect all routes.",
   "workflow_plan": {
     "activation": {

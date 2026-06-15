@@ -9,7 +9,7 @@
   "producer": "dynamic-workflow-designer",
   "raw_kind": "workflow-output",
   "rendered_blueprint": "# pos-api-auth-audit\n\nObjective: Find API routes that lack required authorization checks across packages and produce a verified evidence ledger.\nActivation: activate (The prompt needs a reusable artifact with downstream handoffs, verification, and gated execution.)\nPatterns: Pipeline, Parallel Fan-Out / Fan-In, Adversarial Verify, Human Gate, Resume And Cache\n\n## First Slice\n\nInventory route entry points, auth middleware, and package boundaries without editing files.\n\nCompletion check: inventory validates and every gap is either resolved or recorded\n\n## Risk Gates\n\n- write action: stop before writing and ask for approval\n- shell action: stop before shell use and ask for approval\n- network action: stop before network use and ask for approval\n- external message action: stop before sending external messages and ask for approval\n- secret access: stop before secret access and ask for approval\n",
-  "skill_sha256": "b3a20daf5e7e6c1d826f1167f39f64ab295836a83cce6f82d54ffa120842326a",
+  "skill_sha256": "835ad8fef13ecc473ea88de6d8820bc6e6b3dd2287522ab49bb811dd5f38dbda",
   "source_prompt": "Design a workflow to audit every API route for missing auth across a multi-package service.",
   "workflow_plan": {
     "activation": {

@@ -1,13 +1,14 @@
 ---
 name: dynamic-workflow-designer
-description: Design large, situation-aware multi-agent workflows for broad tasks that are too big for one normal agent turn. Use when a user asks for dynamic workflows, ultracode-style orchestration, large workflow design, multi-agent decomposition, codebase-wide audits, migrations, research sweeps, verification harnesses, or a plan that should scale across phases, subagents, gates, budgets, and resumable execution.
+description: DWM skill entrypoint. Design large, situation-aware multi-agent workflows for broad tasks that are too big for one normal agent turn. Use when a user asks for dynamic workflows, ultracode-style orchestration, large workflow design, multi-agent decomposition, codebase-wide audits, migrations, research sweeps, verification harnesses, or a plan that should scale across phases, subagents, gates, budgets, and resumable execution.
 ---
 
-# Dynamic Workflow Designer
+# DWM Skill Entrypoint
 
-Use this skill to turn a large objective into an executable workflow design.
-It is not a thin router. It designs the workflow itself: phases, workers,
-parallelization, handoff contracts, gates, budgets, evidence, and stop rules.
+DWM means Deterministic Workflow Machine. Use this skill entrypoint to turn a
+large objective into an executable workflow design. It is not a thin router. It
+designs the workflow itself: phases, workers, parallelization, handoff
+contracts, gates, budgets, evidence, and stop rules.
 
 Do not run a large workflow just because a task is broad. First produce a
 workflow design the user can inspect or that the current environment can execute.

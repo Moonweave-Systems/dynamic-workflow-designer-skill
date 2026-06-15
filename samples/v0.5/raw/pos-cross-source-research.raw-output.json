@@ -8,7 +8,7 @@
   "producer": "dynamic-workflow-designer",
   "raw_kind": "workflow-output",
   "rendered_blueprint": "# pos-cross-source-research\n\nObjective: Coordinate cross-source research and filter claims through independent source verification.\nActivation: activate (The prompt needs a reusable artifact with downstream handoffs, verification, and gated execution.)\nPatterns: Parallel Fan-Out / Fan-In, Adversarial Verify, Judge Panel, Resume And Cache\n\n## First Slice\n\nDefine the source classes, claim schema, and freshness constraints before collecting evidence.\n\nCompletion check: inventory validates and every gap is either resolved or recorded\n\n## Risk Gates\n\n- write action: stop before writing and ask for approval\n- shell action: stop before shell use and ask for approval\n- network action: stop before network use and ask for approval\n- external message action: stop before sending external messages and ask for approval\n- paid external API use: stop before paid external API use and ask for approval\n",
-  "skill_sha256": "b3a20daf5e7e6c1d826f1167f39f64ab295836a83cce6f82d54ffa120842326a",
+  "skill_sha256": "835ad8fef13ecc473ea88de6d8820bc6e6b3dd2287522ab49bb811dd5f38dbda",
   "source_prompt": "Research the current state of on-device LLM inference across papers, repos, and product docs with claim verification.",
   "workflow_plan": {
     "activation": {

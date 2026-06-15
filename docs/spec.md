@@ -1,17 +1,19 @@
-# Dynamic Workflow Designer Skill Spec
+# DWM Skill And Control-Plane Spec
 
 Status: V1 implemented, V2 release candidate, V2.5 first loop implemented, V3 entry runtime implemented, Last updated: 2026-06-15
 
 ## Purpose
 
-`dynamic-workflow-designer` helps Codex design large, situation-aware workflows
-for work that is too broad for a single normal agent turn. It fills the gap
-between a thin route selector and a full workflow runtime.
+DWM, the Deterministic Workflow Machine, helps Codex design and operate large,
+situation-aware workflows for work that is too broad for a single normal agent
+turn. The installed skill entrypoint remains `dynamic-workflow-designer` for
+compatibility. DWM fills the gap between a thin route selector and a full
+workflow runtime.
 
-The skill should produce a concrete workflow architecture: phases, workers,
-parallelism, handoff artifacts, verification gates, safety gates, budgets, and
-resume strategy. It may later become a Codex plugin or runtime-backed system,
-but v0 is a spec-first skill.
+The skill entrypoint should produce a concrete workflow architecture: phases,
+workers, parallelism, handoff artifacts, verification gates, safety gates,
+budgets, and resume strategy. The broader DWM control-plane now also compiles,
+dispatches, records, reviews, ingests, and resumes workflow artifacts.
 
 ## Product Position
 
@@ -22,8 +24,9 @@ workflow itself for a very large task.
 Positioning:
 
 - `workflow-router`: classify and route ordinary broad work.
-- `dynamic-workflow-designer`: design an ultracode-style workflow for major
-  work before execution.
+- DWM / `dynamic-workflow-designer`: design an ultracode-style workflow for
+  major work before execution, then move through deterministic control-plane
+  artifacts.
 - Future `workflow-orchestrator` plugin/runtime: execute saved workflow plans
   with resumability, monitoring, and subagent coordination.
 - V0.5 continuation gate: prove the machine-readable `workflow.plan.json`

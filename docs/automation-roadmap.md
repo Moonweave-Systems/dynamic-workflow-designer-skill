@@ -1,22 +1,23 @@
-# Large-Task Automation Roadmap
+# DWM Automation Roadmap
 
 Status: draft; V3 entry runtime implemented
 Date: 2026-06-15
 
 ## Purpose
 
-The final product goal is large-task automation: a system that can take a broad
-objective, decompose it into inspectable work, execute bounded slices, verify
-results, resume after interruption, and stop at human gates for risky actions.
+DWM, the Deterministic Workflow Machine, is a large-task automation
+control-plane: a system that can take a broad objective, decompose it into
+inspectable work, execute bounded slices, verify results, resume after
+interruption, and stop at human gates for risky actions.
 
 This repo should not become a loose prompt pack or an unchecked agent launcher.
-Its differentiator is a compiler-first control plane: plans and execution
+DWM's differentiator is a compiler-first control-plane: plans and execution
 packets are explicit, hashed, reviewable, resumable, and falsifiable.
 
 ## Product Position
 
-`dynamic-workflow-designer` should become the control plane for large Codex
-workflows.
+DWM should become the control-plane for large Codex workflows. The legacy skill
+entrypoint remains `dynamic-workflow-designer`.
 
 | Layer | Responsibility | Repo stance |
 | --- | --- | --- |

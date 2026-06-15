@@ -8,7 +8,7 @@
   "producer": "dynamic-workflow-designer",
   "raw_kind": "workflow-output",
   "rendered_blueprint": "# neg-one-file-plan\n\nObjective: Route the request to the smallest sufficient workflow without emitting a large dynamic workflow.\nActivation: downgrade (One-file planning does not need handoffs, fan-out, or resume boundaries.)\nPatterns: none\n\n## First Slice\n\nUse simple-plan instead of dynamic-workflow-designer for this request.\n\nCompletion check: no dynamic workflow artifact is needed\n\n## Risk Gates\n\n- multi-agent execution: stop before multi-agent execution and ask for approval\n",
-  "skill_sha256": "b3a20daf5e7e6c1d826f1167f39f64ab295836a83cce6f82d54ffa120842326a",
+  "skill_sha256": "835ad8fef13ecc473ea88de6d8820bc6e6b3dd2287522ab49bb811dd5f38dbda",
   "source_prompt": "Draft a simple implementation plan for one file.",
   "workflow_plan": {
     "activation": {
