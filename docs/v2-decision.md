@@ -11,10 +11,10 @@ python scripts/execute_packet.py --manifest fixtures/v2/manifest.json --out out/
 Generated summary values:
 
 - `suite_id`: `final`
-- `fixture_count`: 23
-- `required_fixture_count`: 22
-- `required_passed`: 22
-- `passed`: 22
+- `fixture_count`: 24
+- `required_fixture_count`: 23
+- `required_passed`: 23
+- `passed`: 23
 - `failed`: 1
 - `skipped`: 0
 - `decision`: `keep`

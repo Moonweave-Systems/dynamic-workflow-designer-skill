@@ -73,6 +73,8 @@ ALLOWED_PYTHON_FIXTURE_SNIPPETS = {
     "print('inventory.json')",
     "from pathlib import Path; Path('inventory.json').write_text('{}')",
     "from pathlib import Path; raise SystemExit(0 if Path('inventory.json').is_file() else 1)",
+    "import json, subprocess; from pathlib import Path; status=subprocess.run(['git','status','--short'],check=True,text=True,stdout=subprocess.PIPE).stdout.splitlines(); inventory={'release_surfaces':['scripts/compile_workflow.py','scripts/execute_packet.py','scripts/run_workflow.py','fixtures/v2/manifest.json','fixtures/v3/manifest.json'],'evidence_commands':['python scripts/check_contract.py','python scripts/execute_packet.py --manifest fixtures/v2/manifest.json --out out/v2/final','python scripts/run_workflow.py --self-test'],'dirty_files':{'classes':['modified','added','untracked'],'git_status_short':status},'open_risks':['V2 fixture execution proves checked artifacts, not full semantic agent execution']}; Path('inventory.json').write_text(json.dumps(inventory,sort_keys=True))",
+    "import json; from pathlib import Path; data=json.loads(Path('inventory.json').read_text()); required={'release_surfaces','evidence_commands','dirty_files','open_risks'}; ok=required <= set(data) and data['release_surfaces'] and data['evidence_commands'] and isinstance(data['dirty_files'], dict) and data['open_risks']; print(json.dumps(data,sort_keys=True)); raise SystemExit(0 if ok else 1)",
     "print('verify ok')",
     "print('verification pass')",
     "import sys; print('verification failed', file=sys.stderr); sys.exit(4)",
@@ -2589,7 +2591,8 @@ def run_manifest(manifest_path: Path, out_dir: Path) -> dict[str, Any]:
                 continue
             fixture_worktree = fixture.get("worktree")
             if isinstance(fixture_worktree, str):
-                fixture_worktree = f"{suite_id}-{fixture_worktree}"
+                fixture_head = git_text(["rev-parse", "--short=12", "HEAD"], ROOT).strip()
+                fixture_worktree = f"{suite_id}-{fixture_head}-{fixture_worktree}"
             cleanup_manifest_worktree_paths(
                 str(fixture_worktree) if isinstance(fixture_worktree, str) else None,
                 fixture.get("cleanup_worktree_paths"),
@@ -2711,6 +2714,14 @@ def reset_owned_v2_output(path: Path) -> None:
     shutil.rmtree(path)
 
 
+def v25_fixture_worktree(suite_id: str, fixture_id: str, suffix: str | None = None) -> str:
+    head = git_text(["rev-parse", "--short=12", "HEAD"], ROOT).strip()
+    parts = ["v25", suite_id, head, fixture_id]
+    if suffix:
+        parts.append(suffix)
+    return "-".join(parts)
+
+
 def prepare_v25_fixture_attempt(suite_id: str, fixture_id: str, fixture_type: str, fixture_out: Path) -> tuple[Path, Path, dict[str, Any]]:
     ready_plan = ROOT / "fixtures" / "v1" / "plans" / "ready-readonly.workflow.plan.json"
     run_id = f"v25-{suite_id}-{fixture_id}"
@@ -2718,7 +2729,7 @@ def prepare_v25_fixture_attempt(suite_id: str, fixture_id: str, fixture_type: st
     v2_run = V2_OUT_ROOT / run_id
     reset_owned_v2_output(v2_run)
     compile_plan(ready_plan, v1_run, run_id=run_id)
-    worktree = f"v25-{suite_id}-{fixture_id}"
+    worktree = v25_fixture_worktree(suite_id, fixture_id)
     if fixture_type in {"review-approved", "review-resume", "review-stale-after-new-attempt", "review-replacement-after-new-attempt"}:
         result = execute_local_shell(
             v1_run,
@@ -2768,7 +2779,7 @@ def run_v25_fixture(suite_id: str, fixture: dict[str, Any], fixture_out: Path) -
         execute_local_shell(
             v1_run,
             out_dir=v2_run,
-            worktree=f"v25-{suite_id}-{fixture_id}-new-attempt",
+            worktree=v25_fixture_worktree(suite_id, fixture_id, "new-attempt"),
             local_shell={"argv": ["python", "-c", "import sys; sys.exit(2)"], "expected_exit_code": 0},
         )
         result = review_resume(v1_run, out_dir=v2_run)
@@ -2777,7 +2788,7 @@ def run_v25_fixture(suite_id: str, fixture: dict[str, Any], fixture_out: Path) -
         execute_local_shell(
             v1_run,
             out_dir=v2_run,
-            worktree=f"v25-{suite_id}-{fixture_id}-new-attempt",
+            worktree=v25_fixture_worktree(suite_id, fixture_id, "new-attempt"),
             local_shell={"argv": ["python", "-c", "import sys; sys.exit(2)"], "expected_exit_code": 0},
         )
         review_execution(v1_run, out_dir=v2_run)
@@ -2872,8 +2883,10 @@ def self_test() -> None:
             if sentinel and sentinel.get("tool") == TOOL:
                 shutil.rmtree(path)
 
+    self_test_head = git_text(["rev-parse", "--short=12", "HEAD"], ROOT).strip()
+
     def wt(name: str) -> str:
-        return f"execute-self-test-v2h-{name}"
+        return f"execute-self-test-v2h-{self_test_head}-{name}"
 
     for old_self_test in sorted(V2_OUT_ROOT.glob("execute-self-test*")):
         reset_owned_v2(old_self_test)

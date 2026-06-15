@@ -235,6 +235,36 @@
     },
     {
       "expected_status": "verified",
+      "cleanup_worktree_paths": [
+        "inventory.json"
+      ],
+      "id": "dogfood-v32-semantic-inventory-verified",
+      "local_shell": {
+        "argv": [
+          "python",
+          "-c",
+          "import json, subprocess; from pathlib import Path; status=subprocess.run(['git','status','--short'],check=True,text=True,stdout=subprocess.PIPE).stdout.splitlines(); inventory={'release_surfaces':['scripts/compile_workflow.py','scripts/execute_packet.py','scripts/run_workflow.py','fixtures/v2/manifest.json','fixtures/v3/manifest.json'],'evidence_commands':['python scripts/check_contract.py','python scripts/execute_packet.py --manifest fixtures/v2/manifest.json --out out/v2/final','python scripts/run_workflow.py --self-test'],'dirty_files':{'classes':['modified','added','untracked'],'git_status_short':status},'open_risks':['V2 fixture execution proves checked artifacts, not full semantic agent execution']}; Path('inventory.json').write_text(json.dumps(inventory,sort_keys=True))"
+        ],
+        "expected_exit_code": 0
+      },
+      "plan": "fixtures/v3.1/dogfood-release-readiness.workflow.plan.json",
+      "required": true,
+      "type": "local-shell",
+      "verification_commands": [
+        {
+          "argv": [
+            "python",
+            "-c",
+            "import json; from pathlib import Path; data=json.loads(Path('inventory.json').read_text()); required={'release_surfaces','evidence_commands','dirty_files','open_risks'}; ok=required <= set(data) and data['release_surfaces'] and data['evidence_commands'] and isinstance(data['dirty_files'], dict) and data['open_risks']; print(json.dumps(data,sort_keys=True)); raise SystemExit(0 if ok else 1)"
+          ],
+          "expected_exit_code": 0,
+          "id": "verify-semantic-inventory"
+        }
+      ],
+      "worktree": "v32-semantic-inventory"
+    },
+    {
+      "expected_status": "verified",
       "id": "local-shell-verification-pass",
       "local_shell": {
         "argv": [

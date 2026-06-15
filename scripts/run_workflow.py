@@ -31,6 +31,7 @@ from execute_packet import (  # noqa: E402
     ExecError,
     append_review_contract,
     execute_local_shell,
+    git_text,
     prepare_repair,
     review_contract,
     review_execution,
@@ -768,7 +769,8 @@ def reset_owned_v3(path: Path) -> None:
 
 
 def fixture_worktree(suite_id: str, fixture_id: str, suffix: str = "run-v3-verified") -> str:
-    return f"v3-{suite_id}-{fixture_id}-{suffix}"
+    head = git_text(["rev-parse", "--short=12", "HEAD"], ROOT).strip()
+    return f"v3-{suite_id}-{head}-{fixture_id}-{suffix}"
 
 
 def clear_fixture_inventory(worktree_name: str) -> None:
