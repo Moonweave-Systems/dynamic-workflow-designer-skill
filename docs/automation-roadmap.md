@@ -25,7 +25,7 @@ workflows.
 | First-slice compiler | materialize one safe packet and resume contract | implemented in V1 |
 | Execution adapter | run one compiled packet through a controlled backend | V2 release candidate |
 | Runtime loop | advance packet by packet with verification and resume | V3 entry implemented |
-| Parallel orchestration | coordinate multiple workers across worktrees | later |
+| Parallel orchestration | schedule ready phase packets under a concurrency cap | first scheduler slice implemented |
 | Product surface | plugin, CLI, dashboard, and release packaging | last |
 
 Prior art such as `oh-my-codex` already covers a broad Codex runtime layer:
@@ -215,11 +215,23 @@ Full runtime done means:
 
 ### V4: Parallel Worker Orchestration
 
-Status: planned.
+Status: first scheduler slice implemented.
 
 Purpose: run independent packets in parallel with fan-in verification.
 
-Done means:
+First scheduler slice done means:
+
+- `scripts/orchestrate_workflow.py` consumes trusted V3 runtime output.
+- V4 emits `schedule.json`, packet prompts, a journal, status, and resume docs.
+- V4 selects every currently ready phase up to the plan concurrency cap.
+- V4 preserves handoff schemas, worker contracts, expected outputs, and stop
+  conditions in generated packets.
+- V4 resume detects tampered schedule, packet, prompt, and journal artifacts.
+- V4 self-test covers linear scheduling, fan-out scheduling, concurrency caps,
+  clean resume, and tampered schedule invalidation.
+- V4 dogfood over `out/v3/v32-semantic-dogfood` schedules `evidence_review`.
+
+Full worker orchestration done means:
 
 - workers have isolated worktrees and bounded context.
 - concurrency caps are explicit.
