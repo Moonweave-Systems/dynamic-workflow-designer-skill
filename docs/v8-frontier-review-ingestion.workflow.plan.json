@@ -1,0 +1,330 @@
+{
+  "activation": {
+    "decision": "activate",
+    "downgrade_target": null,
+    "matched_thresholds": [
+      "downstream-consumer",
+      "resumable-handoffs",
+      "adversarial-verification"
+    ],
+    "reason": "V7.5 reviewed frontier results need deterministic ingestion before the runtime can treat release_decision as completed."
+  },
+  "assumptions": [
+    {
+      "claim": "A V7.5 review-approved result is the only trusted input for frontier completion.",
+      "verification": "Require V7.5 ownership, clean resume, verdict approve, and non-empty approved_outputs before ingestion."
+    },
+    {
+      "claim": "The V7.5 -> V7 -> V6.5 -> V6 lineage is enough to recover the runtime frontier state.",
+      "verification": "Follow the review source result to the V6.5 dispatch, require clean V6.5 and V6 resumes, then recompute the original plan frontier."
+    }
+  ],
+  "budget": {
+    "file_touch_limit": "one new script plus V8 docs, release checks, and roadmap updates",
+    "max_agents": 1,
+    "max_retries": 1,
+    "max_rounds": 1,
+    "time_box": "one implementation slice"
+  },
+  "created_by": "dynamic-workflow-designer",
+  "execution_path": {
+    "consumer": "codex-agent",
+    "first_slice": {
+      "completion_check": "out/v8/v32-semantic-dogfood/status.json reports frontier-ready and selected_phase_ids human_gate",
+      "expected_output": "V8 state, hashes, status, resume, and next frontier packet artifacts",
+      "forbidden_actions": [
+        "worker execution",
+        "backend execution",
+        "external service calls",
+        "worktree merge"
+      ],
+      "inputs": [
+        "repository path",
+        "out/v7.5/v32-semantic-dogfood",
+        "out/v7/v32-semantic-dogfood",
+        "out/v6.5/v32-semantic-dogfood",
+        "out/v6/v32-semantic-dogfood"
+      ],
+      "instruction": "Consume one trusted V7.5 frontier review, mark its phase complete, and emit the next runtime frontier without executing it."
+    },
+    "mode": "direct-codex"
+  },
+  "handoffs": [
+    {
+      "artifact": "review.json",
+      "artifact_schema": {
+        "format": "json",
+        "required_fields": [
+          "verdict",
+          "source_result_path",
+          "source_phase_id",
+          "approved_outputs"
+        ],
+        "validation_command": "python -m json.tool review.json"
+      },
+      "from_phase": "review_validation",
+      "to_phase": "lineage_reconstruction"
+    },
+    {
+      "artifact": "state.json",
+      "artifact_schema": {
+        "format": "json",
+        "required_fields": [
+          "completed_phase_ids",
+          "ready_phase_ids",
+          "selected_phase_ids",
+          "source_hashes"
+        ],
+        "validation_command": "python -m json.tool state.json"
+      },
+      "from_phase": "frontier_ingestion",
+      "to_phase": "resume_verification"
+    }
+  ],
+  "objective": "Design the first V8 frontier-review ingestion slice that consumes V7.5 review-approved evidence and emits the next trusted runtime frontier.",
+  "parallelism": {
+    "barriers": [
+      "review validation before lineage reconstruction",
+      "lineage reconstruction before frontier ingestion",
+      "frontier ingestion before resume verification"
+    ],
+    "concurrency_cap": 1,
+    "fan_in_rule": "No fan-in in the first slice; one V7.5 review is ingested at a time.",
+    "shape": "pipeline"
+  },
+  "patterns": [
+    "Sequential",
+    "Resume And Cache",
+    "Adversarial Verify"
+  ],
+  "phases": [
+    {
+      "depends_on": [],
+      "entry_criteria": [
+        "V7.5 review directory is owned",
+        "V7.5 status is review-approved"
+      ],
+      "exit_criteria": [
+        "review.json verdict is approve",
+        "approved_outputs is non-empty"
+      ],
+      "id": "review_validation",
+      "name": "Review Validation",
+      "outputs": [
+        "review.json"
+      ],
+      "worker_ids": [
+        "frontier-ingest-worker"
+      ]
+    },
+    {
+      "depends_on": [
+        "review_validation"
+      ],
+      "entry_criteria": [
+        "trusted V7.5 review exists"
+      ],
+      "exit_criteria": [
+        "V7 result source is recovered",
+        "V6.5 dispatch and V6 frontier resume cleanly"
+      ],
+      "id": "lineage_reconstruction",
+      "name": "Lineage Reconstruction",
+      "outputs": [
+        "lineage.json"
+      ],
+      "worker_ids": [
+        "frontier-ingest-worker"
+      ]
+    },
+    {
+      "depends_on": [
+        "lineage_reconstruction"
+      ],
+      "entry_criteria": [
+        "lineage validates"
+      ],
+      "exit_criteria": [
+        "reviewed phase is appended to completed_phase_ids",
+        "next ready frontier is recomputed from the plan"
+      ],
+      "id": "frontier_ingestion",
+      "name": "Frontier Ingestion",
+      "outputs": [
+        "run.json",
+        "state.json",
+        "hashes.json",
+        "packets/*.packet.json",
+        "journal/0000.json"
+      ],
+      "worker_ids": [
+        "frontier-ingest-worker"
+      ]
+    },
+    {
+      "depends_on": [
+        "frontier_ingestion"
+      ],
+      "entry_criteria": [
+        "V8 artifacts exist"
+      ],
+      "exit_criteria": [
+        "resume recomputes state, packet, prompt, journal, and hashes",
+        "tampered state invalidates resume"
+      ],
+      "id": "resume_verification",
+      "name": "Resume Verification",
+      "outputs": [
+        "status.json",
+        "resume.md",
+        "hashes.json"
+      ],
+      "worker_ids": [
+        "frontier-ingest-worker"
+      ]
+    }
+  ],
+  "plan_id": "v8-frontier-review-ingestion-first-slice",
+  "resume": {
+    "cacheable_outputs": [
+      "run.json",
+      "state.json",
+      "hashes.json",
+      "status.json",
+      "resume.md"
+    ],
+    "invalidators": [
+      "V7.5 review changes",
+      "V7 result changes",
+      "V6.5 dispatch changes",
+      "V6 frontier changes",
+      "generated state, packet, prompt, journal, or hashes tampering"
+    ],
+    "restart_points": [
+      "review_validation",
+      "lineage_reconstruction",
+      "frontier_ingestion",
+      "resume_verification"
+    ]
+  },
+  "risk_gates": [
+    {
+      "requires_user_approval": true,
+      "safe_default": "stop before writing and ask for approval",
+      "trigger": "write"
+    },
+    {
+      "requires_user_approval": true,
+      "safe_default": "stop before shell use and ask for approval",
+      "trigger": "shell process"
+    },
+    {
+      "requires_user_approval": true,
+      "safe_default": "stop before network use and ask for approval",
+      "trigger": "network"
+    }
+  ],
+  "schema_version": "0.5",
+  "source_prompt": "Design the next workflow after V7.5 frontier-result review.",
+  "surfaces": [
+    {
+      "access_mode": "write-approved",
+      "id": "repo",
+      "kind": "repo",
+      "locator": "."
+    },
+    {
+      "access_mode": "read-only",
+      "id": "v75-review",
+      "kind": "artifact",
+      "locator": "out/v7.5/v32-semantic-dogfood"
+    },
+    {
+      "access_mode": "write-approved",
+      "id": "v8-output",
+      "kind": "artifact",
+      "locator": "out/v8/"
+    }
+  ],
+  "verification": [
+    {
+      "claim_or_output": "V8 consumes only trusted V7.5 reviewed frontier results.",
+      "evidence_required": [
+        "python scripts/ingest_frontier_review.py --self-test",
+        "out/v8/v32-semantic-dogfood/status.json"
+      ],
+      "falsifier": "A stale or rejected V7.5 review can produce frontier-ready status."
+    },
+    {
+      "claim_or_output": "V8 marks release_decision complete and selects the next true frontier.",
+      "evidence_required": [
+        "python scripts/ingest_frontier_review.py --review out/v7.5/v32-semantic-dogfood --out out/v8/v32-semantic-dogfood",
+        "out/v8/v32-semantic-dogfood/state.json"
+      ],
+      "falsifier": "V8 claims workflow-complete while human_gate is still ready."
+    },
+    {
+      "claim_or_output": "V8 generated artifacts are resumable and tamper-evident.",
+      "evidence_required": [
+        "python scripts/ingest_frontier_review.py --resume out/v8/v32-semantic-dogfood",
+        "tampered state self-test"
+      ],
+      "falsifier": "Generated state, packet, prompt, journal, or hashes can drift without invalidating resume."
+    }
+  ],
+  "workers": [
+    {
+      "context_budget": {
+        "max_files": 20,
+        "max_tokens": 12000,
+        "must_exclude": [
+          "out/**/work/"
+        ],
+        "must_include": [
+          "scripts/ingest_frontier_review.py",
+          "scripts/review_frontier_result.py",
+          "scripts/ingest_worker_review.py",
+          "docs/v8-frontier-review-ingestion-spec.md"
+        ]
+      },
+      "forbidden_actions": [
+        "worker execution",
+        "backend execution",
+        "external service calls",
+        "worktree merge",
+        "human approval synthesis"
+      ],
+      "id": "frontier-ingest-worker",
+      "ownership": [
+        "review_validation",
+        "lineage_reconstruction",
+        "frontier_ingestion",
+        "resume_verification"
+      ],
+      "prompt_contract": {
+        "inputs": [
+          "V7.5 review directory",
+          "V7 result metadata",
+          "V6.5 dispatch lineage",
+          "V6 frontier state"
+        ],
+        "required_output_schema": "state.json plus status.json",
+        "stop_conditions": [
+          "V7.5 review is not approved",
+          "V7.5 resume is not clean",
+          "reviewed phase is not selected by V6 frontier",
+          "worker execution would be required"
+        ]
+      },
+      "role": "Deterministic frontier review ingestion implementer",
+      "tool_permissions": {
+        "mcp_connectors": [],
+        "network": false,
+        "read": true,
+        "requires_escalation_for": [],
+        "shell": true,
+        "write": true
+      }
+    }
+  ]
+}

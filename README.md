@@ -60,6 +60,7 @@ Use $dynamic-workflow-designer to plan a 500-file migration with verification ga
 ├── scripts/dispatch_frontier.py         # V6.5 frontier dispatch
 ├── scripts/run_frontier_result.py       # V7 frontier worker-result adapter
 ├── scripts/review_frontier_result.py    # V7.5 frontier-result review
+├── scripts/ingest_frontier_review.py    # V8 frontier-review ingestion
 ├── references/workflow-patterns.md  # Pattern guide for workflow designs
 ├── references/workflow-plan-schema.md
 │                                      # workflow.plan.json contract
@@ -88,6 +89,9 @@ Use $dynamic-workflow-designer to plan a 500-file migration with verification ga
 ├── docs/v7.5-frontier-result-review-spec.md
 │                                      # V7.5 frontier-result review spec
 ├── docs/v7.5-decision.md              # V7.5 keep/kill decision
+├── docs/v8-frontier-review-ingestion-spec.md
+│                                      # V8 frontier-review ingestion spec
+├── docs/v8-decision.md                # V8 keep/kill decision
 ├── docs/github-research.md          # Prior-art survey and import decisions
 ├── docs/dwm-branding.md             # Product naming and compatibility rules
 ├── assets/dwm-hero.svg              # README hero image
@@ -138,6 +142,7 @@ python scripts/ingest_worker_review.py --self-test
 python scripts/dispatch_frontier.py --self-test
 python scripts/run_frontier_result.py --self-test
 python scripts/review_frontier_result.py --self-test
+python scripts/ingest_frontier_review.py --self-test
 python scripts/check_whitespace.py .
 python scripts/check_release_text.py .
 python scripts/check_release_text.py --self-test
@@ -250,9 +255,10 @@ fixture-only worker result evidence, V5.5 reviews that result, and V6 ingests
 approved reviewed results into the next frontier. V6.5 turns that trusted
 frontier back into an emit-only dispatch bundle. V7 records controlled fixture
 evidence for that next phase. V7.5 reviews that frontier evidence before it can
-be ingested. The current implemented dogfood chain ends with
-`out/v7.5/v32-semantic-dogfood/status.json` reporting `status: review-approved`
-for `release_decision`.
+be ingested. V8 ingests the reviewed frontier result back into runtime frontier
+state. The current implemented dogfood chain ends with
+`out/v8/v32-semantic-dogfood/status.json` reporting `status: frontier-ready`
+with `human_gate` selected.
 
 The V6 runtime-ingestion spec and decision are
 [`docs/v6-runtime-ingestion-spec.md`](docs/v6-runtime-ingestion-spec.md) and
@@ -263,9 +269,11 @@ V7 is described in
 V7.5 is described in
 [`docs/v7.5-frontier-result-review-spec.md`](docs/v7.5-frontier-result-review-spec.md)
 and the keep decision is
-[`docs/v7.5-decision.md`](docs/v7.5-decision.md). V7.5 still does not ingest
-runtime state, run arbitrary worker backends, merge worktrees, or claim fully
-autonomous large-task completion.
+[`docs/v7.5-decision.md`](docs/v7.5-decision.md). V8 is described in
+[`docs/v8-frontier-review-ingestion-spec.md`](docs/v8-frontier-review-ingestion-spec.md)
+and the keep decision is [`docs/v8-decision.md`](docs/v8-decision.md). V8 still
+does not execute the selected frontier, satisfy human gates, merge worktrees, or
+claim fully autonomous large-task completion.
 
 ## License
 

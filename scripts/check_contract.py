@@ -410,6 +410,40 @@ def require_v75_decision_summary_consistency() -> None:
         raise SystemExit(f"V7.5 decision consistency failed: {exc}") from exc
 
 
+def require_v8_decision_summary_text(status: dict[str, object], decision_text: str) -> None:
+    normalized_decision_text = " ".join(decision_text.lower().split())
+    snapshots = status.get("snapshots")
+    if not isinstance(snapshots, dict):
+        raise SystemExit("V8 status is missing snapshots")
+    required_snippets = [
+        "decision: keep",
+        "python scripts/ingest_frontier_review.py --self-test",
+        "python scripts/ingest_frontier_review.py --review out/v7.5/v32-semantic-dogfood --out out/v8/v32-semantic-dogfood",
+        "python scripts/ingest_frontier_review.py --resume out/v8/v32-semantic-dogfood",
+        f"`run_id`: `{status['run_id']}`",
+        f"`status`: `{status['status']}`",
+        f"`resume_state`: `{status['resume_state']}`",
+        f"`completed_phase_ids`: `{', '.join(str(phase) for phase in status['completed_phase_ids'])}`",
+        f"`reviewed_phase_ids`: `{', '.join(str(phase) for phase in status['reviewed_phase_ids'])}`",
+        f"`ready_phase_ids`: `{', '.join(str(phase) for phase in status['ready_phase_ids'])}`",
+        f"`selected_phase_ids`: `{', '.join(str(phase) for phase in status['selected_phase_ids'])}`",
+        f"`state_hash`: `{snapshots['state_hash']}`",
+        "does not claim workflow completion",
+    ]
+    missing = [snippet for snippet in required_snippets if snippet not in normalized_decision_text]
+    if missing:
+        raise SystemExit(f"docs/v8-decision.md does not match V8 status: {missing}")
+
+
+def require_v8_decision_summary_consistency() -> None:
+    try:
+        completed = run_contract_command([sys.executable, "scripts/ingest_frontier_review.py", "--resume", "out/v8/v32-semantic-dogfood"])
+        status = json.loads(completed.stdout)
+        require_v8_decision_summary_text(status, (ROOT / "docs" / "v8-decision.md").read_text())
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"V8 decision consistency failed: {exc}") from exc
+
+
 def require_release_commands_pass() -> None:
     commands = [
         [sys.executable, "scripts/quick_validate_skill.py", "."],
@@ -421,6 +455,7 @@ def require_release_commands_pass() -> None:
         [sys.executable, "scripts/run_workflow.py", "--self-test"],
         [sys.executable, "scripts/run_workflow.py", "--manifest", "fixtures/v3/manifest.json", "--out", "out/v3/final"],
         [sys.executable, "scripts/review_frontier_result.py", "--self-test"],
+        [sys.executable, "scripts/ingest_frontier_review.py", "--self-test"],
         [sys.executable, "scripts/check_whitespace.py", "."],
         [sys.executable, "scripts/check_release_text.py", "."],
         [sys.executable, "scripts/check_release_text.py", "--self-test"],
@@ -450,6 +485,29 @@ def require_release_commands_pass() -> None:
         raise SystemExit(f"V7.5 dogfood resume CLI output was not JSON: {completed.stdout}") from exc
     if v75_resumed.get("status") != "review-approved" or v75_resumed.get("resume_state") != "resumable":
         raise SystemExit(f"V7.5 dogfood resume did not produce clean resumable state: {completed.stdout}")
+    completed = run_contract_command(
+        [
+            sys.executable,
+            "scripts/ingest_frontier_review.py",
+            "--review",
+            "out/v7.5/v32-semantic-dogfood",
+            "--out",
+            "out/v8/v32-semantic-dogfood",
+        ]
+    )
+    try:
+        v8_ingested = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"V8 dogfood ingestion CLI output was not JSON: {completed.stdout}") from exc
+    if v8_ingested.get("status") != "frontier-ready" or v8_ingested.get("selected_phase_ids") != ["human_gate"]:
+        raise SystemExit(f"V8 dogfood ingestion did not select human_gate: {completed.stdout}")
+    completed = run_contract_command([sys.executable, "scripts/ingest_frontier_review.py", "--resume", "out/v8/v32-semantic-dogfood"])
+    try:
+        v8_resumed = json.loads(completed.stdout)
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"V8 dogfood resume CLI output was not JSON: {completed.stdout}") from exc
+    if v8_resumed.get("status") != "frontier-ready" or v8_resumed.get("resume_state") != "resumable":
+        raise SystemExit(f"V8 dogfood resume did not produce clean resumable state: {completed.stdout}")
     cli_out = ROOT / "out" / "v1" / "contract-cli"
     completed = run_contract_command(
         [
@@ -880,6 +938,39 @@ Overclaims execution: no
     else:
         raise SystemExit("self-test failed: stale V7.5 decision summary passed")
 
+    v8_status = {
+        "run_id": "v32-semantic-dogfood",
+        "status": "frontier-ready",
+        "resume_state": "resumable",
+        "completed_phase_ids": ["release_inventory", "evidence_review", "release_decision"],
+        "reviewed_phase_ids": ["evidence_review", "release_decision"],
+        "ready_phase_ids": ["human_gate"],
+        "selected_phase_ids": ["human_gate"],
+        "snapshots": {"state_hash": "abc123"},
+    }
+    good_v8_decision = (
+        "Decision: keep\n"
+        "python scripts/ingest_frontier_review.py --self-test\n"
+        "python scripts/ingest_frontier_review.py --review out/v7.5/v32-semantic-dogfood --out out/v8/v32-semantic-dogfood\n"
+        "python scripts/ingest_frontier_review.py --resume out/v8/v32-semantic-dogfood\n"
+        "- `run_id`: `v32-semantic-dogfood`\n"
+        "- `status`: `frontier-ready`\n"
+        "- `resume_state`: `resumable`\n"
+        "- `completed_phase_ids`: `release_inventory, evidence_review, release_decision`\n"
+        "- `reviewed_phase_ids`: `evidence_review, release_decision`\n"
+        "- `ready_phase_ids`: `human_gate`\n"
+        "- `selected_phase_ids`: `human_gate`\n"
+        "- `state_hash`: `abc123`\n"
+        "This decision does not claim workflow completion.\n"
+    )
+    require_v8_decision_summary_text(v8_status, good_v8_decision)
+    try:
+        require_v8_decision_summary_text(v8_status, good_v8_decision.replace("abc123", "stale999", 1))
+    except SystemExit:
+        pass
+    else:
+        raise SystemExit("self-test failed: stale V8 decision summary passed")
+
     print("contract self-test: pass")
 
 
@@ -937,6 +1028,7 @@ def main() -> None:
             "python scripts/run_workflow.py --self-test",
             "python scripts/run_workflow.py --manifest fixtures/v3/manifest.json --out out/v3/final",
             "python scripts/review_frontier_result.py --self-test",
+            "python scripts/ingest_frontier_review.py --self-test",
             "docs/v2.5-review-repair-spec.md",
             "docs/v2.5-to-v3.workflow.plan.json",
             "docs/v2.5-decision.md",
@@ -953,6 +1045,8 @@ def main() -> None:
             "docs/v7.5-frontier-result-review-spec.md",
             "docs/v7.5-decision.md",
             "does not execute later",
+            "docs/v8-frontier-review-ingestion-spec.md",
+            "docs/v8-decision.md",
         ],
     )
     require_terms("docs/v0.5-plan-schema-evaluator-spec.md", V05_REQUIRED_TERMS)
@@ -1034,6 +1128,9 @@ def main() -> None:
             "v7.5 frontier result review implemented",
             "docs/v7.5-frontier-result-review-spec.md",
             "first review slice implemented",
+            "v8 frontier review ingestion implemented",
+            "docs/v8-frontier-review-ingestion-spec.md",
+            "first ingestion slice implemented",
         ],
     )
     require_terms(
@@ -1047,6 +1144,19 @@ def main() -> None:
             "`resume_state`: `resumable`",
             "`approved_outputs`: `release-decision.md`",
             "does not claim runtime ingestion",
+        ],
+    )
+    require_terms(
+        "docs/v8-decision.md",
+        [
+            "decision: keep",
+            "python scripts/ingest_frontier_review.py --self-test",
+            "python scripts/ingest_frontier_review.py --review out/v7.5/v32-semantic-dogfood --out out/v8/v32-semantic-dogfood",
+            "python scripts/ingest_frontier_review.py --resume out/v8/v32-semantic-dogfood",
+            "`status`: `frontier-ready`",
+            "`resume_state`: `resumable`",
+            "`selected_phase_ids`: `human_gate`",
+            "does not claim workflow completion",
         ],
     )
     require_terms(
@@ -1140,6 +1250,7 @@ def main() -> None:
     require_v25_decision_summary_consistency()
     require_v3_decision_summary_consistency()
     require_v75_decision_summary_consistency()
+    require_v8_decision_summary_consistency()
     print("contract smoke: pass")
 
 

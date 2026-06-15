@@ -1,6 +1,6 @@
 # DWM Automation Roadmap
 
-Status: draft; V3 entry runtime implemented; V7.5 frontier result review implemented
+Status: draft; V3 entry runtime implemented; V7.5 frontier result review implemented; V8 frontier review ingestion implemented
 Date: 2026-06-15
 
 ## Purpose
@@ -34,6 +34,7 @@ entrypoint remains `dynamic-workflow-designer`.
 | Frontier dispatch | turn trusted runtime frontier packets into dispatch bundles | first loop-back slice implemented |
 | Frontier result adapter | produce controlled next-phase worker evidence | first controlled slice implemented |
 | Frontier result review | approve or reject next-phase worker evidence before ingestion | first review slice implemented |
+| Frontier review ingestion | consume reviewed frontier results and emit the next frontier | first ingestion slice implemented |
 | Product surface | plugin, CLI, dashboard, and release packaging | last |
 
 Prior art such as `oh-my-codex` already covers a broad Codex runtime layer:
@@ -439,7 +440,40 @@ Full frontier result review done means:
   approval,
 - only reviewed frontier results can complete next-phase runtime work.
 
-### V8: Product Packaging
+### V8: Frontier Review Ingestion
+
+Status: first ingestion slice implemented.
+
+Purpose: ingest V7.5 reviewed frontier-result evidence into runtime frontier
+state so `release_decision` can complete without trusting unreviewed V7 output.
+
+Spec: `docs/v8-frontier-review-ingestion-spec.md`.
+
+Workflow plan: `docs/v8-frontier-review-ingestion.workflow.plan.json`.
+
+First ingestion slice done means:
+
+- `scripts/ingest_frontier_review.py` consumes one trusted V7.5 review
+  directory,
+- V8 requires V7.5 `status: review-approved` and clean resume,
+- V8 validates the V7.5 -> V7 -> V6.5 -> V6 lineage before ingestion,
+- V8 appends `release_decision` to `completed_phase_ids`,
+- V8 preserves previous `reviewed_phase_ids` and appends `release_decision`,
+- V8 recomputes the next ready frontier from the original plan,
+- V8 dogfood selects `human_gate` rather than claiming workflow completion,
+- V8 writes run, state, packet, prompt, journal, hashes, status, and resume
+  artifacts under owned `out/v8/`,
+- V8 resume detects stale source evidence and tampered generated artifacts,
+- V8 does not execute workers or satisfy human gates.
+
+Full frontier review ingestion done means:
+
+- reviewed frontier results can continue through repeated loops,
+- multi-result fan-in has deterministic ordering and conflict handling,
+- human gates are explicit packets, not silent completions,
+- workflow completion is declared only when no ready or blocked phase remains.
+
+### V9: Product Packaging
 
 Status: planned.
 
