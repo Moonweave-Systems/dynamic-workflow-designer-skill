@@ -1,0 +1,102 @@
+<svg width="1600" height="520" viewBox="0 0 1600 520" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">DWM - Deterministic Workflow Machine</title>
+  <desc id="desc">A deterministic workflow pipeline turning a goal into packets, evidence, reviews, ingestion, and the next frontier.</desc>
+  <rect width="1600" height="520" rx="28" fill="#F8FAFC"/>
+  <path d="M0 0H1600V520H0V0Z" fill="url(#bg)"/>
+  <circle cx="1280" cy="128" r="260" fill="#EEF2FF"/>
+  <circle cx="310" cy="396" r="210" fill="#F1F5F9"/>
+  <g filter="url(#shadow)">
+    <rect x="72" y="68" width="1456" height="384" rx="32" fill="white" fill-opacity="0.78"/>
+    <rect x="72.5" y="68.5" width="1455" height="383" rx="31.5" stroke="#E2E8F0"/>
+  </g>
+  <text x="126" y="164" fill="#0F172A" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="104" font-weight="800" letter-spacing="0">DWM</text>
+  <text x="130" y="214" fill="#334155" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="28" font-weight="600" letter-spacing="0">Deterministic Workflow Machine</text>
+  <text x="130" y="258" fill="#64748B" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="22" font-weight="500" letter-spacing="0">Plans, packets, evidence, reviews, and resumable runtime state.</text>
+
+  <g transform="translate(124 312)">
+    <rect x="0" y="0" width="168" height="76" rx="18" fill="#0F172A"/>
+    <text x="28" y="47" fill="#FFFFFF" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="22" font-weight="700" letter-spacing="0">goal</text>
+  </g>
+
+  <g stroke="#94A3B8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M324 350H414"/>
+    <path d="M400 337L416 350L400 363"/>
+    <path d="M566 350H656"/>
+    <path d="M642 337L658 350L642 363"/>
+    <path d="M808 350H898"/>
+    <path d="M884 337L900 350L884 363"/>
+    <path d="M1050 350H1140"/>
+    <path d="M1126 337L1142 350L1126 363"/>
+    <path d="M1288 350C1388 350 1428 284 1398 218"/>
+    <path d="M1387 232L1399 216L1416 226"/>
+    <path d="M1224 388C1030 452 742 448 520 392" stroke-dasharray="9 13"/>
+    <path d="M536 386L518 391L530 406"/>
+  </g>
+
+  <g filter="url(#cardShadow)">
+    <rect x="434" y="298" width="126" height="104" rx="16" fill="#FFFFFF"/>
+    <path d="M532 298L560 326H532V298Z" fill="#C7D2FE"/>
+    <rect x="458" y="330" width="62" height="7" rx="3.5" fill="#CBD5E1"/>
+    <rect x="458" y="350" width="78" height="7" rx="3.5" fill="#E2E8F0"/>
+    <rect x="458" y="370" width="48" height="7" rx="3.5" fill="#CBD5E1"/>
+  </g>
+  <text x="438" y="428" fill="#475569" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="18" font-weight="700" letter-spacing="0">plan</text>
+
+  <g filter="url(#cardShadow)">
+    <rect x="676" y="298" width="126" height="104" rx="16" fill="#FFFFFF"/>
+    <rect x="702" y="322" width="74" height="12" rx="6" fill="#6366F1"/>
+    <rect x="702" y="350" width="74" height="7" rx="3.5" fill="#CBD5E1"/>
+    <rect x="702" y="370" width="48" height="7" rx="3.5" fill="#E2E8F0"/>
+    <circle cx="778" cy="374" r="8" fill="#A5B4FC"/>
+  </g>
+  <text x="674" y="428" fill="#475569" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="18" font-weight="700" letter-spacing="0">packet</text>
+
+  <g filter="url(#cardShadow)">
+    <rect x="918" y="298" width="126" height="104" rx="16" fill="#FFFFFF"/>
+    <path d="M982 322C1002 322 1018 338 1018 358C1018 378 1002 394 982 394C962 394 946 378 946 358C946 338 962 322 982 322Z" fill="#EEF2FF"/>
+    <path d="M982 337V358L996 370" stroke="#4F46E5" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M982 337V358L966 366" stroke="#818CF8" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <text x="918" y="428" fill="#475569" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="18" font-weight="700" letter-spacing="0">evidence</text>
+
+  <g filter="url(#cardShadow)">
+    <rect x="1160" y="298" width="126" height="104" rx="16" fill="#FFFFFF"/>
+    <circle cx="1194" cy="330" r="13" fill="#4F46E5"/>
+    <path d="M1188 330L1193 335L1202 324" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="1220" y="323" width="42" height="7" rx="3.5" fill="#CBD5E1"/>
+    <circle cx="1194" cy="370" r="13" fill="#E0E7FF" stroke="#818CF8" stroke-width="3"/>
+    <rect x="1220" y="363" width="42" height="7" rx="3.5" fill="#CBD5E1"/>
+  </g>
+  <text x="1160" y="428" fill="#475569" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="18" font-weight="700" letter-spacing="0">review</text>
+
+  <g filter="url(#cardShadow)">
+    <path d="M1396 284L1454 318V386L1396 420L1338 386V318L1396 284Z" fill="#FFFFFF"/>
+    <path d="M1338 318L1396 352L1454 318" stroke="#A5B4FC" stroke-width="3"/>
+    <path d="M1396 352V420" stroke="#A5B4FC" stroke-width="3"/>
+    <path d="M1368 334L1426 300" stroke="#C7D2FE" stroke-width="3"/>
+    <path d="M1424 334L1368 300" stroke="#C7D2FE" stroke-width="3"/>
+    <path d="M1396 352L1426 335V370L1396 388L1366 370V335L1396 352Z" fill="#6366F1" fill-opacity="0.9"/>
+  </g>
+  <text x="1340" y="446" fill="#475569" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Segoe UI, sans-serif" font-size="18" font-weight="700" letter-spacing="0">next frontier</text>
+
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1600" y2="520" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFFFF"/>
+      <stop offset="0.52" stop-color="#F8FAFC"/>
+      <stop offset="1" stop-color="#EEF2FF"/>
+    </linearGradient>
+    <filter id="shadow" x="44" y="44" width="1512" height="440" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="4"/>
+      <feGaussianBlur stdDeviation="14"/>
+      <feComposite in2="hardAlpha" operator="out"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.15 0 0 0 0 0.23 0 0 0 0 0.36 0 0 0 0.12 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow" result="shape"/>
+    </filter>
+    <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="150%" filterUnits="objectBoundingBox" color-interpolation-filters="sRGB">
+      <feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#334155" flood-opacity="0.14"/>
+    </filter>
+  </defs>
+</svg>

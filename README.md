@@ -5,6 +5,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-4F46E5.svg)](LICENSE)
 [![Agent skill](https://img.shields.io/badge/agent%20skill-Codex-4F46E5.svg)](SKILL.md)
 
+![DWM hero](assets/dwm-hero.svg)
+
 **DWM** stands for **Deterministic Workflow Machine**. It is the product name
 for this repo's workflow control-plane. The installed Codex skill is still named
 `dynamic-workflow-designer` for compatibility, but the system has grown beyond a
@@ -84,6 +86,7 @@ Use $dynamic-workflow-designer to plan a 500-file migration with verification ga
 │                                      # V7 controlled-frontier-result spec
 ├── docs/github-research.md          # Prior-art survey and import decisions
 ├── docs/dwm-branding.md             # Product naming and compatibility rules
+├── assets/dwm-hero.svg              # README hero image
 ├── docs/spec.md                     # Product spec and release criteria
 ├── agents/openai.yaml               # UI metadata
 ├── LICENSE

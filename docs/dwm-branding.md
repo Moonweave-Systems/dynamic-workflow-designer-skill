@@ -7,6 +7,10 @@ legacy Codex skill entrypoint remains `dynamic-workflow-designer` so existing
 skill activation, fixtures, and `workflow.plan.json` contracts continue to
 work.
 
+The preferred repository slug is `dwm`. The old
+`dynamic-workflow-designer-skill` slug may appear only in historical references
+or compatibility redirects.
+
 ## Position
 
 DWM is not an unchecked agent launcher. It is a deterministic control-plane for
@@ -36,6 +40,7 @@ state.
 
 - Use **DWM** for the product and system.
 - Use **Deterministic Workflow Machine** on first mention in formal docs.
+- Use `dwm` for the GitHub repository slug when available.
 - Keep `dynamic-workflow-designer` for the Codex skill name and `created_by`
   contract values.
 - Do not rename existing fixture IDs or `workflow.plan.json` schema fields just
