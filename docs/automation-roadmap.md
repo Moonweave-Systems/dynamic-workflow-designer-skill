@@ -644,6 +644,8 @@ The planned roadmap splits the remaining product into versioned specs:
   `docs/v34-live-score-review-spec.md`.
 - V35 live benchmark report:
   `docs/v35-live-report-spec.md`.
+- V36 README benchmark graph:
+  `docs/v36-readme-benchmark-graph-spec.md`.
 
 These specs define the intended path to an independent DWM product that can use
 Codex CLI directly through DWM Runner while keeping OMX optional rather than a

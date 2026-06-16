@@ -1,0 +1,46 @@
+{
+  "fixtures": [
+    {
+      "expected_status": "graph-recorded",
+      "id": "readme-graph-published-report",
+      "kind": "graph-published-report",
+      "required": true
+    },
+    {
+      "expected_status": "graph-recorded",
+      "id": "readme-graph-refuted-report",
+      "kind": "graph-refuted-report",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_README_GRAPH_STALE_REPORT",
+      "expected_report_hash": "stale-report-hash",
+      "expected_status": "blocked",
+      "id": "readme-graph-stale-report-blocked",
+      "kind": "stale-report",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_README_GRAPH_METRICS_INVALID",
+      "expected_status": "blocked",
+      "id": "readme-graph-metrics-invalid-blocked",
+      "kind": "metrics-invalid",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_README_GRAPH_ARTIFACT_MISSING",
+      "expected_status": "blocked",
+      "id": "readme-graph-missing-artifact-blocked",
+      "kind": "missing-artifact",
+      "required": true
+    }
+  ],
+  "required_fixture_ids": [
+    "readme-graph-published-report",
+    "readme-graph-refuted-report",
+    "readme-graph-stale-report-blocked",
+    "readme-graph-metrics-invalid-blocked",
+    "readme-graph-missing-artifact-blocked"
+  ],
+  "suite_id": "v36-readme-benchmark-graph"
+}

@@ -1583,6 +1583,50 @@ def require_v35_live_report_decision_summary_consistency() -> None:
         raise SystemExit(f"V35 decision consistency failed: {exc}") from exc
 
 
+def require_v36_readme_graph_decision_summary_text(summary: dict[str, object], decision_text: str) -> None:
+    normalized_decision_text = " ".join(decision_text.lower().split())
+    required_snippets = [
+        f"decision: {summary['decision']}",
+        f"`suite_id`: `{summary['suite_id']}`",
+        f"`fixture_count`: {summary['fixture_count']}",
+        f"`required_fixture_count`: {summary['required_fixture_count']}",
+        f"`required_passed`: {summary['required_passed']}",
+        f"`passed`: {summary['passed']}",
+        f"`failed`: {summary['failed']}",
+        f"`skipped`: {summary['skipped']}",
+        f"`decision`: `{summary['decision']}`",
+        "python scripts/dwm_readme_benchmark_graph.py --manifest fixtures/v36/manifest.json --out out/readme-benchmark-graphs/v36-final",
+        "benchmark-graph.json",
+        "benchmark-graph.svg",
+        "readme-snippet.md",
+        "err_readme_graph_artifact_missing",
+        "err_readme_graph_stale_report",
+        "err_readme_graph_metrics_invalid",
+        "does not claim live model execution",
+    ]
+    missing = [snippet for snippet in required_snippets if snippet not in normalized_decision_text]
+    if missing:
+        raise SystemExit(f"docs/v36-decision.md does not match V36 summary: {missing}")
+
+
+def require_v36_readme_graph_decision_summary_consistency() -> None:
+    try:
+        completed = run_contract_command(
+            [
+                sys.executable,
+                "scripts/dwm_readme_benchmark_graph.py",
+                "--manifest",
+                "fixtures/v36/manifest.json",
+                "--out",
+                "out/readme-benchmark-graphs/v36-final",
+            ],
+        )
+        summary = json.loads(completed.stdout)
+        require_v36_readme_graph_decision_summary_text(summary, (ROOT / "docs" / "v36-decision.md").read_text())
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"V36 decision consistency failed: {exc}") from exc
+
+
 def require_release_commands_pass() -> None:
     commands = [
         [sys.executable, "scripts/quick_validate_skill.py", "."],
@@ -1632,6 +1676,8 @@ def require_release_commands_pass() -> None:
         [sys.executable, "scripts/dwm_live_score_review.py", "--manifest", "fixtures/v34/manifest.json", "--out", "out/live-score-reviews/v34-final"],
         [sys.executable, "scripts/dwm_live_report.py", "--self-test"],
         [sys.executable, "scripts/dwm_live_report.py", "--manifest", "fixtures/v35/manifest.json", "--out", "out/live-reports/v35-final"],
+        [sys.executable, "scripts/dwm_readme_benchmark_graph.py", "--self-test"],
+        [sys.executable, "scripts/dwm_readme_benchmark_graph.py", "--manifest", "fixtures/v36/manifest.json", "--out", "out/readme-benchmark-graphs/v36-final"],
         [sys.executable, "scripts/run_workflow.py", "--self-test"],
         [sys.executable, "scripts/run_workflow.py", "--manifest", "fixtures/v3/manifest.json", "--out", "out/v3/final"],
         [sys.executable, "scripts/orchestrate_workflow.py", "--self-test"],
@@ -3059,6 +3105,38 @@ Overclaims execution: no
     else:
         raise SystemExit("self-test failed: stale V35 decision summary passed")
 
+    v36_summary = {
+        "suite_id": "v36-final",
+        "fixture_count": 5,
+        "required_fixture_count": 5,
+        "required_passed": 5,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "decision": "keep",
+    }
+    good_v36_decision = (
+        "Decision: keep\n"
+        "python scripts/dwm_readme_benchmark_graph.py --manifest fixtures/v36/manifest.json --out out/readme-benchmark-graphs/v36-final\n"
+        "- `suite_id`: `v36-final`\n"
+        "- `fixture_count`: 5\n"
+        "- `required_fixture_count`: 5\n"
+        "- `required_passed`: 5\n"
+        "- `passed`: 5\n"
+        "- `failed`: 0\n"
+        "- `skipped`: 0\n"
+        "- `decision`: `keep`\n"
+        "The accepted suite covers benchmark-graph.json, benchmark-graph.svg, README-snippet.md, ERR_README_GRAPH_ARTIFACT_MISSING, ERR_README_GRAPH_STALE_REPORT, and ERR_README_GRAPH_METRICS_INVALID.\n"
+        "This decision does not claim live model execution.\n"
+    )
+    require_v36_readme_graph_decision_summary_text(v36_summary, good_v36_decision)
+    try:
+        require_v36_readme_graph_decision_summary_text(v36_summary, good_v36_decision.replace("`passed`: 5", "`passed`: 4", 1))
+    except SystemExit:
+        pass
+    else:
+        raise SystemExit("self-test failed: stale V36 decision summary passed")
+
     print("contract self-test: pass")
 
 
@@ -3701,6 +3779,19 @@ def main() -> None:
         ],
     )
     require_terms(
+        "docs/v36-readme-benchmark-graph-spec.md",
+        [
+            "status: implemented first readme benchmark graph artifact generator in",
+            "benchmark-graph.json",
+            "benchmark-graph.svg",
+            "readme-snippet.md",
+            "report.json.graph_metrics",
+            "err_readme_graph_artifact_missing",
+            "err_readme_graph_stale_report",
+            "err_readme_graph_metrics_invalid",
+        ],
+    )
+    require_terms(
         "docs/v7.5-decision.md",
         [
             "decision: keep",
@@ -3749,7 +3840,7 @@ def main() -> None:
             "python scripts/dwm.py commands --kind release --json",
             "`status`: `workflow-complete`",
             "`doctor_ok`: `true`",
-            "`release_command_count`: `78`",
+            "`release_command_count`: `80`",
             "does not claim workflow execution",
         ],
     )
@@ -3886,6 +3977,7 @@ def main() -> None:
     require_v33_live_score_aggregate_decision_summary_consistency()
     require_v34_live_score_review_decision_summary_consistency()
     require_v35_live_report_decision_summary_consistency()
+    require_v36_readme_graph_decision_summary_consistency()
     print("contract smoke: pass")
 
 

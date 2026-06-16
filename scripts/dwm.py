@@ -83,6 +83,8 @@ RELEASE_COMMANDS = [
     "python scripts/dwm_live_score_review.py --manifest fixtures/v34/manifest.json --out out/live-score-reviews/v34-final",
     "python scripts/dwm_live_report.py --self-test",
     "python scripts/dwm_live_report.py --manifest fixtures/v35/manifest.json --out out/live-reports/v35-final",
+    "python scripts/dwm_readme_benchmark_graph.py --self-test",
+    "python scripts/dwm_readme_benchmark_graph.py --manifest fixtures/v36/manifest.json --out out/readme-benchmark-graphs/v36-final",
     "python scripts/run_workflow.py --self-test",
     "python scripts/run_workflow.py --manifest fixtures/v3/manifest.json --out out/v3/final",
     "python scripts/orchestrate_workflow.py --self-test",
@@ -176,6 +178,8 @@ BASE_REQUIRED_PATHS = [
     "docs/v34-live-score-review-spec.md",
     "docs/v35-decision.md",
     "docs/v35-live-report-spec.md",
+    "docs/v36-decision.md",
+    "docs/v36-readme-benchmark-graph-spec.md",
     "packaging/dwm-benchmark-attempts.json",
     "packaging/dwm-adapters.json",
     "packaging/dwm-benchmarks.json",
@@ -204,6 +208,7 @@ BASE_REQUIRED_PATHS = [
     "scripts/dwm_live_score_aggregate.py",
     "scripts/dwm_live_score_review.py",
     "scripts/dwm_live_report.py",
+    "scripts/dwm_readme_benchmark_graph.py",
 ]
 
 

@@ -193,6 +193,8 @@ task itself needs dynamic orchestration.
 ├── docs/v34-decision.md
 ├── docs/v35-live-report-spec.md
 ├── docs/v35-decision.md
+├── docs/v36-readme-benchmark-graph-spec.md
+├── docs/v36-decision.md
 ├── docs/github-research.md          # Prior-art survey and import decisions
 ├── docs/dwm-branding.md             # Product naming and compatibility rules
 ├── assets/dwm-hero.svg              # README hero image
@@ -284,6 +286,8 @@ python scripts/dwm_live_score_review.py --self-test
 python scripts/dwm_live_score_review.py --manifest fixtures/v34/manifest.json --out out/live-score-reviews/v34-final
 python scripts/dwm_live_report.py --self-test
 python scripts/dwm_live_report.py --manifest fixtures/v35/manifest.json --out out/live-reports/v35-final
+python scripts/dwm_readme_benchmark_graph.py --self-test
+python scripts/dwm_readme_benchmark_graph.py --manifest fixtures/v36/manifest.json --out out/readme-benchmark-graphs/v36-final
 python scripts/run_workflow.py --self-test
 python scripts/run_workflow.py --manifest fixtures/v3/manifest.json --out out/v3/final
 python scripts/orchestrate_workflow.py --self-test
@@ -407,6 +411,15 @@ python scripts/dwm_live_report.py publish --review out/live-score-reviews/<revie
 
 Future README benchmark graphs should read `out/live-reports/<report_id>/report.json`
 and use `graph_metrics` as the source of truth.
+
+For V36 README benchmark graph artifacts, use:
+
+```bash
+python scripts/dwm_readme_benchmark_graph.py generate --report out/live-reports/<report_id> --out out/readme-benchmark-graphs/<graph_id>
+```
+
+This writes `benchmark-graph.svg`, `benchmark-graph.json`, and
+`README-snippet.md` without editing README automatically.
 
 For hash-bound HUD evidence approval, use:
 
