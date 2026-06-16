@@ -1,46 +1,80 @@
 # DWM
 
-> Deterministic Workflow Machine: a control-plane for agentic work that turns large goals into hashed packets, evidence, reviews, and resumable runtime state.
+> Deterministic Workflow Machine: a local control-plane for agentic work that
+> turns large goals into hashed packets, evidence, reviews, gates, and
+> resumable runtime state.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-4F46E5.svg)](LICENSE)
 [![Agent skill](https://img.shields.io/badge/agent%20skill-Codex-4F46E5.svg)](SKILL.md)
+[![Release](https://img.shields.io/github/v/release/Moonweave-Systems/dwm?color=4F46E5)](https://github.com/Moonweave-Systems/dwm/releases)
+[![Contract](https://img.shields.io/badge/contract-self--tested-059669.svg)](scripts/check_contract.py)
 
 ![DWM hero](assets/dwm-hero.svg)
 
 **DWM** stands for **Deterministic Workflow Machine**. It is the product name
-for this repo's workflow control-plane. The installed Codex skill is still named
-`dynamic-workflow-designer` for compatibility, but the system has grown beyond a
-single skill: it now designs, compiles, dispatches, records, reviews, ingests,
-and resumes workflow artifacts.
+for this repo's workflow control-plane. The installed Codex skill remains named
+`dynamic-workflow-designer` for compatibility, but the system now goes beyond a
+single prompt skill: it designs, compiles, dispatches, records, reviews,
+ingests, resumes, and release-checks workflow artifacts.
 
-It is deliberately not the same as `workflow-router`. The router chooses the
-smallest suitable workflow. DWM designs a larger workflow when the task itself
-needs dynamic orchestration.
+## Quickstart
 
-## Why
-
-Claude Code Dynamic Workflows changed the useful abstraction: for large work,
-the plan can live outside the chat as an inspectable workflow. Codex does not
-currently have the same native workflow runtime in this environment, so this
-repo starts with the part we can make checkable now: a workflow design contract.
-
-DWM starts from a skill contract but treats artifacts, not model claims, as the
-source of truth. Plans, packets, dispatches, worker results, reviews, and
-runtime states are explicit, hash-bound, and resumable.
-
-## Use
-
-The product name is DWM. The current skill invocation remains:
-
-Example prompts:
+Use the skill when a task is too large or risky for one normal agent turn:
 
 ```text
 Use $dynamic-workflow-designer to design a workflow for auditing every route for missing authorization.
 ```
 
-```text
-Use $dynamic-workflow-designer to plan a 500-file migration with verification gates and rollback boundaries.
+Then inspect the deterministic product surface:
+
+```bash
+python scripts/dwm.py status --run out/v9/v32-semantic-dogfood
+python scripts/dwm.py next --run out/v9/v32-semantic-dogfood
+python scripts/dwm.py doctor
+python scripts/dwm.py commands --kind product
 ```
+
+Run the current release gate:
+
+```bash
+python scripts/check_contract.py
+python scripts/dwm_dogfood_replay.py replay --out out/dogfood-replay/<replay_id>
+```
+
+## What It Does
+
+| Layer | Current capability |
+| --- | --- |
+| Workflow design | Converts broad objectives into phases, packets, handoffs, gates, budgets, and verification plans. |
+| Packet compiler | Emits first-slice packets, prompts, status, resume files, and hash ledgers. |
+| Runner | Executes approved read-only or pre-isolated packets through bounded adapters. |
+| Review and repair | Records review findings, repair prompts, retry state, and verification evidence. |
+| Fanout | Runs bounded multi-worker slices with deterministic fan-in. |
+| HUD and approvals | Produces read-only status views and hash-bound approval artifacts. |
+| Packaging | Validates repo-local install metadata and adapter registry contracts. |
+| Release gates | Checks compatibility, migration, reviewer evidence, and replayable dogfood status. |
+
+## Safety Model
+
+DWM treats artifacts, not model claims, as the source of truth. A workflow is
+trusted only when the relevant plan, packet, prompt, evidence, review, approval,
+and status artifacts match their hash ledgers.
+
+DWM does not claim unrestricted autonomous execution. Destructive actions,
+network access, dependency installation, secret access, external messaging,
+database migration, production deployment, and history rewrite require explicit
+gates with a safe default.
+
+## Why
+
+Large agentic work fails when plans live only in chat and success is asserted by
+the same model that performed the work. DWM moves the control-plane into files:
+plans, packets, dispatches, worker results, reviews, approvals, runtime states,
+and release gates are explicit, hash-bound, and resumable.
+
+It is deliberately not the same as `workflow-router`. The router chooses the
+smallest suitable workflow. DWM designs and operates a larger workflow when the
+task itself needs dynamic orchestration.
 
 ## Repository layout
 
@@ -207,7 +241,9 @@ python scripts/check_release_text.py .
 python scripts/check_release_text.py --self-test
 ```
 
-For day-to-day product checks, use the DWM CLI surface:
+For day-to-day product checks, use the DWM CLI surface shown in the
+Quickstart. The detailed release command corpus above is intentionally longer:
+it is the reproducible evidence set for the current release.
 
 For hash-bound HUD evidence approval, use:
 
@@ -248,11 +284,9 @@ For deterministic dogfood replay evidence, use:
 python scripts/dwm_dogfood_replay.py replay --out out/dogfood-replay/<replay_id>
 ```
 
+The release command catalog is also available from:
+
 ```bash
-python scripts/dwm.py status --run out/v9/v32-semantic-dogfood
-python scripts/dwm.py next --run out/v9/v32-semantic-dogfood
-python scripts/dwm.py doctor
-python scripts/dwm.py commands --kind product
 python scripts/dwm.py commands --kind release
 ```
 
