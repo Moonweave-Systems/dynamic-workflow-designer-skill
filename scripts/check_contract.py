@@ -1145,6 +1145,51 @@ def require_v25_tasks_decision_summary_consistency() -> None:
         raise SystemExit(f"V25 decision consistency failed: {exc}") from exc
 
 
+def require_v26_attempts_decision_summary_text(summary: dict[str, object], decision_text: str) -> None:
+    normalized_decision_text = " ".join(decision_text.lower().split())
+    required_snippets = [
+        f"decision: {summary['decision']}",
+        f"`suite_id`: `{summary['suite_id']}`",
+        f"`fixture_count`: {summary['fixture_count']}",
+        f"`required_fixture_count`: {summary['required_fixture_count']}",
+        f"`required_passed`: {summary['required_passed']}",
+        f"`passed`: {summary['passed']}",
+        f"`failed`: {summary['failed']}",
+        f"`skipped`: {summary['skipped']}",
+        f"`decision`: `{summary['decision']}`",
+        "python scripts/dwm_benchmark_attempts.py --manifest fixtures/v26/manifest.json --out out/benchmark-attempts/v26-final",
+        "scripted-fixture",
+        "attempt.json",
+        "changes.json",
+        "verification.json",
+        "err_benchmark_attempts_missing_tasks",
+        "err_benchmark_attempts_stale_plan",
+        "err_benchmark_attempts_unsafe_path",
+        "does not claim live model execution",
+    ]
+    missing = [snippet for snippet in required_snippets if snippet not in normalized_decision_text]
+    if missing:
+        raise SystemExit(f"docs/v26-decision.md does not match V26 summary: {missing}")
+
+
+def require_v26_attempts_decision_summary_consistency() -> None:
+    try:
+        completed = run_contract_command(
+            [
+                sys.executable,
+                "scripts/dwm_benchmark_attempts.py",
+                "--manifest",
+                "fixtures/v26/manifest.json",
+                "--out",
+                "out/benchmark-attempts/v26-final",
+            ],
+        )
+        summary = json.loads(completed.stdout)
+        require_v26_attempts_decision_summary_text(summary, (ROOT / "docs" / "v26-decision.md").read_text())
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"V26 decision consistency failed: {exc}") from exc
+
+
 def require_release_commands_pass() -> None:
     commands = [
         [sys.executable, "scripts/quick_validate_skill.py", "."],
@@ -1174,6 +1219,8 @@ def require_release_commands_pass() -> None:
         [sys.executable, "scripts/dwm_live_benchmark.py", "--manifest", "fixtures/v24/manifest.json", "--out", "out/benchmarks-live/v24-final"],
         [sys.executable, "scripts/dwm_benchmark_tasks.py", "--self-test"],
         [sys.executable, "scripts/dwm_benchmark_tasks.py", "--manifest", "fixtures/v25/manifest.json", "--out", "out/benchmark-tasks/v25-final"],
+        [sys.executable, "scripts/dwm_benchmark_attempts.py", "--self-test"],
+        [sys.executable, "scripts/dwm_benchmark_attempts.py", "--manifest", "fixtures/v26/manifest.json", "--out", "out/benchmark-attempts/v26-final"],
         [sys.executable, "scripts/run_workflow.py", "--self-test"],
         [sys.executable, "scripts/run_workflow.py", "--manifest", "fixtures/v3/manifest.json", "--out", "out/v3/final"],
         [sys.executable, "scripts/orchestrate_workflow.py", "--self-test"],
@@ -2281,6 +2328,38 @@ Overclaims execution: no
     else:
         raise SystemExit("self-test failed: stale V25 decision summary passed")
 
+    v26_summary = {
+        "suite_id": "v26-final",
+        "fixture_count": 5,
+        "required_fixture_count": 5,
+        "required_passed": 5,
+        "passed": 5,
+        "failed": 0,
+        "skipped": 0,
+        "decision": "keep",
+    }
+    good_v26_decision = (
+        "Decision: keep\n"
+        "python scripts/dwm_benchmark_attempts.py --manifest fixtures/v26/manifest.json --out out/benchmark-attempts/v26-final\n"
+        "- `suite_id`: `v26-final`\n"
+        "- `fixture_count`: 5\n"
+        "- `required_fixture_count`: 5\n"
+        "- `required_passed`: 5\n"
+        "- `passed`: 5\n"
+        "- `failed`: 0\n"
+        "- `skipped`: 0\n"
+        "- `decision`: `keep`\n"
+        "The accepted suite covers scripted-fixture, attempt.json, changes.json, verification.json, ERR_BENCHMARK_ATTEMPTS_MISSING_TASKS, ERR_BENCHMARK_ATTEMPTS_STALE_PLAN, and ERR_BENCHMARK_ATTEMPTS_UNSAFE_PATH.\n"
+        "This decision does not claim live model execution.\n"
+    )
+    require_v26_attempts_decision_summary_text(v26_summary, good_v26_decision)
+    try:
+        require_v26_attempts_decision_summary_text(v26_summary, good_v26_decision.replace("`passed`: 5", "`passed`: 4", 1))
+    except SystemExit:
+        pass
+    else:
+        raise SystemExit("self-test failed: stale V26 decision summary passed")
+
     print("contract self-test: pass")
 
 
@@ -2789,6 +2868,20 @@ def main() -> None:
         ],
     )
     require_terms(
+        "docs/v26-benchmark-attempt-harness-spec.md",
+        [
+            "status: implemented first benchmark attempt harness in",
+            "scripted-fixture",
+            "attempt.json",
+            "changes.json",
+            "verification.json",
+            "ledger.json",
+            "err_benchmark_attempts_missing_tasks",
+            "err_benchmark_attempts_stale_plan",
+            "err_benchmark_attempts_unsafe_path",
+        ],
+    )
+    require_terms(
         "docs/v7.5-decision.md",
         [
             "decision: keep",
@@ -2837,7 +2930,7 @@ def main() -> None:
             "python scripts/dwm.py commands --kind release --json",
             "`status`: `workflow-complete`",
             "`doctor_ok`: `true`",
-            "`release_command_count`: `58`",
+            "`release_command_count`: `60`",
             "does not claim workflow execution",
         ],
     )
@@ -2964,6 +3057,7 @@ def main() -> None:
     require_v23_decision_summary_consistency()
     require_v24_decision_summary_consistency()
     require_v25_tasks_decision_summary_consistency()
+    require_v26_attempts_decision_summary_consistency()
     print("contract smoke: pass")
 
 

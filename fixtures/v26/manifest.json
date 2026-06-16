@@ -1,0 +1,48 @@
+{
+  "fixtures": [
+    {
+      "expected_solved_count": 6,
+      "expected_status": "attempted",
+      "expected_task_count": 6,
+      "id": "scripted-fixture-attempts-solved",
+      "kind": "attempt-suite",
+      "required": true
+    },
+    {
+      "expected_status": "verified",
+      "expected_task_count": 6,
+      "id": "scripted-fixture-attempt-ledger-verified",
+      "kind": "verify-ledger",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_BENCHMARK_ATTEMPTS_MISSING_TASKS",
+      "expected_status": "blocked",
+      "id": "attempts-missing-tasks-blocked",
+      "kind": "missing-tasks",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_BENCHMARK_ATTEMPTS_STALE_PLAN",
+      "expected_status": "blocked",
+      "id": "attempts-stale-plan-blocked",
+      "kind": "stale-plan",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_BENCHMARK_ATTEMPTS_UNSAFE_PATH",
+      "expected_status": "blocked",
+      "id": "attempts-unsafe-path-blocked",
+      "kind": "unsafe-path",
+      "required": true
+    }
+  ],
+  "required_fixture_ids": [
+    "scripted-fixture-attempts-solved",
+    "scripted-fixture-attempt-ledger-verified",
+    "attempts-missing-tasks-blocked",
+    "attempts-stale-plan-blocked",
+    "attempts-unsafe-path-blocked"
+  ],
+  "suite_id": "v26-benchmark-attempt-harness"
+}

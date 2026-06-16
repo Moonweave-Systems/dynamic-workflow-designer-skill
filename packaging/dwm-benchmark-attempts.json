@@ -1,0 +1,76 @@
+{
+  "adapter": "scripted-fixture",
+  "schema_version": "1.0",
+  "tasks": [
+    {
+      "id": "failing-test-fix",
+      "changes": [
+        {
+          "path": "app.py",
+          "replace": "return a - b",
+          "with": "return a + b"
+        }
+      ]
+    },
+    {
+      "id": "small-refactor",
+      "changes": [
+        {
+          "path": "names.py",
+          "replace": "def display_user(name: str) -> str:\n    return name.strip().title()\n\n\ndef display_owner(name: str) -> str:\n    return name.strip().title()\n",
+          "with": "def normalize_name(name: str) -> str:\n    return name.strip().title()\n\n\ndef display_user(name: str) -> str:\n    return normalize_name(name)\n\n\ndef display_owner(name: str) -> str:\n    return normalize_name(name)\n"
+        }
+      ]
+    },
+    {
+      "id": "auth-permission-audit",
+      "changes": [
+        {
+          "path": "permissions.py",
+          "replace": "def can_access_admin_panel(user: object) -> bool:\n    return True\n",
+          "with": "def can_access_admin_panel(user: object) -> bool:\n    role = getattr(user, \"role\", None)\n    return role == \"admin\"\n"
+        }
+      ]
+    },
+    {
+      "id": "ui-render-regression",
+      "changes": [
+        {
+          "path": "dashboard.html",
+          "replace": "<main><h1>Dashboard</h1></main>",
+          "with": "<main data-testid=\"dashboard\"><h1>Dashboard</h1></main>"
+        }
+      ]
+    },
+    {
+      "id": "docs-code-consistency",
+      "changes": [
+        {
+          "path": "docs/api.md",
+          "replace": "delete_user(user_id)",
+          "with": "remove_user(user_id)"
+        }
+      ]
+    },
+    {
+      "id": "multi-file-migration",
+      "changes": [
+        {
+          "path": "config.json",
+          "replace": "legacy_id",
+          "with": "stable_id"
+        },
+        {
+          "path": "model.py",
+          "replace": "legacy_id",
+          "with": "stable_id"
+        },
+        {
+          "path": "README.md",
+          "replace": "legacy_id",
+          "with": "stable_id"
+        }
+      ]
+    }
+  ]
+}
