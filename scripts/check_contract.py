@@ -559,6 +559,46 @@ def require_v11_decision_summary_consistency() -> None:
         raise SystemExit(f"V11 decision consistency failed: {exc}") from exc
 
 
+def require_v13_decision_summary_text(summary: dict[str, object], decision_text: str) -> None:
+    normalized_decision_text = " ".join(decision_text.lower().split())
+    required_snippets = [
+        f"decision: {summary['decision']}",
+        f"`suite_id`: `{summary['suite_id']}`",
+        f"`fixture_count`: {summary['fixture_count']}",
+        f"`required_fixture_count`: {summary['required_fixture_count']}",
+        f"`required_passed`: {summary['required_passed']}",
+        f"`passed`: {summary['passed']}",
+        f"`failed`: {summary['failed']}",
+        f"`skipped`: {summary['skipped']}",
+        f"`decision`: `{summary['decision']}`",
+        "python scripts/dwm_runner.py --manifest fixtures/v13/manifest.json --out out/v13/final",
+        "does not claim live codex execution",
+        "worktree creation",
+        "durable session attach",
+    ]
+    missing = [snippet for snippet in required_snippets if snippet not in normalized_decision_text]
+    if missing:
+        raise SystemExit(f"docs/v13-decision.md does not match V13 summary: {missing}")
+
+
+def require_v13_decision_summary_consistency() -> None:
+    try:
+        completed = run_contract_command(
+            [
+                sys.executable,
+                "scripts/dwm_runner.py",
+                "--manifest",
+                "fixtures/v13/manifest.json",
+                "--out",
+                "out/v13/final",
+            ],
+        )
+        summary = json.loads(completed.stdout)
+        require_v13_decision_summary_text(summary, (ROOT / "docs" / "v13-decision.md").read_text())
+    except json.JSONDecodeError as exc:
+        raise SystemExit(f"V13 decision consistency failed: {exc}") from exc
+
+
 def require_release_commands_pass() -> None:
     commands = [
         [sys.executable, "scripts/quick_validate_skill.py", "."],
@@ -567,6 +607,7 @@ def require_release_commands_pass() -> None:
         [sys.executable, "scripts/compile_workflow.py", "--self-test"],
         [sys.executable, "scripts/execute_packet.py", "--self-test"],
         [sys.executable, "scripts/execute_packet.py", "--manifest", "fixtures/v2.5/manifest.json", "--out", "out/v2.5/final"],
+        [sys.executable, "scripts/dwm_runner.py", "--self-test"],
         [sys.executable, "scripts/run_workflow.py", "--self-test"],
         [sys.executable, "scripts/run_workflow.py", "--manifest", "fixtures/v3/manifest.json", "--out", "out/v3/final"],
         [sys.executable, "scripts/orchestrate_workflow.py", "--self-test"],
@@ -1235,6 +1276,37 @@ Overclaims execution: no
     else:
         raise SystemExit("self-test failed: stale V11 decision summary passed")
 
+    v13_summary = {
+        "suite_id": "final",
+        "fixture_count": 4,
+        "required_fixture_count": 4,
+        "required_passed": 4,
+        "passed": 4,
+        "failed": 0,
+        "skipped": 0,
+        "decision": "keep",
+    }
+    good_v13_decision = (
+        "Decision: keep\n"
+        "python scripts/dwm_runner.py --manifest fixtures/v13/manifest.json --out out/v13/final\n"
+        "- `suite_id`: `final`\n"
+        "- `fixture_count`: 4\n"
+        "- `required_fixture_count`: 4\n"
+        "- `required_passed`: 4\n"
+        "- `passed`: 4\n"
+        "- `failed`: 0\n"
+        "- `skipped`: 0\n"
+        "- `decision`: `keep`\n"
+        "This decision does not claim live Codex execution, worktree creation, durable session attach, or multi-worker fanout.\n"
+    )
+    require_v13_decision_summary_text(v13_summary, good_v13_decision)
+    try:
+        require_v13_decision_summary_text(v13_summary, good_v13_decision.replace("`passed`: 4", "`passed`: 3", 1))
+    except SystemExit:
+        pass
+    else:
+        raise SystemExit("self-test failed: stale V13 decision summary passed")
+
     print("contract self-test: pass")
 
 
@@ -1424,6 +1496,7 @@ def main() -> None:
             "first operator guidance slice implemented",
             "planned v12",
             "planned v13",
+            "mvp implemented",
             "planned v20",
             "docs/v12-to-v20-final-roadmap.md",
             "omx optional",
@@ -1433,7 +1506,7 @@ def main() -> None:
     require_terms(
         "docs/v12-to-v20-final-roadmap.md",
         [
-            "status: v12 implemented; v13-v20 planned.",
+            "status: v12-v13 implemented; v14-v20 planned.",
             "dwm core",
             "dwm runner",
             "codex cli workers",
@@ -1453,8 +1526,20 @@ def main() -> None:
             "## safety and verification gates",
         ],
     )
-    for spec_path in [
+    require_terms(
         "docs/v13-dwm-runner-mvp-spec.md",
+        [
+            "status: implemented in `scripts/dwm_runner.py`.",
+            "## research and prior art",
+            "## product position and non-goals",
+            "## workflow architecture",
+            "## execution model",
+            "## safety and verification gates",
+            "## evaluation fixtures",
+            "## release plan",
+        ],
+    )
+    for spec_path in [
         "docs/v14-session-worktree-runtime-spec.md",
         "docs/v15-runtime-review-repair-spec.md",
         "docs/v16-multi-worker-fanout-spec.md",
@@ -1525,7 +1610,7 @@ def main() -> None:
             "python scripts/dwm.py commands --kind release --json",
             "`status`: `workflow-complete`",
             "`doctor_ok`: `true`",
-            "`release_command_count`: `27`",
+            "`release_command_count`: `29`",
             "does not claim workflow execution",
         ],
     )
@@ -1638,6 +1723,7 @@ def main() -> None:
     require_v9_decision_summary_consistency()
     require_v10_decision_summary_consistency()
     require_v11_decision_summary_consistency()
+    require_v13_decision_summary_consistency()
     print("contract smoke: pass")
 
 

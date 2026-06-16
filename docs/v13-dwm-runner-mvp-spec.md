@@ -1,6 +1,6 @@
 # V13 DWM Runner MVP Spec
 
-Status: planned; not implemented.
+Status: implemented in `scripts/dwm_runner.py`.
 
 ## Research And Prior Art
 
@@ -29,7 +29,7 @@ Non-goals:
 Add a runner entry:
 
 ```bash
-python scripts/dwm_runner.py run --packet out/<run>/packets/<packet>.json --out out/runner/<run_id>
+python scripts/dwm_runner.py run --run out/v1/<run_id> --out out/v13/<run_id>
 ```
 
 Runner output should include:
@@ -46,10 +46,11 @@ Runner output should include:
 
 ## Execution Model
 
-The MVP runner may call Codex CLI only through an explicit allowlisted command
-shape planned by V12. It must capture outputs before DWM Core decides whether
-the run is trusted. Write-mode execution is allowed only when the input run
-already points at an isolated worktree prepared outside V13.
+The MVP runner calls V12 command planning before any backend action. It may run
+only dry-run evidence preparation or allowlisted Codex fixture commands. It
+must capture outputs before DWM Core decides whether the run is trusted.
+Write-mode execution remains blocked in V13 unless a later slice adds an
+explicit pre-isolated worktree contract.
 
 ## Safety And Verification Gates
 
@@ -63,11 +64,12 @@ rewrite, deletion, and external messaging require human gates.
 - positive: dry-run read-only packet records evidence,
 - positive: Codex auth failure records blocked evidence,
 - negative: stale packet refuses execution,
-- negative: write packet without worktree refuses execution.
+- negative: write-risk packet refuses execution.
 
 ## Release Plan
 
 1. Add `scripts/dwm_runner.py` with dry-run and Codex-fixture modes.
 2. Add manifest fixtures under `fixtures/v13/`.
 3. Add `docs/v13-decision.md` from generated summary.
-4. Keep live Codex execution as optional smoke evidence until auth is stable.
+4. Keep live Codex execution, worktree creation, and session attachment out of
+   V13.

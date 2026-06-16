@@ -106,6 +106,7 @@ Use $dynamic-workflow-designer to plan a 500-file migration with verification ga
 ├── docs/v12-to-v20-final-roadmap.md   # planned final roadmap
 ├── docs/v12-adapter-command-planner-spec.md
 ├── docs/v13-dwm-runner-mvp-spec.md
+├── docs/v13-decision.md
 ├── docs/v14-session-worktree-runtime-spec.md
 ├── docs/v15-runtime-review-repair-spec.md
 ├── docs/v16-multi-worker-fanout-spec.md

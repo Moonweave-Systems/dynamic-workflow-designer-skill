@@ -38,7 +38,7 @@ entrypoint remains `dynamic-workflow-designer`.
 | Human gate resolution | consume explicit human approval and complete human-gated frontier | first resolution slice implemented |
 | Product surface | plugin, CLI, dashboard, and release packaging | first operator guidance slice implemented |
 | Adapter command planner | generate exact next adapter commands without execution | planned V12, implemented |
-| DWM Runner | execute read-only or pre-isolated DWM-approved packets through Codex CLI with evidence | planned V13 |
+| DWM Runner | execute read-only or pre-isolated DWM-approved packets through Codex CLI with evidence | planned V13, MVP implemented |
 | Session/worktree runtime | durable sessions, worktree isolation, logs, and resume | planned V14 |
 | Runtime review/repair | runner-backed review, repair, and retry loops | planned V15 |
 | Multi-worker fanout | bounded parallel Codex workers and deterministic fan-in | planned V16 |
