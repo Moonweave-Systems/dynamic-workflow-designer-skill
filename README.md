@@ -169,6 +169,8 @@ task itself needs dynamic orchestration.
 ├── docs/v23-decision.md
 ├── docs/v24-live-benchmark-evidence-spec.md
 ├── docs/v24-decision.md
+├── docs/v25-benchmark-task-materializer-spec.md
+├── docs/v25-decision.md
 ├── docs/github-research.md          # Prior-art survey and import decisions
 ├── docs/dwm-branding.md             # Product naming and compatibility rules
 ├── assets/dwm-hero.svg              # README hero image
@@ -238,6 +240,8 @@ python scripts/dwm_benchmark.py --self-test
 python scripts/dwm_benchmark.py --manifest fixtures/v23/manifest.json --out out/benchmarks/v23-final
 python scripts/dwm_live_benchmark.py --self-test
 python scripts/dwm_live_benchmark.py --manifest fixtures/v24/manifest.json --out out/benchmarks-live/v24-final
+python scripts/dwm_benchmark_tasks.py --self-test
+python scripts/dwm_benchmark_tasks.py --manifest fixtures/v25/manifest.json --out out/benchmark-tasks/v25-final
 python scripts/run_workflow.py --self-test
 python scripts/run_workflow.py --manifest fixtures/v3/manifest.json --out out/v3/final
 python scripts/orchestrate_workflow.py --self-test
@@ -289,6 +293,13 @@ For V24 live benchmark evidence capture, use:
 ```bash
 python scripts/dwm_live_benchmark.py capture --out out/benchmarks-live/<capture_id>
 python scripts/dwm_live_benchmark.py adapter-check --mode codex-cli --adapter-command codex
+```
+
+For V25 benchmark task materialization, use:
+
+```bash
+python scripts/dwm_benchmark_tasks.py materialize --out out/benchmark-tasks/<suite_id>
+python scripts/dwm_benchmark_tasks.py verify --out out/benchmark-tasks/<suite_id>
 ```
 
 For hash-bound HUD evidence approval, use:

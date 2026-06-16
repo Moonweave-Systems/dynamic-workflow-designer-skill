@@ -1,0 +1,47 @@
+{
+  "fixtures": [
+    {
+      "expected_status": "materialized",
+      "expected_task_count": 6,
+      "id": "benchmark-tasks-materialized",
+      "kind": "materialize-suite",
+      "required": true
+    },
+    {
+      "expected_status": "verified",
+      "expected_task_count": 6,
+      "id": "benchmark-tasks-initial-verified",
+      "kind": "verify-initial",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_BENCHMARK_TASKS_CORPUS_MISMATCH",
+      "expected_status": "blocked",
+      "id": "benchmark-tasks-corpus-mismatch-blocked",
+      "kind": "corpus-mismatch",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_BENCHMARK_TASKS_UNSAFE_PATH",
+      "expected_status": "blocked",
+      "id": "benchmark-tasks-unsafe-path-blocked",
+      "kind": "unsafe-path",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_BENCHMARK_TASKS_STALE_TEMPLATE",
+      "expected_status": "blocked",
+      "id": "benchmark-tasks-stale-template-blocked",
+      "kind": "stale-template",
+      "required": true
+    }
+  ],
+  "required_fixture_ids": [
+    "benchmark-tasks-materialized",
+    "benchmark-tasks-initial-verified",
+    "benchmark-tasks-corpus-mismatch-blocked",
+    "benchmark-tasks-unsafe-path-blocked",
+    "benchmark-tasks-stale-template-blocked"
+  ],
+  "suite_id": "v25-benchmark-task-materializer"
+}

@@ -1,0 +1,141 @@
+{
+  "schema_version": "1.0",
+  "tasks": [
+    {
+      "id": "failing-test-fix",
+      "prompt": "Fix the failing add() behavior without changing the public function name.",
+      "files": [
+        {
+          "path": "app.py",
+          "content": "def add(a: int, b: int) -> int:\n    return a - b\n"
+        },
+        {
+          "path": "tests/test_app.py",
+          "content": "from app import add\n\n\ndef test_adds_numbers() -> None:\n    assert add(2, 3) == 5\n"
+        }
+      ],
+      "verifier_checks": [
+        {
+          "id": "add-uses-plus",
+          "path": "app.py",
+          "text": "return a + b",
+          "type": "file_contains"
+        }
+      ]
+    },
+    {
+      "id": "small-refactor",
+      "prompt": "Extract a shared normalize_name() helper while preserving the visible output.",
+      "files": [
+        {
+          "path": "names.py",
+          "content": "def display_user(name: str) -> str:\n    return name.strip().title()\n\n\ndef display_owner(name: str) -> str:\n    return name.strip().title()\n"
+        }
+      ],
+      "verifier_checks": [
+        {
+          "id": "helper-extracted",
+          "path": "names.py",
+          "text": "def normalize_name",
+          "type": "file_contains"
+        }
+      ]
+    },
+    {
+      "id": "auth-permission-audit",
+      "prompt": "Restrict admin_panel access to admin users and keep a readable permission boundary.",
+      "files": [
+        {
+          "path": "permissions.py",
+          "content": "def can_access_admin_panel(user: object) -> bool:\n    return True\n"
+        }
+      ],
+      "verifier_checks": [
+        {
+          "id": "admin-boundary-present",
+          "path": "permissions.py",
+          "text": "role == \"admin\"",
+          "type": "file_contains"
+        }
+      ]
+    },
+    {
+      "id": "ui-render-regression",
+      "prompt": "Restore the dashboard landmark test id without changing the heading text.",
+      "files": [
+        {
+          "path": "dashboard.html",
+          "content": "<main><h1>Dashboard</h1></main>\n"
+        }
+      ],
+      "verifier_checks": [
+        {
+          "id": "dashboard-testid-present",
+          "path": "dashboard.html",
+          "text": "data-testid=\"dashboard\"",
+          "type": "file_contains"
+        }
+      ]
+    },
+    {
+      "id": "docs-code-consistency",
+      "prompt": "Make the API docs match the exported user removal function.",
+      "files": [
+        {
+          "path": "users.py",
+          "content": "def remove_user(user_id: str) -> None:\n    pass\n"
+        },
+        {
+          "path": "docs/api.md",
+          "content": "# API\n\nUse `delete_user(user_id)` to remove a user.\n"
+        }
+      ],
+      "verifier_checks": [
+        {
+          "id": "docs-use-real-function",
+          "path": "docs/api.md",
+          "text": "remove_user(user_id)",
+          "type": "file_contains"
+        }
+      ]
+    },
+    {
+      "id": "multi-file-migration",
+      "prompt": "Complete the rename from legacy_id to stable_id across code, config, and docs.",
+      "files": [
+        {
+          "path": "config.json",
+          "content": "{\n  \"field\": \"legacy_id\"\n}\n"
+        },
+        {
+          "path": "model.py",
+          "content": "def read_identifier(row: dict[str, str]) -> str:\n    return row[\"legacy_id\"]\n"
+        },
+        {
+          "path": "README.md",
+          "content": "Rows are keyed by `legacy_id`.\n"
+        }
+      ],
+      "verifier_checks": [
+        {
+          "id": "config-renamed",
+          "path": "config.json",
+          "text": "stable_id",
+          "type": "file_contains"
+        },
+        {
+          "id": "code-renamed",
+          "path": "model.py",
+          "text": "stable_id",
+          "type": "file_contains"
+        },
+        {
+          "id": "docs-renamed",
+          "path": "README.md",
+          "text": "stable_id",
+          "type": "file_contains"
+        }
+      ]
+    }
+  ]
+}

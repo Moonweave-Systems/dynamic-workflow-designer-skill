@@ -5,7 +5,7 @@
     "shell"
   ],
   "cli_entrypoint": "scripts/dwm.py",
-  "contract_version": "24.0.0",
+  "contract_version": "25.0.0",
   "core_artifacts": [
     "SKILL.md",
     "scripts/dwm.py",
@@ -15,7 +15,9 @@
     "docs/v12-to-v20-final-roadmap.md",
     "docs/v21-product-shell-spec.md",
     "packaging/dwm-benchmarks.json",
+    "packaging/dwm-benchmark-tasks.json",
     "packaging/dwm-roles.json",
+    "scripts/dwm_benchmark_tasks.py",
     "scripts/dwm_benchmark.py",
     "scripts/dwm_live_benchmark.py",
     "scripts/dwm_roles.py"

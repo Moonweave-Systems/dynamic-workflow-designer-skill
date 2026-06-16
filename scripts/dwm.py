@@ -61,6 +61,8 @@ RELEASE_COMMANDS = [
     "python scripts/dwm_benchmark.py --manifest fixtures/v23/manifest.json --out out/benchmarks/v23-final",
     "python scripts/dwm_live_benchmark.py --self-test",
     "python scripts/dwm_live_benchmark.py --manifest fixtures/v24/manifest.json --out out/benchmarks-live/v24-final",
+    "python scripts/dwm_benchmark_tasks.py --self-test",
+    "python scripts/dwm_benchmark_tasks.py --manifest fixtures/v25/manifest.json --out out/benchmark-tasks/v25-final",
     "python scripts/run_workflow.py --self-test",
     "python scripts/run_workflow.py --manifest fixtures/v3/manifest.json --out out/v3/final",
     "python scripts/orchestrate_workflow.py --self-test",
@@ -130,8 +132,11 @@ BASE_REQUIRED_PATHS = [
     "docs/v23-harness-benchmark-spec.md",
     "docs/v24-decision.md",
     "docs/v24-live-benchmark-evidence-spec.md",
+    "docs/v25-decision.md",
+    "docs/v25-benchmark-task-materializer-spec.md",
     "packaging/dwm-adapters.json",
     "packaging/dwm-benchmarks.json",
+    "packaging/dwm-benchmark-tasks.json",
     "packaging/dwm-package.json",
     "packaging/dwm-roles.json",
     "scripts/dwm.py",
@@ -145,6 +150,7 @@ BASE_REQUIRED_PATHS = [
     "scripts/dwm_roles.py",
     "scripts/dwm_benchmark.py",
     "scripts/dwm_live_benchmark.py",
+    "scripts/dwm_benchmark_tasks.py",
 ]
 
 

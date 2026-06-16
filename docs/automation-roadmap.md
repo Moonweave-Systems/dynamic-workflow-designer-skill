@@ -619,7 +619,9 @@ The planned roadmap splits the remaining product into versioned specs:
 - V23 harness benchmark:
   `docs/v23-harness-benchmark-spec.md`,
 - V24 live benchmark evidence:
-  `docs/v24-live-benchmark-evidence-spec.md`.
+  `docs/v24-live-benchmark-evidence-spec.md`,
+- V25 benchmark task materializer:
+  `docs/v25-benchmark-task-materializer-spec.md`.
 
 These specs define the intended path to an independent DWM product that can use
 Codex CLI directly through DWM Runner while keeping OMX optional rather than a
