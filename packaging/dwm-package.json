@@ -5,7 +5,7 @@
     "shell"
   ],
   "cli_entrypoint": "scripts/dwm.py",
-  "contract_version": "26.0.0",
+  "contract_version": "27.0.0",
   "core_artifacts": [
     "SKILL.md",
     "scripts/dwm.py",
@@ -21,6 +21,7 @@
     "scripts/dwm_benchmark_attempts.py",
     "scripts/dwm_benchmark_tasks.py",
     "scripts/dwm_benchmark.py",
+    "scripts/dwm_adapter_smoke.py",
     "scripts/dwm_live_benchmark.py",
     "scripts/dwm_roles.py"
   ],

@@ -1,0 +1,55 @@
+{
+  "fixtures": [
+    {
+      "adapter_command": "python",
+      "expected_status": "captured",
+      "id": "adapter-smoke-local-captured",
+      "kind": "adapter-smoke",
+      "required": true,
+      "task_id": "failing-test-fix"
+    },
+    {
+      "adapter_command": "__dwm_missing_adapter__",
+      "expected_error": "ERR_ADAPTER_SMOKE_UNAVAILABLE",
+      "expected_status": "skipped",
+      "id": "adapter-smoke-missing-skipped",
+      "kind": "adapter-smoke",
+      "required": true,
+      "task_id": "failing-test-fix"
+    },
+    {
+      "adapter_command": "../codex",
+      "expected_error": "ERR_ADAPTER_SMOKE_UNSAFE_COMMAND",
+      "expected_status": "blocked",
+      "id": "adapter-smoke-unsafe-command-blocked",
+      "kind": "unsafe-command",
+      "required": true,
+      "task_id": "failing-test-fix"
+    },
+    {
+      "expected_error": "ERR_ADAPTER_SMOKE_UNKNOWN_TASK",
+      "expected_status": "blocked",
+      "id": "adapter-smoke-unknown-task-blocked",
+      "kind": "unknown-task",
+      "required": true,
+      "task_id": "missing-task"
+    },
+    {
+      "expected_error": "ERR_ADAPTER_SMOKE_STALE_TEMPLATE",
+      "expected_status": "blocked",
+      "expected_template_hash": "stale-template-hash",
+      "id": "adapter-smoke-stale-template-blocked",
+      "kind": "stale-template",
+      "required": true,
+      "task_id": "failing-test-fix"
+    }
+  ],
+  "required_fixture_ids": [
+    "adapter-smoke-local-captured",
+    "adapter-smoke-missing-skipped",
+    "adapter-smoke-unsafe-command-blocked",
+    "adapter-smoke-unknown-task-blocked",
+    "adapter-smoke-stale-template-blocked"
+  ],
+  "suite_id": "v27-adapter-smoke"
+}
