@@ -1,0 +1,51 @@
+{
+  "fixtures": [
+    {
+      "adapter_command": "python",
+      "expected_status": "ready-for-human-run",
+      "id": "runner-preflight-ready",
+      "kind": "preflight-ready",
+      "required": true,
+      "task_id": "failing-test-fix"
+    },
+    {
+      "adapter_command": "__dwm_missing_adapter__",
+      "expected_error": "ERR_LIVE_RUNNER_PLAN_SKIPPED",
+      "expected_status": "skipped",
+      "id": "runner-preflight-skipped-plan",
+      "kind": "preflight-skipped",
+      "required": true,
+      "task_id": "failing-test-fix"
+    },
+    {
+      "expected_error": "ERR_LIVE_RUNNER_STALE_PLAN",
+      "expected_status": "blocked",
+      "expected_plan_hash": "stale-plan-hash",
+      "id": "runner-preflight-stale-plan-blocked",
+      "kind": "stale-plan",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_LIVE_RUNNER_POLICY_BLOCKED",
+      "expected_status": "blocked",
+      "id": "runner-preflight-policy-blocked",
+      "kind": "policy-blocked",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_LIVE_RUNNER_ARTIFACT_MISSING",
+      "expected_status": "blocked",
+      "id": "runner-preflight-missing-artifact-blocked",
+      "kind": "missing-artifact",
+      "required": true
+    }
+  ],
+  "required_fixture_ids": [
+    "runner-preflight-ready",
+    "runner-preflight-skipped-plan",
+    "runner-preflight-stale-plan-blocked",
+    "runner-preflight-policy-blocked",
+    "runner-preflight-missing-artifact-blocked"
+  ],
+  "suite_id": "v29-live-runner-preflight"
+}

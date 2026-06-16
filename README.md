@@ -177,6 +177,8 @@ task itself needs dynamic orchestration.
 ├── docs/v27-decision.md
 ├── docs/v28-live-attempt-planner-spec.md
 ├── docs/v28-decision.md
+├── docs/v29-live-runner-preflight-spec.md
+├── docs/v29-decision.md
 ├── docs/github-research.md          # Prior-art survey and import decisions
 ├── docs/dwm-branding.md             # Product naming and compatibility rules
 ├── assets/dwm-hero.svg              # README hero image
@@ -254,6 +256,8 @@ python scripts/dwm_adapter_smoke.py --self-test
 python scripts/dwm_adapter_smoke.py --manifest fixtures/v27/manifest.json --out out/adapter-smoke/v27-final
 python scripts/dwm_live_attempt_plan.py --self-test
 python scripts/dwm_live_attempt_plan.py --manifest fixtures/v28/manifest.json --out out/live-attempt-plans/v28-final
+python scripts/dwm_live_runner_preflight.py --self-test
+python scripts/dwm_live_runner_preflight.py --manifest fixtures/v29/manifest.json --out out/live-runner-preflight/v29-final
 python scripts/run_workflow.py --self-test
 python scripts/run_workflow.py --manifest fixtures/v3/manifest.json --out out/v3/final
 python scripts/orchestrate_workflow.py --self-test
@@ -331,6 +335,12 @@ For V28 live attempt command planning, use:
 
 ```bash
 python scripts/dwm_live_attempt_plan.py plan --adapter-command codex --task-id failing-test-fix --out out/live-attempt-plans/<plan_id>
+```
+
+For V29 live runner preflight, use:
+
+```bash
+python scripts/dwm_live_runner_preflight.py preflight --plan out/live-attempt-plans/<plan_id> --out out/live-runner-preflight/<preflight_id>
 ```
 
 For hash-bound HUD evidence approval, use:

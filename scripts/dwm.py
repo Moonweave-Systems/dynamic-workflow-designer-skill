@@ -69,6 +69,8 @@ RELEASE_COMMANDS = [
     "python scripts/dwm_adapter_smoke.py --manifest fixtures/v27/manifest.json --out out/adapter-smoke/v27-final",
     "python scripts/dwm_live_attempt_plan.py --self-test",
     "python scripts/dwm_live_attempt_plan.py --manifest fixtures/v28/manifest.json --out out/live-attempt-plans/v28-final",
+    "python scripts/dwm_live_runner_preflight.py --self-test",
+    "python scripts/dwm_live_runner_preflight.py --manifest fixtures/v29/manifest.json --out out/live-runner-preflight/v29-final",
     "python scripts/run_workflow.py --self-test",
     "python scripts/run_workflow.py --manifest fixtures/v3/manifest.json --out out/v3/final",
     "python scripts/orchestrate_workflow.py --self-test",
@@ -146,6 +148,8 @@ BASE_REQUIRED_PATHS = [
     "docs/v27-adapter-smoke-spec.md",
     "docs/v28-decision.md",
     "docs/v28-live-attempt-planner-spec.md",
+    "docs/v29-decision.md",
+    "docs/v29-live-runner-preflight-spec.md",
     "packaging/dwm-benchmark-attempts.json",
     "packaging/dwm-adapters.json",
     "packaging/dwm-benchmarks.json",
@@ -167,6 +171,7 @@ BASE_REQUIRED_PATHS = [
     "scripts/dwm_benchmark_attempts.py",
     "scripts/dwm_adapter_smoke.py",
     "scripts/dwm_live_attempt_plan.py",
+    "scripts/dwm_live_runner_preflight.py",
 ]
 
 
