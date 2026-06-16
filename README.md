@@ -1,7 +1,7 @@
 # DWM
 
 > Deterministic Workflow Machine: a local control-plane for agentic work that
-> turns large goals into hashed packets, evidence, reviews, gates, and
+> turns large goals into hashed plans, packets, evidence, reviews, gates, and
 > resumable runtime state.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-4F46E5.svg)](LICENSE)
@@ -11,11 +11,11 @@
 
 ![DWM hero](assets/dwm-hero.svg)
 
-**DWM** stands for **Deterministic Workflow Machine**. It is the product name
-for this repo's workflow control-plane. The installed Codex skill remains named
-`dynamic-workflow-designer` for compatibility, but the system now goes beyond a
-single prompt skill: it designs, compiles, dispatches, records, reviews,
-ingests, resumes, and release-checks workflow artifacts.
+**DWM** is a deterministic workflow control-plane for Codex-era agentic work.
+The installed skill remains named `dynamic-workflow-designer` for compatibility,
+but this repository now provides a broader product surface: workflow design,
+packet compilation, bounded runner gates, review/repair evidence, live scoring
+artifacts, and release checks.
 
 ## Quickstart
 
@@ -25,7 +25,7 @@ Use the skill when a task is too large or risky for one normal agent turn:
 Use $dynamic-workflow-designer to design a workflow for auditing every route for missing authorization.
 ```
 
-Then inspect the deterministic product surface:
+Inspect the product surface:
 
 ```bash
 python scripts/dwm.py status --run out/v9/v32-semantic-dogfood
@@ -34,25 +34,30 @@ python scripts/dwm.py doctor
 python scripts/dwm.py commands --kind product
 ```
 
-Run the current release gate:
+Run the release contract:
 
 ```bash
 python scripts/check_contract.py
-python scripts/dwm_dogfood_replay.py replay --out out/dogfood-replay/<replay_id>
 ```
 
-## What It Does
+For the full release command corpus, use:
 
-| Layer | Current capability |
+```bash
+python scripts/dwm.py commands --kind release
+```
+
+## Current Surface
+
+| Layer | Capability |
 | --- | --- |
-| Workflow design | Converts broad objectives into phases, packets, handoffs, gates, budgets, and verification plans. |
-| Packet compiler | Emits first-slice packets, prompts, status, resume files, and hash ledgers. |
-| Runner | Executes approved read-only or pre-isolated packets through bounded adapters. |
-| Review and repair | Records review findings, repair prompts, retry state, and verification evidence. |
+| Design | Converts broad objectives into phases, workers, handoffs, gates, budgets, and verification plans. |
+| Compile | Emits first-slice packets, prompts, status, resume files, and hash ledgers. |
+| Run | Executes approved read-only or pre-isolated packets through bounded adapters. |
+| Review | Records review findings, repair prompts, retry state, and verification evidence. |
 | Fanout | Runs bounded multi-worker slices with deterministic fan-in. |
-| HUD and approvals | Produces read-only status views and hash-bound approval artifacts. |
-| Packaging | Validates repo-local install metadata and adapter registry contracts. |
-| Release gates | Checks compatibility, migration, reviewer evidence, and replayable dogfood status. |
+| HUD | Produces read-only status views and hash-bound approval artifacts. |
+| Live evidence | Plans adapter commands, preflights them, ingests receipts, judges receipts, scores verified evidence, and reports graph-ready metrics. |
+| Packaging | Validates repo-local install metadata, adapter registries, compatibility, and release evidence. |
 
 ## Safety Model
 
@@ -65,254 +70,41 @@ network access, dependency installation, secret access, external messaging,
 database migration, production deployment, and history rewrite require explicit
 gates with a safe default.
 
-## Why
+## Live Scoring
 
-Large agentic work fails when plans live only in chat and success is asserted by
-the same model that performed the work. DWM moves the control-plane into files:
-plans, packets, dispatches, worker results, reviews, approvals, runtime states,
-and release gates are explicit, hash-bound, and resumable.
-
-It is deliberately not the same as `workflow-router`. The router chooses the
-smallest suitable workflow. DWM designs and operates a larger workflow when the
-task itself needs dynamic orchestration.
-
-## Repository layout
+The live benchmark path is intentionally staged:
 
 ```text
-.
-├── SKILL.md                         # Runtime skill instructions
-├── scripts/check_contract.py         # Release contract smoke check
-├── scripts/evaluate_plan.py          # V0.5 schema and benchmark evaluator
-├── scripts/compile_workflow.py        # V1 first-slice packet compiler
-├── scripts/execute_packet.py          # V2 first-slice execution adapter
-├── scripts/run_workflow.py             # V3 runtime entry loop
-├── scripts/orchestrate_workflow.py      # V4 scheduler
-├── scripts/dispatch_worker.py           # V4.5 dispatch preparation
-├── scripts/run_worker_result.py         # V5 fixture worker-result adapter
-├── scripts/review_worker_result.py      # V5.5 worker-result review
-├── scripts/ingest_worker_review.py      # V6 runtime ingestion
-├── scripts/dispatch_frontier.py         # V6.5 frontier dispatch
-├── scripts/run_frontier_result.py       # V7 frontier worker-result adapter
-├── scripts/review_frontier_result.py    # V7.5 frontier-result review
-├── scripts/ingest_frontier_review.py    # V8 frontier-review ingestion
-├── scripts/resolve_human_gate.py        # V9 human-gate resolution
-├── scripts/dwm.py                       # V10 product CLI surface
-├── references/workflow-patterns.md  # Pattern guide for workflow designs
-├── references/workflow-plan-schema.md
-│                                      # workflow.plan.json contract
-├── fixtures/v0.5/manifest.json       # Benchmark fixture manifest
-├── samples/v0.5/                     # Deterministic candidate/baseline samples
-├── docs/fixture-smoke/v0-smoke.md    # Auditable fixture smoke results
-├── docs/v0.5-plan-schema-evaluator-spec.md
-│                                      # V0.5 evaluator spec
-├── docs/v0.5-decision.md             # Keep/kill decision
-├── docs/v1-first-slice-compiler-spec.md
-│                                      # First-slice compiler spec
-├── docs/v1-decision.md                # V1 keep/kill decision
-├── docs/automation-roadmap.md         # Large-task automation roadmap
-├── docs/v2-execution-adapter-spec.md  # V2 execution-adapter spec
-├── docs/v2-decision.md                # V2 keep/kill decision
-├── docs/v2.5-review-repair-spec.md    # V2.5 review/repair spec
-├── docs/v2.5-decision.md              # V2.5 keep/kill decision
-├── docs/v3-runtime-entry-spec.md      # V3 runtime-entry spec
-├── docs/v3-decision.md                # V3 keep/kill decision
-├── docs/v6-runtime-ingestion-spec.md  # V6 runtime-ingestion spec
-├── docs/v6-decision.md                # V6 keep/kill decision
-├── docs/v6.5-frontier-dispatch-spec.md
-│                                      # V6.5 frontier-dispatch spec
-├── docs/v7-controlled-frontier-result-spec.md
-│                                      # V7 controlled-frontier-result spec
-├── docs/v7.5-frontier-result-review-spec.md
-│                                      # V7.5 frontier-result review spec
-├── docs/v7.5-decision.md              # V7.5 keep/kill decision
-├── docs/v8-frontier-review-ingestion-spec.md
-│                                      # V8 frontier-review ingestion spec
-├── docs/v8-decision.md                # V8 keep/kill decision
-├── docs/v9-human-gate-resolution-spec.md
-│                                      # V9 human-gate resolution spec
-├── docs/v9-decision.md                # V9 keep/kill decision
-├── docs/v10-product-packaging-spec.md
-│                                      # V10 product packaging spec
-├── docs/v10-decision.md               # V10 keep/kill decision
-├── docs/v11-operator-guidance-spec.md
-│                                      # V11 operator guidance spec
-├── docs/v11-decision.md               # V11 keep/kill decision
-├── docs/v12-to-v20-final-roadmap.md   # planned final roadmap
-├── docs/v12-adapter-command-planner-spec.md
-├── docs/v13-dwm-runner-mvp-spec.md
-├── docs/v13-decision.md
-├── docs/v14-session-worktree-runtime-spec.md
-├── docs/v14-decision.md
-├── docs/v15-runtime-review-repair-spec.md
-├── docs/v15-decision.md
-├── docs/v16-multi-worker-fanout-spec.md
-├── docs/v16-decision.md
-├── docs/v17-dashboard-hud-spec.md
-├── docs/v17-decision.md
-├── docs/v18-plugin-install-packaging-spec.md
-├── docs/v18-decision.md
-├── docs/v19-adapter-ecosystem-spec.md
-├── docs/v19-decision.md
-├── docs/v20-1.0-release-hardening-spec.md
-├── docs/v20-decision.md
-├── docs/v20-compatibility-matrix.md
-├── docs/v20-migration-rollback.md
-├── docs/v20.5-reviewer-gate-spec.md
-├── docs/v20.5-decision.md
-├── docs/v20.6-dogfood-replay-spec.md
-├── docs/v20.6-decision.md
-├── docs/v21-product-shell-spec.md
-├── docs/v21-decision.md
-├── docs/v22-role-pack-spec.md
-├── docs/v22-decision.md
-├── docs/v23-harness-benchmark-spec.md
-├── docs/v23-decision.md
-├── docs/v24-live-benchmark-evidence-spec.md
-├── docs/v24-decision.md
-├── docs/v25-benchmark-task-materializer-spec.md
-├── docs/v25-decision.md
-├── docs/v26-benchmark-attempt-harness-spec.md
-├── docs/v26-decision.md
-├── docs/v27-adapter-smoke-spec.md
-├── docs/v27-decision.md
-├── docs/v28-live-attempt-planner-spec.md
-├── docs/v28-decision.md
-├── docs/v29-live-runner-preflight-spec.md
-├── docs/v29-decision.md
-├── docs/v30-live-receipt-ingestion-spec.md
-├── docs/v30-decision.md
-├── docs/v31-live-receipt-judgment-spec.md
-├── docs/v31-decision.md
-├── docs/v32-live-score-verifier-spec.md
-├── docs/v32-decision.md
-├── docs/v32-to-v35-live-scoring-workflow.md
-├── docs/v32-to-v35-live-scoring-workflow.plan.json
-├── docs/v33-live-score-aggregate-spec.md
-├── docs/v33-decision.md
-├── docs/v34-live-score-review-spec.md
-├── docs/v34-decision.md
-├── docs/v35-live-report-spec.md
-├── docs/v35-decision.md
-├── docs/v36-readme-benchmark-graph-spec.md
-├── docs/v36-decision.md
-├── docs/github-research.md          # Prior-art survey and import decisions
-├── docs/dwm-branding.md             # Product naming and compatibility rules
-├── assets/dwm-hero.svg              # README hero image
-├── docs/spec.md                     # Product spec and release criteria
-├── agents/openai.yaml               # UI metadata
-├── LICENSE
-└── README.md
+V28 command plan
+  -> V29 runner preflight
+  -> V30 receipt ingestion
+  -> V31 receipt judgment
+  -> V32 score verification
+  -> V33 score aggregation
+  -> V34 adversarial review
+  -> V35 benchmark report
+  -> V36 README graph artifacts
 ```
 
-## Prior Art
+The README graph pipeline is source-bound. Future README benchmark visuals
+should read `report.json.graph_metrics`, not terminal output, generated prose,
+or manually copied numbers.
 
-The initial survey looked at:
-
-- `lxcong/awesome-claude-dynamic-workflows`
-- `peymanvahidi/awesome-claude-dynamic-workflows`
-- `Timmy6942025/opencode-dynamic-workflows`
-- `scasella/claude-dynamic-workflows-codex`
-- `andrueandersoncs/open-workflows`
-- local `claude-skills/engineering/agent-workflow-designer`
-- local `claude-skills/orchestration/ORCHESTRATION.md`
-
-See [`docs/github-research.md`](docs/github-research.md) for what to reuse and
-what not to vendor.
-
-## Releasing
-
-Run from the repository root:
+Generate graph artifacts with:
 
 ```bash
-python scripts/quick_validate_skill.py .
-python scripts/quick_validate_skill.py --self-test
-python scripts/check_contract.py
-python scripts/check_contract.py --self-test
-python scripts/evaluate_plan.py --self-test
-python scripts/evaluate_plan.py --manifest fixtures/v0.5/manifest.json --out out/v0.5
-python scripts/compile_workflow.py --self-test
-python scripts/compile_workflow.py --manifest fixtures/v1/manifest.json --out out/v1/final
-python scripts/execute_packet.py --self-test
-python scripts/execute_packet.py --manifest fixtures/v2/manifest.json --out out/v2/final
-python scripts/execute_packet.py --manifest fixtures/v2.5/manifest.json --out out/v2.5/final
-python scripts/dwm_runner.py --self-test
-python scripts/dwm_runner.py --manifest fixtures/v13/manifest.json --out out/v13/final
-python scripts/dwm_runner.py session --self-test
-python scripts/dwm_runner.py --manifest fixtures/v14/manifest.json --out out/v13/v14-final
-python scripts/dwm_runner.py review --self-test
-python scripts/dwm_runner.py --manifest fixtures/v15/manifest.json --out out/v13/v15-final
-python scripts/dwm_runner.py fanout --self-test
-python scripts/dwm_runner.py --manifest fixtures/v16/manifest.json --out out/v13/v16-final
-python scripts/dwm_hud.py --self-test
-python scripts/dwm_hud.py --manifest fixtures/v17/manifest.json --out out/hud/v17-final
-python scripts/dwm_install.py --self-test
-python scripts/dwm_install.py --manifest fixtures/v18/manifest.json --out out/install/v18-final
-python scripts/dwm_adapters.py --self-test
-python scripts/dwm_adapters.py --manifest fixtures/v19/manifest.json --out out/adapters/v19-final
-python scripts/dwm_release.py --self-test
-python scripts/dwm_release.py --manifest fixtures/v20/manifest.json --out out/release/v20-final
-python scripts/dwm_review_gate.py --self-test
-python scripts/dwm_review_gate.py --manifest fixtures/v20.5/manifest.json --out out/release-review/v20.5-final
-python scripts/dwm_dogfood_replay.py --self-test
-python scripts/dwm_dogfood_replay.py --manifest fixtures/v20.6/manifest.json --out out/dogfood-replay/v20.6-final
-python scripts/dwm.py plan "V21 shell smoke" --out out/v21/release-plan-smoke --json
-python scripts/dwm.py run "V21 shell smoke" --out out/v21/release-run-smoke --json
-python scripts/dwm.py resume --run out/v21/release-run-smoke --json
-python scripts/dwm_roles.py --self-test
-python scripts/dwm_roles.py --manifest fixtures/v22/manifest.json --out out/roles/v22-final
-python scripts/dwm_benchmark.py --self-test
-python scripts/dwm_benchmark.py --manifest fixtures/v23/manifest.json --out out/benchmarks/v23-final
-python scripts/dwm_live_benchmark.py --self-test
-python scripts/dwm_live_benchmark.py --manifest fixtures/v24/manifest.json --out out/benchmarks-live/v24-final
-python scripts/dwm_benchmark_tasks.py --self-test
-python scripts/dwm_benchmark_tasks.py --manifest fixtures/v25/manifest.json --out out/benchmark-tasks/v25-final
-python scripts/dwm_benchmark_attempts.py --self-test
-python scripts/dwm_benchmark_attempts.py --manifest fixtures/v26/manifest.json --out out/benchmark-attempts/v26-final
-python scripts/dwm_adapter_smoke.py --self-test
-python scripts/dwm_adapter_smoke.py --manifest fixtures/v27/manifest.json --out out/adapter-smoke/v27-final
-python scripts/dwm_live_attempt_plan.py --self-test
-python scripts/dwm_live_attempt_plan.py --manifest fixtures/v28/manifest.json --out out/live-attempt-plans/v28-final
-python scripts/dwm_live_runner_preflight.py --self-test
-python scripts/dwm_live_runner_preflight.py --manifest fixtures/v29/manifest.json --out out/live-runner-preflight/v29-final
-python scripts/dwm_live_receipt.py --self-test
-python scripts/dwm_live_receipt.py --manifest fixtures/v30/manifest.json --out out/live-receipts/v30-final
-python scripts/dwm_live_receipt_judge.py --self-test
-python scripts/dwm_live_receipt_judge.py --manifest fixtures/v31/manifest.json --out out/live-receipt-judgments/v31-final
-python scripts/dwm_live_score.py --self-test
-python scripts/dwm_live_score.py --manifest fixtures/v32/manifest.json --out out/live-scores/v32-final
-python scripts/dwm_live_score_aggregate.py --self-test
-python scripts/dwm_live_score_aggregate.py --manifest fixtures/v33/manifest.json --out out/live-score-aggregates/v33-final
-python scripts/dwm_live_score_review.py --self-test
-python scripts/dwm_live_score_review.py --manifest fixtures/v34/manifest.json --out out/live-score-reviews/v34-final
-python scripts/dwm_live_report.py --self-test
-python scripts/dwm_live_report.py --manifest fixtures/v35/manifest.json --out out/live-reports/v35-final
-python scripts/dwm_readme_benchmark_graph.py --self-test
-python scripts/dwm_readme_benchmark_graph.py --manifest fixtures/v36/manifest.json --out out/readme-benchmark-graphs/v36-final
-python scripts/run_workflow.py --self-test
-python scripts/run_workflow.py --manifest fixtures/v3/manifest.json --out out/v3/final
-python scripts/orchestrate_workflow.py --self-test
-python scripts/dispatch_worker.py --self-test
-python scripts/run_worker_result.py --self-test
-python scripts/review_worker_result.py --self-test
-python scripts/ingest_worker_review.py --self-test
-python scripts/dispatch_frontier.py --self-test
-python scripts/run_frontier_result.py --self-test
-python scripts/review_frontier_result.py --self-test
-python scripts/ingest_frontier_review.py --self-test
-python scripts/resolve_human_gate.py --self-test
-python scripts/dwm.py --self-test
-python scripts/dwm.py next --run out/v9/v32-semantic-dogfood --json
-python scripts/dwm.py commands --kind product --json
-python scripts/check_whitespace.py .
-python scripts/check_release_text.py .
-python scripts/check_release_text.py --self-test
+python scripts/dwm_readme_benchmark_graph.py generate --report out/live-reports/<report_id> --out out/readme-benchmark-graphs/<graph_id>
 ```
 
-For day-to-day product checks, use the DWM CLI surface shown in the
-Quickstart. The detailed release command corpus above is intentionally longer:
-it is the reproducible evidence set for the current release.
+This writes:
 
-For the V21 product shell, use:
+- `benchmark-graph.json`
+- `benchmark-graph.svg`
+- `README-snippet.md`
+
+## Common Commands
+
+Product shell:
 
 ```bash
 python scripts/dwm.py plan "<objective>" --out out/v21/<run_id>
@@ -320,293 +112,63 @@ python scripts/dwm.py run "<objective>" --out out/v21/<run_id>
 python scripts/dwm.py resume --run out/v21/<run_id>
 ```
 
-For V22 role pack checks, use:
-
-```bash
-python scripts/dwm_roles.py registry
-python scripts/dwm_roles.py role --role worker
-```
-
-For V23 harness benchmark checks, use:
+Benchmark and live evidence:
 
 ```bash
 python scripts/dwm_benchmark.py corpus
 python scripts/dwm_benchmark.py claim --min-margin 8
-```
-
-For V24 live benchmark evidence capture, use:
-
-```bash
 python scripts/dwm_live_benchmark.py capture --out out/benchmarks-live/<capture_id>
-python scripts/dwm_live_benchmark.py adapter-check --mode codex-cli --adapter-command codex
-```
-
-For V25 benchmark task materialization, use:
-
-```bash
-python scripts/dwm_benchmark_tasks.py materialize --out out/benchmark-tasks/<suite_id>
-python scripts/dwm_benchmark_tasks.py verify --out out/benchmark-tasks/<suite_id>
-```
-
-For V26 benchmark attempt evidence, use:
-
-```bash
-python scripts/dwm_benchmark_attempts.py attempt --out out/benchmark-attempts/<suite_id>
-python scripts/dwm_benchmark_attempts.py verify --out out/benchmark-attempts/<suite_id>
-```
-
-For V27 adapter smoke evidence, use:
-
-```bash
-python scripts/dwm_adapter_smoke.py smoke --adapter-command codex --task-id failing-test-fix --out out/adapter-smoke/<smoke_id>
-```
-
-For V28 live attempt command planning, use:
-
-```bash
 python scripts/dwm_live_attempt_plan.py plan --adapter-command codex --task-id failing-test-fix --out out/live-attempt-plans/<plan_id>
-```
-
-For V29 live runner preflight, use:
-
-```bash
 python scripts/dwm_live_runner_preflight.py preflight --plan out/live-attempt-plans/<plan_id> --out out/live-runner-preflight/<preflight_id>
-```
-
-For V30 live receipt ingestion, use:
-
-```bash
 python scripts/dwm_live_receipt.py ingest --preflight out/live-runner-preflight/<preflight_id> --receipt receipt.json --out out/live-receipts/<receipt_id>
-```
-
-For V31 live receipt judgment, use:
-
-```bash
-python scripts/dwm_live_receipt_judge.py judge --receipt-dir out/live-receipts/<receipt_id> --out out/live-receipt-judgments/<judgment_id>
-```
-
-For V32 live score verification, use:
-
-```bash
-python scripts/dwm_live_score.py score --judgment-dir out/live-receipt-judgments/<judgment_id> --receipt-dir out/live-receipts/<receipt_id> --verification verification.json --out out/live-scores/<score_id>
-```
-
-For V33 live score aggregation, use repeated `--score-dir` arguments:
-
-```bash
-python scripts/dwm_live_score_aggregate.py aggregate --score-dir out/live-scores/<score_id> --out out/live-score-aggregates/<aggregate_id>
-```
-
-For V34 adversarial live score review, use:
-
-```bash
-python scripts/dwm_live_score_review.py review --aggregate out/live-score-aggregates/<aggregate_id> --out out/live-score-reviews/<review_id>
-```
-
-For V35 live benchmark reporting, use:
-
-```bash
 python scripts/dwm_live_report.py publish --review out/live-score-reviews/<review_id> --out out/live-reports/<report_id>
 ```
 
-Future README benchmark graphs should read `out/live-reports/<report_id>/report.json`
-and use `graph_metrics` as the source of truth.
-
-For V36 README benchmark graph artifacts, use:
+Role, HUD, install, adapter, and release checks:
 
 ```bash
-python scripts/dwm_readme_benchmark_graph.py generate --report out/live-reports/<report_id> --out out/readme-benchmark-graphs/<graph_id>
-```
-
-This writes `benchmark-graph.svg`, `benchmark-graph.json`, and
-`README-snippet.md` without editing README automatically.
-
-For hash-bound HUD evidence approval, use:
-
-```bash
+python scripts/dwm_roles.py registry
 python scripts/dwm_hud.py approve --hud out/hud/<hud_id> --out out/hud/<approval_id> --approver <name>
-```
-
-For repo-local install packaging checks, use:
-
-```bash
 python scripts/dwm_install.py validate
-python scripts/dwm_install.py install --home /tmp/dwm-home --out out/install/<install_id>
-```
-
-For adapter registry checks, use:
-
-```bash
 python scripts/dwm_adapters.py registry
-python scripts/dwm_adapters.py fixture-run --out out/adapters/<run_id>
-```
-
-For 1.0 release-candidate hardening, use:
-
-```bash
-python scripts/dwm_release.py --manifest fixtures/v20/manifest.json --out out/release/v20-final
 python scripts/dwm_release.py status --out out/release/<release_id>
 ```
 
-For independent release-candidate review, use:
+## Repository Map
 
-```bash
-python scripts/dwm_review_gate.py review --release out/release/<release_id> --out out/release-review/<review_id>
-```
+| Path | Purpose |
+| --- | --- |
+| `SKILL.md` | Codex skill entrypoint and workflow design contract. |
+| `scripts/dwm.py` | Product CLI for status, next actions, doctor, and command discovery. |
+| `scripts/check_contract.py` | Release contract smoke and documentation consistency check. |
+| `scripts/compile_workflow.py` | First-slice packet compiler. |
+| `scripts/dwm_runner.py` | Runner, session/worktree, review/repair, and fanout surfaces. |
+| `scripts/dwm_live_*.py` | Live evidence, receipt, score, review, report, and graph gates. |
+| `docs/automation-roadmap.md` | Implementation roadmap and completed slices. |
+| `docs/v32-to-v35-live-scoring-workflow.md` | Live scoring workflow design. |
+| `docs/v36-readme-benchmark-graph-spec.md` | README benchmark graph artifact contract. |
+| `fixtures/` | Deterministic manifests used by release gates. |
+| `assets/` | Tracked README visuals. |
 
-For deterministic dogfood replay evidence, use:
+## Key Docs
 
-```bash
-python scripts/dwm_dogfood_replay.py replay --out out/dogfood-replay/<replay_id>
-```
+- [`docs/spec.md`](docs/spec.md): product spec and release criteria.
+- [`docs/automation-roadmap.md`](docs/automation-roadmap.md): staged roadmap.
+- [`docs/github-research.md`](docs/github-research.md): prior-art survey.
+- [`docs/v12-to-v20-final-roadmap.md`](docs/v12-to-v20-final-roadmap.md): final-product roadmap.
+- [`docs/v23-harness-benchmark-spec.md`](docs/v23-harness-benchmark-spec.md): benchmark corpus contract.
+- [`docs/v35-live-report-spec.md`](docs/v35-live-report-spec.md): live benchmark report gate.
+- [`docs/v36-readme-benchmark-graph-spec.md`](docs/v36-readme-benchmark-graph-spec.md): README graph artifact generator.
 
-The release command catalog is also available from:
+Generated `out/` directories are verification evidence, not source of truth.
 
-```bash
-python scripts/dwm.py commands --kind release
-```
+## Position
 
-For V2 release-candidate verification, also run two manual smokes after the V2
-manifest command: perform a V2 dry run on
-`out/v1/v2-final-dry-run-ready-readonly` and require
-`repo_tracked_diff_unchanged: true`, then run the blocked smoke against
-`out/v1/v2-final-dry-run-blocked-risk` and prove V2 refuses execution with
-`ERR_EXEC_BLOCKED_RISK`. Refresh
-[`docs/v2-decision.md`](docs/v2-decision.md) from the generated
-`out/v2/final/summary.json` values after the V2 manifest command.
-
-The contract check requires passing fixture records under
-[`docs/fixture-smoke/`](docs/fixture-smoke/).
-
-The V0.5 manifest uses tracked baseline source snapshots under
-[`samples/v0.5/baseline-sources/`](samples/v0.5/baseline-sources/) so the
-manifest gate is reproducible from this repository.
-
-The V0.5 evaluator regenerates repo-local `out/v0.5/` from tracked fixtures and
-samples. That directory is verification evidence, not source of truth. Raw
-records are bound to the current `SKILL.md` hash, baseline observations require
-source-backed excerpts, and consumer reports require blinded sample-review
-provenance with field-level support. The manifest run exits nonzero if the
-keep/kill decision is not `keep` or if `docs/v0.5-decision.md` does not match the
-freshly regenerated summary.
-
-The V0.5 keep/kill decision is
-[`docs/v0.5-decision.md`](docs/v0.5-decision.md).
-
-V1 is the first-slice compiler described in
-[`docs/v1-first-slice-compiler-spec.md`](docs/v1-first-slice-compiler-spec.md).
-V1 compiles an activated `workflow.plan.json` into one inspectable
-first-slice packet, prompt, gate state, and resume/status files without claiming
-a full automatic workflow runtime.
-
-The V1 first-slice compiler release gate adds:
-
-```bash
-python scripts/compile_workflow.py --plan workflow.plan.json --out out/v1/<run_id>
-python scripts/compile_workflow.py --resume out/v1/<run_id>
-python scripts/compile_workflow.py --self-test
-python scripts/compile_workflow.py --manifest fixtures/v1/manifest.json --out out/v1/final
-```
-
-V1 expects `workflow.plan.json` to live under this repository root; resume treats
-absolute or parent-traversal source-plan paths as stale.
-
-The V1 keep/kill decision is
-[`docs/v1-decision.md`](docs/v1-decision.md).
-
-The large-task automation roadmap is
-[`docs/automation-roadmap.md`](docs/automation-roadmap.md). The current
-DWM implementation started with the V2 first-slice execution adapter described
-in [`docs/v2-execution-adapter-spec.md`](docs/v2-execution-adapter-spec.md).
-The planned final product roadmap is split across
-[`docs/v12-to-v20-final-roadmap.md`](docs/v12-to-v20-final-roadmap.md) and the
-V12-V20 spec files. Those future specs are planning documents, not implemented runtime claims.
-V2 Slice 1 adds `scripts/execute_packet.py` dry-run evidence generation and V1
-trust precondition checks. V2 Slice 2 adds manifest-scoped `local-shell`
-execution fixtures, deterministic worktree creation, stdout/stderr capture, and
-dirty-worktree blocking. V2 Slice 3 adds manifest-scoped verification commands
-that can promote a successful attempt to `verified` or fail it with
-`ERR_EXEC_VERIFY_FAILED`. V2 Slice 4 adds the Codex CLI backend with worktree
-isolation, transcript capture, backend auth detection, configurable timeout,
-fixture-command mode, and optional installed-Codex live smoke command support.
-Public `--manifest` is limited to `fixtures/v2/manifest.json`; command-bearing
-fixtures are release-test inputs, not a general command runner.
-The V2 release candidate adds stale source-plan
-invalidation, malformed attempt invalidation, required-fixture failure policy,
-and the `fixtures/v2/manifest.json` keep gate recorded in
-[`docs/v2-decision.md`](docs/v2-decision.md). V2 still does not execute OMX,
-merge worktrees, or advance multi-slice workflows.
-
-V2.5 execute-review-repair is the next completed control-plane loop:
-[`docs/v2.5-review-repair-spec.md`](docs/v2.5-review-repair-spec.md) defines
-the review, repair, evidence, and status model, while
-[`docs/v2.5-to-v3.workflow.plan.json`](docs/v2.5-to-v3.workflow.plan.json)
-is the machine-readable workflow plan that hands trusted V2.5 terminal states
-to the future V3 multi-slice runtime. `scripts/execute_packet.py` now supports
-`--review`, `--review-resume`, and `--repair` for one trusted V2 packet
-attempt, and the keep gate is:
-
-```bash
-python scripts/execute_packet.py --manifest fixtures/v2.5/manifest.json --out out/v2.5/final
-```
-
-The V2.5 keep/kill decision is
-[`docs/v2.5-decision.md`](docs/v2.5-decision.md). V2.5 still does not advance
-later packets or run backend repair execution; it prepares bounded repair
-prompts and records review/repair contract ledgers.
-
-V3 runtime entry is the current multi-slice bridge:
-[`docs/v3-runtime-entry-spec.md`](docs/v3-runtime-entry-spec.md) defines how
-trusted V2.5 terminal states become a deterministic runtime journal and next
-packet candidate. `scripts/run_workflow.py` supports `--start`, `--resume`,
-`--self-test`, and the keep gate:
-
-```bash
-python scripts/run_workflow.py --manifest fixtures/v3/manifest.json --out out/v3/final
-```
-
-The V3 keep/kill decision is
-[`docs/v3-decision.md`](docs/v3-decision.md). V3 still does not execute later
-packets, orchestrate parallel workers, merge worktrees, or claim fully
-autonomous large-task completion.
-
-V4 through V7 extend the runtime bridge without opening unrestricted execution:
-V4 schedules ready phase packets, V4.5 prepares dispatch bundles, V5 records
-fixture-only worker result evidence, V5.5 reviews that result, and V6 ingests
-approved reviewed results into the next frontier. V6.5 turns that trusted
-frontier back into an emit-only dispatch bundle. V7 records controlled fixture
-evidence for that next phase. V7.5 reviews that frontier evidence before it can
-be ingested. V8 ingests the reviewed frontier result back into runtime frontier
-state. V9 resolves the explicit human gate from a tracked approval artifact.
-The current implemented dogfood chain ends with
-`out/v9/v32-semantic-dogfood/status.json` reporting
-`status: workflow-complete`.
-
-The V6 runtime-ingestion spec and decision are
-[`docs/v6-runtime-ingestion-spec.md`](docs/v6-runtime-ingestion-spec.md) and
-[`docs/v6-decision.md`](docs/v6-decision.md). V6.5 is described in
-[`docs/v6.5-frontier-dispatch-spec.md`](docs/v6.5-frontier-dispatch-spec.md).
-V7 is described in
-[`docs/v7-controlled-frontier-result-spec.md`](docs/v7-controlled-frontier-result-spec.md).
-V7.5 is described in
-[`docs/v7.5-frontier-result-review-spec.md`](docs/v7.5-frontier-result-review-spec.md)
-and the keep decision is
-[`docs/v7.5-decision.md`](docs/v7.5-decision.md). V8 is described in
-[`docs/v8-frontier-review-ingestion-spec.md`](docs/v8-frontier-review-ingestion-spec.md)
-and the keep decision is [`docs/v8-decision.md`](docs/v8-decision.md). V9 is
-described in
-[`docs/v9-human-gate-resolution-spec.md`](docs/v9-human-gate-resolution-spec.md)
-and the keep decision is [`docs/v9-decision.md`](docs/v9-decision.md). V10 is
-described in [`docs/v10-product-packaging-spec.md`](docs/v10-product-packaging-spec.md)
-and the keep decision is [`docs/v10-decision.md`](docs/v10-decision.md). V10
-adds a read-only product CLI for status, doctor, and command discovery. V11 is
-described in [`docs/v11-operator-guidance-spec.md`](docs/v11-operator-guidance-spec.md)
-and the keep decision is [`docs/v11-decision.md`](docs/v11-decision.md). V11
-adds read-only operator guidance through `dwm next`, so a user can ask for the
-next safe action over trusted artifacts. It still does not execute workers,
-merge worktrees, deploy, call external services, or claim unattended autonomous
-execution beyond recorded approval ingestion and operator guidance.
+DWM is not an OMO clone and not a prompt-only workflow router. It is a
+deterministic control-plane above Codex, Claude, OpenCode, and optional OMO-like
+surfaces. The goal is to make agentic work inspectable, reproducible, resumable,
+and honest about what has actually been executed.
 
 ## License
 
-[MIT](LICENSE)
+MIT. See [`LICENSE`](LICENSE).
