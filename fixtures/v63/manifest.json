@@ -1,0 +1,53 @@
+{
+  "fixtures": [
+    {
+      "expected_decision": "acquire-next-task",
+      "expected_recommendation_status": "ready",
+      "id": "ready-next-task",
+      "kind": "ready-next-task",
+      "required": true
+    },
+    {
+      "expected_decision": "fill-existing-direct-receipt",
+      "expected_recommendation_status": "waiting-direct-receipt",
+      "id": "waiting-receipt",
+      "kind": "waiting-receipt",
+      "required": true
+    },
+    {
+      "expected_decision": "review-existing-series-before-more-acquisition",
+      "expected_recommendation_status": "graph-ready-local-review",
+      "id": "graph-ready",
+      "kind": "graph-ready",
+      "required": true
+    },
+    {
+      "expected_decision": "resolve-duplicate-pair-root",
+      "expected_recommendation_status": "blocked-duplicate-pair-root",
+      "id": "duplicate-pair-root",
+      "kind": "duplicate-pair-root",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_DOGFOOD_OPERATOR_STALE_PAIR",
+      "id": "stale-pair-blocked",
+      "kind": "stale-pair",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_DOGFOOD_OPERATOR_STALE_ACQUISITION",
+      "id": "stale-acquisition-blocked",
+      "kind": "stale-acquisition",
+      "required": true
+    }
+  ],
+  "required_fixture_ids": [
+    "ready-next-task",
+    "waiting-receipt",
+    "graph-ready",
+    "duplicate-pair-root",
+    "stale-pair-blocked",
+    "stale-acquisition-blocked"
+  ],
+  "suite_id": "v63-dogfood-operator-duplicate-root"
+}

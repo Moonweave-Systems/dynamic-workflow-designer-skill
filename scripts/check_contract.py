@@ -1712,6 +1712,8 @@ def require_release_commands_pass() -> None:
         [sys.executable, "scripts/dwm_dogfood_acquire.py", "--manifest", "fixtures/v61/manifest.json", "--out", "out/dogfood-acquisitions/v61-final"],
         [sys.executable, "scripts/dwm_dogfood_operator.py", "--self-test"],
         [sys.executable, "scripts/dwm_dogfood_operator.py", "--manifest", "fixtures/v62/manifest.json", "--out", "out/dogfood-operator/v62-final"],
+        [sys.executable, "scripts/dwm_dogfood_operator.py", "--self-test"],
+        [sys.executable, "scripts/dwm_dogfood_operator.py", "--manifest", "fixtures/v63/manifest.json", "--out", "out/dogfood-operator/v63-final"],
         [sys.executable, "scripts/run_workflow.py", "--self-test"],
         [sys.executable, "scripts/run_workflow.py", "--manifest", "fixtures/v3/manifest.json", "--out", "out/v3/final"],
         [sys.executable, "scripts/orchestrate_workflow.py", "--self-test"],
@@ -3345,6 +3347,7 @@ def main() -> None:
             "docs/v60-dogfood-chart-review-spec.md",
             "docs/v61-dogfood-acquire-spec.md",
             "docs/v62-dogfood-operator-spec.md",
+            "docs/v63-dogfood-operator-duplicate-root-spec.md",
             "generated `out/` directories are verification evidence, not source of truth",
             "deterministic control-plane above agent clis",
             "bounded adapter surfaces",
@@ -4338,6 +4341,28 @@ def main() -> None:
         ],
     )
     require_terms(
+        "docs/v63-dogfood-operator-duplicate-root-spec.md",
+        [
+            "status: implemented duplicate pair-root blocking in",
+            "python scripts/dwm_dogfood_operator.py recommend --out out/dogfood-operator/<operator_id>",
+            "err_dogfood_operator_duplicate_task",
+            "duplicate_task_ids",
+            "do not delete duplicate pairs",
+            "do not treat duplicate task pairs as graph-ready",
+        ],
+    )
+    require_terms(
+        "docs/v63-decision.md",
+        [
+            "decision: keep",
+            "python scripts/dwm_dogfood_operator.py --manifest fixtures/v63/manifest.json --out out/dogfood-operator/v63-final",
+            "err_dogfood_operator_duplicate_task",
+            "resolve-duplicate-pair-root",
+            "waiting direct receipt blocking",
+            "does not claim live codex execution",
+        ],
+    )
+    require_terms(
         "docs/v7.5-decision.md",
         [
             "decision: keep",
@@ -4386,7 +4411,7 @@ def main() -> None:
             "python scripts/dwm.py commands --kind release --json",
             "`status`: `workflow-complete`",
             "`doctor_ok`: `true`",
-            "`release_command_count`: `124`",
+            "`release_command_count`: `126`",
             "does not claim workflow execution",
         ],
     )

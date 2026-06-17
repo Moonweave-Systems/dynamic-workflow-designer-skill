@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""V62 dogfood acquisition operator."""
+"""V62/V63 dogfood acquisition operator."""
 
 from __future__ import annotations
 
@@ -25,7 +25,7 @@ from dwm_dogfood_pair import PAIR_ROOT  # noqa: E402
 
 TOOL = "dwm_dogfood_operator.py"
 SCHEMA_VERSION = "1.0"
-OPERATOR_VERSION = "62.0.0"
+OPERATOR_VERSION = "63.0.0"
 OPERATOR_ROOT = ROOT / "out" / "dogfood-operator"
 SENTINEL = ".dwm_dogfood_operator-owned.json"
 
@@ -160,7 +160,15 @@ def scan_pairs(pair_root: Path) -> dict[str, Any]:
             task_id = pair.get("task_id")
             if isinstance(task_id, str) and task_id:
                 pairs.append({"task_id": task_id, "pair_path": rel(pair_dir), "source_hash": canonical_hash(pair)})
-    return {"root": rel(pair_root), "pairs": pairs, "task_ids": sorted({item["task_id"] for item in pairs})}
+    counts: dict[str, int] = {}
+    for pair in pairs:
+        counts[pair["task_id"]] = counts.get(pair["task_id"], 0) + 1
+    return {
+        "root": rel(pair_root),
+        "pairs": pairs,
+        "task_ids": sorted(counts),
+        "duplicate_task_ids": sorted(task_id for task_id, count in counts.items() if count > 1),
+    }
 
 
 def scan_acquisitions(acquisition_root: Path) -> dict[str, Any]:
@@ -219,6 +227,7 @@ def acquisition_command(operator_id: str, task_id: str) -> str:
 def decide_next(pair_state: dict[str, Any], acquisition_state: dict[str, Any], *, operator_id: str, min_pairs: int) -> dict[str, Any]:
     tasks = [task["id"] for task in default_tasks()]
     completed = set(pair_state["task_ids"])
+    duplicate_task_ids = pair_state.get("duplicate_task_ids", [])
     waiting = acquisition_state["waiting"]
     if waiting:
         first = sorted(waiting, key=lambda item: (item["task_id"], item["acquisition_path"]))[0]
@@ -231,6 +240,16 @@ def decide_next(pair_state: dict[str, Any], acquisition_state: dict[str, Any], *
             "direct_receipt_template_path": first["direct_receipt_template_path"],
             "acquisition_path": first["acquisition_path"],
             "safe_next_step": "fill the existing direct receipt template before starting another acquisition",
+        }
+    if len(completed) >= min_pairs and duplicate_task_ids:
+        return {
+            "status": "blocked-duplicate-pair-root",
+            "decision": "resolve-duplicate-pair-root",
+            "task_id": "",
+            "command": "",
+            "blocked_by": ["ERR_DOGFOOD_OPERATOR_DUPLICATE_TASK"],
+            "duplicate_task_ids": duplicate_task_ids,
+            "safe_next_step": "choose one pair per task or use a clean pair root before building graph-ready series",
         }
     if len(completed) >= min_pairs:
         return {
@@ -306,6 +325,7 @@ def recommend(out_dir: Path, *, pair_root: Path, acquisition_root: Path, min_pai
             "completed_pair_count": len(pair_state["task_ids"]),
             "waiting_acquisition_count": len(acquisition_state["waiting"]),
             "recorded_acquisition_count": len(acquisition_state["recorded"]),
+            "duplicate_task_count": len(pair_state.get("duplicate_task_ids", [])),
             "min_pairs": min_pairs,
         },
         "pair_state": pair_state,
@@ -401,6 +421,10 @@ def run_fixture(fixture: dict[str, Any], suite_dir: Path) -> dict[str, Any]:
             for index, task_id in enumerate(["v44-candidate-review-gate", "v45-readme-asset-promotion", "v46-workflow-queue"]):
                 make_pair_record(pair_root, f"pair-{index}", task_id)
             status = recommend(suite_dir / fixture_id, pair_root=pair_root, acquisition_root=acquisition_root, min_pairs=3)
+        elif kind == "duplicate-pair-root":
+            for index, task_id in enumerate(["v44-candidate-review-gate", "v45-readme-asset-promotion", "v46-workflow-queue", "v44-candidate-review-gate"]):
+                make_pair_record(pair_root, f"pair-{index}", task_id)
+            status = recommend(suite_dir / fixture_id, pair_root=pair_root, acquisition_root=acquisition_root, min_pairs=3)
         elif kind in {"stale-pair", "stale-acquisition"}:
             status = blocked_fixture_status(kind, fixture, suite_dir)
         else:
@@ -462,7 +486,7 @@ def evaluate_manifest(manifest_path: Path, out_dir: Path) -> dict[str, Any]:
 def self_test() -> None:
     OPERATOR_ROOT.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="dwm-dogfood-operator-self-test-", dir=OPERATOR_ROOT) as tmp:
-        summary = evaluate_manifest(ROOT / "fixtures" / "v62" / "manifest.json", Path(tmp) / "dogfood-operator-self-test")
+        summary = evaluate_manifest(ROOT / "fixtures" / "v63" / "manifest.json", Path(tmp) / "dogfood-operator-self-test")
     if summary["decision"] != "keep":
         raise DogfoodOperatorError("ERR_DOGFOOD_OPERATOR_FIXTURE_FAILED", "dogfood operator self-test manifest did not keep")
     print("dwm_dogfood_operator self-test: pass")

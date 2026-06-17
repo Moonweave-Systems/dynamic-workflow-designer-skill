@@ -200,6 +200,9 @@ when direct evidence is still needed.
 V62 adds `scripts/dwm_dogfood_operator.py` so the next dogfood step is selected
 from existing pair and acquisition artifacts instead of being guessed manually.
 It writes `dogfood-operator.json`, `dogfood-operator.md`, and `status.json`.
+V63 makes that operator duplicate-aware: if a pair root has more than one pair
+for the same task, it blocks graph-ready recommendation with
+`ERR_DOGFOOD_OPERATOR_DUPLICATE_TASK`.
 
 Generate graph artifacts with:
 
@@ -344,6 +347,7 @@ python scripts/dwm_release.py status --out out/release/<release_id>
 - [`docs/v60-dogfood-chart-review-spec.md`](docs/v60-dogfood-chart-review-spec.md): human-reviewed local dogfood chart gate.
 - [`docs/v61-dogfood-acquire-spec.md`](docs/v61-dogfood-acquire-spec.md): one-command dogfood evidence acquisition loop.
 - [`docs/v62-dogfood-operator-spec.md`](docs/v62-dogfood-operator-spec.md): next dogfood acquisition recommendation loop.
+- [`docs/v63-dogfood-operator-duplicate-root-spec.md`](docs/v63-dogfood-operator-duplicate-root-spec.md): duplicate pair-root blocking for graph readiness.
 
 Generated `out/` directories are verification evidence, not source of truth.
 
