@@ -1722,6 +1722,8 @@ def require_release_commands_pass() -> None:
         [sys.executable, "scripts/dwm_dogfood_progress.py", "--manifest", "fixtures/v66/manifest.json", "--out", "out/dogfood-progress/v66-final"],
         [sys.executable, "scripts/dwm_dogfood_progress_asset_promotion.py", "--self-test"],
         [sys.executable, "scripts/dwm_dogfood_progress_asset_promotion.py", "--manifest", "fixtures/v67/manifest.json", "--out", "out/dogfood-progress-asset-promotions/v67-final"],
+        [sys.executable, "scripts/check_readme_quality.py", "--self-test"],
+        [sys.executable, "scripts/check_readme_quality.py", "README.md"],
         [sys.executable, "scripts/run_workflow.py", "--self-test"],
         [sys.executable, "scripts/run_workflow.py", "--manifest", "fixtures/v3/manifest.json", "--out", "out/v3/final"],
         [sys.executable, "scripts/orchestrate_workflow.py", "--self-test"],
@@ -3228,6 +3230,7 @@ def main() -> None:
             "python scripts/dwm.py next --run out/v9/v32-semantic-dogfood",
             "python scripts/dwm.py commands --kind product",
             "python scripts/check_contract.py",
+            "python scripts/check_readme_quality.py readme.md",
             "python scripts/dwm.py commands --kind release",
             "assets/dwm-dogfood-progress.svg",
             "assets/dwm-live-benchmark.svg",
@@ -3242,9 +3245,10 @@ def main() -> None:
     require_terms(
         "docs/command-reference.md",
         [
-            "python scripts/dwm.py plan "<objective>" --out out/v21/<run_id>",
-            "python scripts/dwm.py run "<objective>" --out out/v21/<run_id>",
+            'python scripts/dwm.py plan "<objective>" --out out/v21/<run_id>',
+            'python scripts/dwm.py run "<objective>" --out out/v21/<run_id>',
             "python scripts/dwm.py resume --run out/v21/<run_id>",
+            "python scripts/check_readme_quality.py readme.md",
             "python scripts/dwm_roles.py registry",
             "python scripts/dwm_benchmark.py corpus",
             "python scripts/dwm_benchmark.py claim --min-margin 8",
@@ -3300,12 +3304,13 @@ def main() -> None:
     require_terms(
         "docs/release-history.md",
         [
-            "V28 command plan",
-            "V36 README graph artifacts",
+            "v28 command plan",
+            "v36 readme graph artifacts",
             "docs/v36-readme-benchmark-graph-spec.md",
             "docs/v45-readme-asset-promotion-spec.md",
             "docs/v52-readme-ux-spec.md",
             "docs/v67-dogfood-progress-asset-promotion-spec.md",
+            "docs/v69-readme-quality-gate-spec.md",
             "generated `out/` directories are verification evidence, not source of truth",
             "direct-agent superiority is not claimed",
             "process progress is not an upward benchmark claim",
@@ -4417,6 +4422,28 @@ def main() -> None:
         ],
     )
     require_terms(
+        "docs/v69-readme-quality-gate-spec.md",
+        [
+            "status: implemented readme product-page quality gate in",
+            "python scripts/check_readme_quality.py readme.md",
+            "maximum readme length",
+            "excessive `v<number>` release-history mentions",
+            "do not require readme to contain every command",
+            "process graph non-benchmark wording",
+        ],
+    )
+    require_terms(
+        "docs/v69-decision.md",
+        [
+            "decision: keep",
+            "python scripts/check_readme_quality.py --self-test",
+            "readme maximum length",
+            "required product-page sections",
+            "release-note overgrowth blocking",
+            "missing reference-doc blocking",
+        ],
+    )
+    require_terms(
         "docs/v7.5-decision.md",
         [
             "decision: keep",
@@ -4465,7 +4492,7 @@ def main() -> None:
             "python scripts/dwm.py commands --kind release --json",
             "`status`: `workflow-complete`",
             "`doctor_ok`: `true`",
-            "`release_command_count`: `134`",
+            "`release_command_count`: `136`",
             "does not claim workflow execution",
         ],
     )

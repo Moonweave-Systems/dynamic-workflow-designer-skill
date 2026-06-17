@@ -1,7 +1,7 @@
 # V62 Dogfood Operator Spec
 
-Status: implemented first deterministic dogfood acquisition recommendation loop
-in `scripts/dwm_dogfood_operator.py`.
+Status: implemented first deterministic dogfood acquisition recommendation loop in
+`scripts/dwm_dogfood_operator.py`.
 
 ## Research and Prior Art
 

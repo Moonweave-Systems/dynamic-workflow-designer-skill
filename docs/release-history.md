@@ -87,6 +87,8 @@ promotion requires real release history.
   `dogfood-progress.svg`, and `dogfood-progress.md`.
 - V67: `docs/v67-dogfood-progress-asset-promotion-spec.md` added
   `dwm-dogfood-progress.svg` and `dwm-dogfood-progress.json` promotion bundles.
+- V69: `docs/v69-readme-quality-gate-spec.md` added the README product-page
+  quality gate.
 
 ## Current Public Boundaries
 

@@ -9,8 +9,9 @@ python scripts/dwm_dogfood_operator.py --manifest fixtures/v63/manifest.json --o
 ```
 
 The accepted suite covers `ERR_DOGFOOD_OPERATOR_DUPLICATE_TASK`,
-`resolve-duplicate-pair-root`, existing V62 acquisition recommendations, waiting
-direct receipt blocking, stale pair blocking, and stale acquisition blocking.
+`resolve-duplicate-pair-root`, existing V62 acquisition recommendations,
+waiting direct receipt blocking, stale pair blocking, and stale acquisition
+blocking.
 
 This decision does not claim live Codex execution, pair deletion, receipt
 fabrication, README graph promotion, public benchmark readiness, or generated

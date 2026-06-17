@@ -9,9 +9,9 @@ python scripts/dwm_dogfood_operator.py --manifest fixtures/v62/manifest.json --o
 ```
 
 The accepted suite covers `dogfood-operator.json`, `dogfood-operator.md`,
-`status.json`, next acquisition command recommendation, waiting direct receipt
-blocking, graph-ready series review recommendation, stale pair blocking, and
-stale acquisition blocking.
+`status.json`, next acquisition command recommendation, waiting direct receipt blocking,
+graph-ready series review recommendation, stale pair blocking, and stale
+acquisition blocking.
 
 This decision does not claim live Codex execution, fabricated direct receipts,
 README graph promotion, public benchmark readiness, external benchmark

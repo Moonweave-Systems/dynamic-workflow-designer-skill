@@ -51,9 +51,8 @@ It writes:
 ## Execution Model
 
 The graph is horizontal process completion. Green nodes mean a matching
-artifact/status pair exists. Grey nodes mean the stage is not yet complete. The
-SVG explicitly states that this is process completion, not an upward performance
-claim.
+artifact/status pair exists. Grey nodes mean the stage is not yet complete.
+The SVG explicitly states: process completion, not upward performance claim.
 
 ## Safety and Verification Gates
 

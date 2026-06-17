@@ -69,6 +69,7 @@ Run the release contract before publishing changes:
 
 ```bash
 python scripts/check_contract.py
+python scripts/check_readme_quality.py README.md
 ```
 
 For the full release command corpus, use:

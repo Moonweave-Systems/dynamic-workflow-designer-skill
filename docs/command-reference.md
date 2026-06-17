@@ -14,6 +14,7 @@ python scripts/dwm.py next --run out/v9/v32-semantic-dogfood
 python scripts/dwm.py doctor
 python scripts/dwm.py commands --kind product
 python scripts/check_contract.py
+python scripts/check_readme_quality.py README.md
 python scripts/dwm.py commands --kind release
 ```
 
