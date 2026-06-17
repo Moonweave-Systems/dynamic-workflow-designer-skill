@@ -1,0 +1,39 @@
+{
+  "fixtures": [
+    {
+      "expected_decision": "local-chart-candidate-ready",
+      "expected_status": "dogfood-chart-candidate-recorded",
+      "id": "chart-candidate-ready",
+      "kind": "chart-candidate-ready",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_DOGFOOD_CHART_CANDIDATE_NOT_READY",
+      "expected_status": "blocked",
+      "id": "not-ready-blocked",
+      "kind": "not-ready",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_DOGFOOD_CHART_CANDIDATE_STALE_SERIES",
+      "expected_status": "blocked",
+      "id": "stale-series-blocked",
+      "kind": "stale-series",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_DOGFOOD_CHART_CANDIDATE_OVERCLAIM",
+      "expected_status": "blocked",
+      "id": "overclaim-blocked",
+      "kind": "overclaim",
+      "required": true
+    }
+  ],
+  "required_fixture_ids": [
+    "chart-candidate-ready",
+    "not-ready-blocked",
+    "stale-series-blocked",
+    "overclaim-blocked"
+  ],
+  "suite_id": "v59-dogfood-chart-candidate"
+}
