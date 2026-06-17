@@ -1,0 +1,30 @@
+{
+  "fixtures": [
+    {
+      "expected_status": "inspect-recorded",
+      "id": "canonical-demo-inspect-ready",
+      "kind": "canonical-demo-inspect",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_DEMO_ARTIFACT_MISSING",
+      "expected_status": "blocked",
+      "id": "inspect-missing-demo-blocked",
+      "kind": "inspect-missing-demo",
+      "required": true
+    },
+    {
+      "expected_error": "ERR_DEMO_STALE_HASH",
+      "expected_status": "blocked",
+      "id": "inspect-stale-hash-blocked",
+      "kind": "inspect-stale-hash",
+      "required": true
+    }
+  ],
+  "required_fixture_ids": [
+    "canonical-demo-inspect-ready",
+    "inspect-missing-demo-blocked",
+    "inspect-stale-hash-blocked"
+  ],
+  "suite_id": "v53-demo-inspect"
+}

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""V51 canonical DWM demo."""
+"""V51/V53 canonical DWM demo and inspection surface."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ from compile_workflow import canonical_hash, canonical_json_text, read_json, wri
 
 TOOL = "dwm_demo.py"
 SCHEMA_VERSION = "1.0"
-DEMO_VERSION = "51.0.0"
+DEMO_VERSION = "53.0.0"
 DEMO_ROOT = ROOT / "out" / "demo"
 SENTINEL = ".dwm_demo-owned.json"
 
@@ -210,6 +210,20 @@ def run_command(record: dict[str, Any]) -> dict[str, Any]:
     return result
 
 
+def read_json_obj(path: Path, *, label: str) -> dict[str, Any]:
+    if not path.is_file() or path.is_symlink():
+        raise DemoError("ERR_DEMO_ARTIFACT_MISSING", f"{label} is missing or symlinked", path=path)
+    data = read_json(path)
+    if not isinstance(data, dict):
+        raise DemoError("ERR_DEMO_ARTIFACT_MISSING", f"{label} must be a JSON object", path=path)
+    return data
+
+
+def expected_command_hash(demo_id: str) -> str:
+    commands = demo_commands(demo_id)
+    return canonical_hash([{"id": item["id"], "command": item["command"]} for item in commands])
+
+
 def render_demo_readme(demo: dict[str, Any]) -> str:
     lines = [
         "# DWM Canonical Demo",
@@ -241,6 +255,38 @@ def render_demo_readme(demo: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def render_inspect_summary(inspect: dict[str, Any]) -> str:
+    lines = [
+        "# DWM Demo Inspect Summary",
+        "",
+        f"Decision: `{inspect['decision']}`",
+        f"Demo: `{inspect['demo_id']}`",
+        "",
+        "This inspection reads existing demo artifacts. It does not rerun demo commands, execute live adapters, or mutate source files.",
+        "",
+        "## Evidence",
+        "",
+        f"- Commands recorded: `{inspect['command_count']}`",
+        f"- Declared artifacts checked: `{inspect['declared_artifact_count']}`",
+        f"- Missing declared artifacts: `{len(inspect['missing_declared_artifacts'])}`",
+        f"- Next read: `{inspect['next_read']}`",
+        "",
+        "## Commands",
+        "",
+    ]
+    for command in inspect["commands"]:
+        lines.extend(
+            [
+                f"- `{command['id']}` -> `{command['returncode']}`",
+            ]
+        )
+    lines.extend(["", "## Generated Files", ""])
+    for path in inspect["generated_files"]:
+        lines.append(f"- `{path}`")
+    lines.append("")
+    return "\n".join(lines)
+
+
 def run_demo(out_dir: Path) -> dict[str, Any]:
     out_dir = resolve_demo_out(out_dir)
     demo_id = out_dir.name
@@ -267,6 +313,65 @@ def run_demo(out_dir: Path) -> dict[str, Any]:
     return demo
 
 
+def inspect_demo(demo_dir: Path) -> dict[str, Any]:
+    demo_dir = resolve_demo_out(demo_dir)
+    demo_id = demo_dir.name
+    sentinel = read_sentinel(demo_dir)
+    if sentinel is None or sentinel.get("demo_id") != demo_id:
+        raise DemoError("ERR_DEMO_ARTIFACT_MISSING", "demo ownership sentinel is missing or stale", path=demo_dir)
+    demo = read_json_obj(demo_dir / "demo.json", label="demo.json")
+    status = read_json_obj(demo_dir / "status.json", label="status.json")
+    if demo.get("demo_id") != demo_id or status.get("demo_id") != demo_id:
+        raise DemoError("ERR_DEMO_STALE_HASH", "demo id does not match inspected directory", path=demo_dir)
+    if canonical_hash(demo) != canonical_hash(status):
+        raise DemoError("ERR_DEMO_STALE_HASH", "demo.json and status.json no longer match", path=demo_dir)
+    if demo.get("source_hashes", {}).get("commands") != expected_command_hash(demo_id):
+        raise DemoError("ERR_DEMO_STALE_HASH", "demo command hash does not match current command plan", path=demo_dir / "demo.json")
+    results = demo.get("results")
+    if not isinstance(results, list) or not results:
+        raise DemoError("ERR_DEMO_ARTIFACT_MISSING", "demo results are missing", path=demo_dir / "demo.json")
+    commands: list[dict[str, Any]] = []
+    declared_artifacts: list[str] = []
+    for result in results:
+        if not isinstance(result, dict):
+            raise DemoError("ERR_DEMO_ARTIFACT_MISSING", "demo result must be an object", path=demo_dir / "demo.json")
+        result_id = str(result.get("id", ""))
+        artifacts = result.get("artifacts")
+        if not isinstance(artifacts, list):
+            raise DemoError("ERR_DEMO_ARTIFACT_MISSING", f"demo result artifacts missing: {result_id}", path=demo_dir / "demo.json")
+        declared_artifacts.extend(str(path) for path in artifacts)
+        commands.append({"id": result_id, "returncode": result.get("returncode"), "artifact_count": len(artifacts)})
+    missing_declared = [path for path in declared_artifacts if not (ROOT / path).is_file()]
+    if missing_declared:
+        raise DemoError("ERR_DEMO_ARTIFACT_MISSING", "declared demo artifacts are missing", path=missing_declared[0])
+    inspect = {
+        "tool": TOOL,
+        "schema_version": SCHEMA_VERSION,
+        "demo_version": DEMO_VERSION,
+        "demo_id": demo_id,
+        "status": "inspect-recorded",
+        "decision": "inspect-ready",
+        "command_count": len(commands),
+        "declared_artifact_count": len(declared_artifacts),
+        "missing_declared_artifacts": missing_declared,
+        "commands": commands,
+        "next_read": demo.get("next_read"),
+        "source_hashes": {
+            "demo": canonical_hash(demo),
+            "status": canonical_hash(status),
+            "commands": demo["source_hashes"]["commands"],
+        },
+        "generated_files": [
+            rel(demo_dir / "demo-inspect.json"),
+            rel(demo_dir / "demo-summary.md"),
+        ],
+        "safe_default": "read demo-summary.md before using any live adapter or public benchmark claim",
+    }
+    write_json_atomic(demo_dir / "demo-inspect.json", inspect, root=demo_dir)
+    write_text_atomic(demo_dir / "demo-summary.md", render_inspect_summary(inspect), root=demo_dir)
+    return inspect
+
+
 def blocked_fixture_status(kind: str, fixture: dict[str, Any], suite_dir: Path) -> dict[str, Any]:
     cleanup_target: Path | None = None
     try:
@@ -280,6 +385,25 @@ def blocked_fixture_status(kind: str, fixture: dict[str, Any], suite_dir: Path) 
             target.mkdir(parents=True)
             (target / "placeholder.txt").write_text("not owned\n")
             run_demo(target)
+        elif kind == "inspect-missing-demo":
+            target = DEMO_ROOT / f"{suite_dir.name}-inspect-missing"
+            cleanup_target = target
+            if target.exists():
+                shutil.rmtree(target)
+            prepare_out_dir(target, target.name, source=ROOT / "fixtures" / "v53" / "manifest.json")
+            inspect_demo(target)
+        elif kind == "inspect-stale-hash":
+            target = DEMO_ROOT / f"{suite_dir.name}-inspect-stale"
+            cleanup_target = target
+            if target.exists():
+                shutil.rmtree(target)
+            run_demo(target)
+            demo_path = target / "demo.json"
+            demo = read_json_obj(demo_path, label="demo.json")
+            demo["source_hashes"]["commands"] = "stale"
+            write_json_atomic(demo_path, demo, root=target)
+            write_json_atomic(target / "status.json", demo, root=target)
+            inspect_demo(target)
         else:
             raise DemoError("ERR_DEMO_FIXTURE_FAILED", f"unknown blocked fixture kind: {kind}")
     except DemoError as exc:
@@ -297,7 +421,13 @@ def run_fixture(fixture: dict[str, Any], suite_dir: Path) -> dict[str, Any]:
         kind = fixture["kind"]
         if kind == "canonical-demo":
             status = run_demo(suite_dir / f"{suite_dir.name}-{fixture_id}")
+        elif kind == "canonical-demo-inspect":
+            target = suite_dir / f"{suite_dir.name}-{fixture_id}"
+            run_demo(target)
+            status = inspect_demo(target)
         elif kind in {"unsafe-out", "non-owned"}:
+            status = blocked_fixture_status(kind, fixture, suite_dir)
+        elif kind in {"inspect-missing-demo", "inspect-stale-hash"}:
             status = blocked_fixture_status(kind, fixture, suite_dir)
         else:
             raise DemoError("ERR_DEMO_FIXTURE_FAILED", f"unknown fixture kind: {kind}")
@@ -357,14 +487,19 @@ def self_test() -> None:
         summary = evaluate_manifest(ROOT / "fixtures" / "v51" / "manifest.json", Path(tmp) / "demo-self-test")
     if summary["decision"] != "keep":
         raise DemoError("ERR_DEMO_FIXTURE_FAILED", "demo self-test manifest did not keep")
+    with tempfile.TemporaryDirectory(prefix="dwm-demo-inspect-self-test-", dir=DEMO_ROOT) as tmp:
+        summary = evaluate_manifest(ROOT / "fixtures" / "v53" / "manifest.json", Path(tmp) / "demo-inspect-self-test")
+    if summary["decision"] != "keep":
+        raise DemoError("ERR_DEMO_FIXTURE_FAILED", "demo inspect self-test manifest did not keep")
     print("dwm_demo self-test: pass")
 
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("command", nargs="?", choices=["run"])
+    parser.add_argument("command", nargs="?", choices=["run", "inspect"])
     parser.add_argument("--manifest")
     parser.add_argument("--out")
+    parser.add_argument("--demo")
     parser.add_argument("--self-test", action="store_true")
     args = parser.parse_args()
     try:
@@ -379,8 +514,12 @@ def main() -> int:
             if not args.out:
                 raise DemoError("ERR_DEMO_PATH_UNSAFE", "run requires --out")
             print(canonical_json_text(run_demo(Path(args.out))))
+        elif args.command == "inspect":
+            if not args.demo:
+                raise DemoError("ERR_DEMO_ARTIFACT_MISSING", "inspect requires --demo")
+            print(canonical_json_text(inspect_demo(Path(args.demo))))
         else:
-            parser.error("expected --self-test, --manifest, or run")
+            parser.error("expected --self-test, --manifest, run, or inspect")
     except DemoError as exc:
         print(canonical_json_text(exc.to_record()), file=sys.stderr)
         return 1

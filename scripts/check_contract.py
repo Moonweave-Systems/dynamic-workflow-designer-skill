@@ -1648,6 +1648,7 @@ def require_release_commands_pass() -> None:
         [sys.executable, "scripts/dwm_release_candidate.py", "--manifest", "fixtures/v50/manifest.json", "--out", "out/release-candidates/v50-final"],
         [sys.executable, "scripts/dwm_demo.py", "--self-test"],
         [sys.executable, "scripts/dwm_demo.py", "--manifest", "fixtures/v51/manifest.json", "--out", "out/demo/v51-final"],
+        [sys.executable, "scripts/dwm_demo.py", "--manifest", "fixtures/v53/manifest.json", "--out", "out/demo/v53-final"],
         [sys.executable, "scripts/dwm_review_gate.py", "--self-test"],
         [sys.executable, "scripts/dwm_dogfood_replay.py", "--self-test"],
         [sys.executable, "scripts/dwm.py", "plan", "V21 shell smoke", "--out", "out/v21/release-plan-smoke", "--json"],
@@ -3229,6 +3230,7 @@ def main() -> None:
             "python scripts/dwm_release_candidate.py cut --parity out/adapters/<parity_id> --operator out/daily-operator/<operator_id> --out out/release-candidates/<candidate_id>",
             "python scripts/dwm_release.py status --out out/release/<release_id>",
             "report.json.graph_metrics",
+            "python scripts/dwm_demo.py inspect --demo out/demo/quickstart",
             "benchmark-graph.json",
             "benchmark-graph.svg",
             "readme-snippet.md",
@@ -3255,6 +3257,8 @@ def main() -> None:
             "release-notes.md",
             "release-checklist.md",
             "demo.json",
+            "demo-inspect.json",
+            "demo-summary.md",
             "out/demo/quickstart",
             "assets/dwm-hero.svg",
             "assets/dwm-live-benchmark.svg",
@@ -3282,6 +3286,7 @@ def main() -> None:
             "docs/v50-release-candidate-cut-spec.md",
             "docs/v51-canonical-demo-spec.md",
             "docs/v52-readme-ux-spec.md",
+            "docs/v53-demo-inspect-spec.md",
             "generated `out/` directories are verification evidence, not source of truth",
             "deterministic control-plane above agent clis",
             "bounded adapter surfaces",
@@ -4021,6 +4026,30 @@ def main() -> None:
         ],
     )
     require_terms(
+        "docs/v53-demo-inspect-spec.md",
+        [
+            "status: implemented first demo inspect surface in",
+            "python scripts/dwm_demo.py inspect --demo out/demo/quickstart",
+            "demo-inspect.json",
+            "demo-summary.md",
+            "err_demo_artifact_missing",
+            "err_demo_stale_hash",
+            "do not refresh stale demo artifacts silently",
+        ],
+    )
+    require_terms(
+        "docs/v53-decision.md",
+        [
+            "decision: keep",
+            "python scripts/dwm_demo.py --manifest fixtures/v53/manifest.json --out out/demo/v53-final",
+            "demo-inspect.json",
+            "demo-summary.md",
+            "missing demo artifact blocking",
+            "stale command hash blocking",
+            "does not claim live adapter execution",
+        ],
+    )
+    require_terms(
         "docs/v7.5-decision.md",
         [
             "decision: keep",
@@ -4069,7 +4098,7 @@ def main() -> None:
             "python scripts/dwm.py commands --kind release --json",
             "`status`: `workflow-complete`",
             "`doctor_ok`: `true`",
-            "`release_command_count`: `105`",
+            "`release_command_count`: `106`",
             "does not claim workflow execution",
         ],
     )

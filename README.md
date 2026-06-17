@@ -30,12 +30,15 @@ executing live adapters or mutating source files:
 
 ```bash
 python scripts/dwm_demo.py run --out out/demo/quickstart
+python scripts/dwm_demo.py inspect --demo out/demo/quickstart
 ```
 
-This writes `demo.json`, `status.json`, and `README.md` under
+This writes `demo.json`, `status.json`, `README.md`, `demo-inspect.json`, and
+`demo-summary.md` under
 `out/demo/quickstart` while leaving source files untouched. It demonstrates the
 plan, compile, packet-review, adapter-parity, dogfood, daily-operator, and
-release-candidate surfaces without live adapter execution.
+release-candidate surfaces without live adapter execution. Inspect blocks stale
+or incomplete demo artifacts instead of silently refreshing them.
 
 Then use the skill when a task is too large or risky for one normal agent turn:
 
@@ -167,6 +170,8 @@ V51 records `demo.json`, `status.json`, and `README.md` for the canonical local
 demo so new users can see the full artifact loop first.
 V52 reorganizes the README around the quick demo, normal loop, current honesty
 boundaries, and benchmark-readiness caveats before adding any new graph claims.
+V53 records `demo-inspect.json` and `demo-summary.md` so demo output can be
+checked for missing artifacts and hash drift before a user trusts the result.
 
 Generate graph artifacts with:
 
@@ -235,7 +240,7 @@ python scripts/dwm_release.py status --out out/release/<release_id>
 | --- | --- |
 | `SKILL.md` | Codex skill entrypoint and workflow design contract. |
 | `scripts/dwm.py` | Product CLI for status, next actions, doctor, and command discovery. |
-| `scripts/dwm_demo.py` | Canonical local demo that records the product loop without live adapters. |
+| `scripts/dwm_demo.py` | Canonical local demo and inspect summary without live adapters. |
 | `scripts/check_contract.py` | Release contract smoke and documentation consistency check. |
 | `scripts/compile_workflow.py` | First-slice packet compiler. |
 | `scripts/dwm_runner.py` | Runner, session/worktree, review/repair, and fanout surfaces. |
@@ -283,6 +288,7 @@ python scripts/dwm_release.py status --out out/release/<release_id>
 - [`docs/v50-release-candidate-cut-spec.md`](docs/v50-release-candidate-cut-spec.md): release candidate cut.
 - [`docs/v51-canonical-demo-spec.md`](docs/v51-canonical-demo-spec.md): canonical local demo.
 - [`docs/v52-readme-ux-spec.md`](docs/v52-readme-ux-spec.md): README UX consolidation.
+- [`docs/v53-demo-inspect-spec.md`](docs/v53-demo-inspect-spec.md): demo inspect surface.
 
 Generated `out/` directories are verification evidence, not source of truth.
 

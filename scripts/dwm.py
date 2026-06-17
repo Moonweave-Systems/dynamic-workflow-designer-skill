@@ -110,6 +110,7 @@ RELEASE_COMMANDS = [
     "python scripts/dwm_release_candidate.py --manifest fixtures/v50/manifest.json --out out/release-candidates/v50-final",
     "python scripts/dwm_demo.py --self-test",
     "python scripts/dwm_demo.py --manifest fixtures/v51/manifest.json --out out/demo/v51-final",
+    "python scripts/dwm_demo.py --manifest fixtures/v53/manifest.json --out out/demo/v53-final",
     "python scripts/run_workflow.py --self-test",
     "python scripts/run_workflow.py --manifest fixtures/v3/manifest.json --out out/v3/final",
     "python scripts/orchestrate_workflow.py --self-test",
@@ -237,6 +238,8 @@ BASE_REQUIRED_PATHS = [
     "docs/v51-canonical-demo-spec.md",
     "docs/v52-decision.md",
     "docs/v52-readme-ux-spec.md",
+    "docs/v53-decision.md",
+    "docs/v53-demo-inspect-spec.md",
     "packaging/dwm-benchmark-attempts.json",
     "packaging/dwm-adapters.json",
     "packaging/dwm-benchmarks.json",
@@ -280,9 +283,12 @@ BASE_REQUIRED_PATHS = [
     "fixtures/v50/manifest.json",
     "scripts/dwm_release_candidate.py",
     "fixtures/v51/manifest.json",
+    "fixtures/v53/manifest.json",
     "scripts/dwm_demo.py",
     "docs/v52-decision.md",
     "docs/v52-readme-ux-spec.md",
+    "docs/v53-decision.md",
+    "docs/v53-demo-inspect-spec.md",
 ]
 
 
