@@ -1791,6 +1791,12 @@ def require_release_commands_pass() -> None:
         [sys.executable, "scripts/dwm_readme_graph_visibility.py", "--self-test"],
         [sys.executable, "scripts/dwm_readme_graph_visibility.py", "--manifest", "fixtures/v79/manifest.json", "--out", "out/readme-graph-visibility/v79-final"],
         [sys.executable, "scripts/dwm_readme_graph_visibility.py", "audit", "--readme", "README.md", "--timing", "out/graph-timing/v78-canonical/graph-timing.json", "--out", "out/readme-graph-visibility/v79-canonical"],
+        [sys.executable, "scripts/dwm_continuation_boundary.py", "--self-test"],
+        [sys.executable, "scripts/dwm_continuation_boundary.py", "--manifest", "fixtures/v80/manifest.json", "--out", "out/continuation-boundaries/v80-final"],
+        [sys.executable, "scripts/dwm_continuation_boundary.py", "assess", "--preflight", "out/large-workflow-queue-preflight/v77-canonical/queue-preflight.json", "--timing", "out/graph-timing/v78-canonical/graph-timing.json", "--visibility", "out/readme-graph-visibility/v79-canonical/readme-graph-visibility.json", "--out", "out/continuation-boundaries/v80-canonical"],
+        [sys.executable, "scripts/dwm_multi_slice_batch.py", "--self-test"],
+        [sys.executable, "scripts/dwm_multi_slice_batch.py", "--manifest", "fixtures/v81/manifest.json", "--out", "out/multi-slice-batches/v81-final"],
+        [sys.executable, "scripts/dwm_multi_slice_batch.py", "plan", "--boundary", "out/continuation-boundaries/v80-canonical/continuation-boundary.json", "--out", "out/multi-slice-batches/v81-canonical"],
         [sys.executable, "scripts/run_workflow.py", "--self-test"],
         [sys.executable, "scripts/run_workflow.py", "--manifest", "fixtures/v3/manifest.json", "--out", "out/v3/final"],
         [sys.executable, "scripts/orchestrate_workflow.py", "--self-test"],
@@ -3382,6 +3388,8 @@ def main() -> None:
             "python scripts/dwm_large_workflow_queue_preflight.py preflight --queue out/workflow-queues/v76-canonical/queue.json --out out/large-workflow-queue-preflight/<preflight_id>",
             "python scripts/dwm_graph_timing_gate.py check --progress out/dogfood-progress/local-v66-current/dogfood-progress.json --readiness out/dogfood-pair-series/local-v64-selected-series/graph-readiness.json --preflight out/large-workflow-queue-preflight/v77-canonical/queue-preflight.json --out out/graph-timing/<timing_id>",
             "python scripts/dwm_readme_graph_visibility.py audit --readme readme.md --timing out/graph-timing/v78-canonical/graph-timing.json --out out/readme-graph-visibility/<visibility_id>",
+            "python scripts/dwm_continuation_boundary.py assess --preflight out/large-workflow-queue-preflight/v77-canonical/queue-preflight.json --timing out/graph-timing/v78-canonical/graph-timing.json --visibility out/readme-graph-visibility/v79-canonical/readme-graph-visibility.json --out out/continuation-boundaries/<boundary_id>",
+            "python scripts/dwm_multi_slice_batch.py plan --boundary out/continuation-boundaries/v80-canonical/continuation-boundary.json --out out/multi-slice-batches/<batch_id>",
             "report.json.graph_metrics",
             "benchmark-graph.json",
             "dogfood-progress.json",
@@ -3396,6 +3404,10 @@ def main() -> None:
             "graph-timing.md",
             "readme-graph-visibility.json",
             "readme-graph-visibility.md",
+            "continuation-boundary.json",
+            "continuation-boundary.md",
+            "multi-slice-batch.json",
+            "multi-slice-batch.md",
             "dwm-dogfood-progress.svg",
             "assets/dwm-hero.svg",
             "assets/dwm-live-benchmark.svg",
@@ -3426,9 +3438,12 @@ def main() -> None:
             "docs/v77-large-workflow-queue-preflight-spec.md",
             "docs/v78-graph-timing-gate-spec.md",
             "docs/v79-readme-graph-visibility-spec.md",
+            "docs/v80-continuation-boundary-spec.md",
+            "docs/v81-multi-slice-batch-spec.md",
             "generated `out/` directories are verification evidence, not source of truth",
             "direct-agent superiority is not claimed",
             "process progress is not an upward benchmark claim",
+            "multi-slice continuation is allowed only for source-only or fixture-only",
         ],
     )
     require_terms("docs/v0.5-plan-schema-evaluator-spec.md", V05_REQUIRED_TERMS)
@@ -4864,6 +4879,58 @@ def main() -> None:
         ],
     )
     require_terms(
+        "docs/v80-continuation-boundary-spec.md",
+        [
+            "status: implemented continuation boundary gate in",
+            "`scripts/dwm_continuation_boundary.py`",
+            "`continuation-boundary.json`",
+            "`continuation-boundary.md`",
+            "source-only control-plane work through v83",
+            "must stop before queued command execution",
+            "v84 is the first human gate",
+            "write, delete, network, deploy, secret",
+        ],
+    )
+    require_terms(
+        "docs/v80-decision.md",
+        [
+            "decision: keep",
+            "python scripts/dwm_continuation_boundary.py --manifest fixtures/v80/manifest.json --out out/continuation-boundaries/v80-final",
+            "`suite_id`: `v80-continuation-boundary`",
+            "`fixture_count`: 4",
+            "`required_passed`: 4",
+            "`decision`: `keep`",
+            "source-only control-plane continuation through v83",
+            "human gate before queued command execution",
+        ],
+    )
+    require_terms(
+        "docs/v81-multi-slice-batch-spec.md",
+        [
+            "status: implemented multi-slice batch planner in",
+            "`scripts/dwm_multi_slice_batch.py`",
+            "`multi-slice-batch.json`",
+            "`multi-slice-batch.md`",
+            "does not execute commands",
+            "v84 human gate",
+            "`continue_source_control_plane`",
+            "`can_continue_without_human: true`",
+        ],
+    )
+    require_terms(
+        "docs/v81-decision.md",
+        [
+            "decision: keep",
+            "python scripts/dwm_multi_slice_batch.py --manifest fixtures/v81/manifest.json --out out/multi-slice-batches/v81-final",
+            "`suite_id`: `v81-multi-slice-batch`",
+            "`fixture_count`: 3",
+            "`required_passed`: 3",
+            "`decision`: `keep`",
+            "plan-only multi-slice batch",
+            "v84 as the first human gate",
+        ],
+    )
+    require_terms(
         "docs/v7.5-decision.md",
         [
             "decision: keep",
@@ -4912,7 +4979,7 @@ def main() -> None:
             "python scripts/dwm.py commands --kind release --json",
             "`status`: `workflow-complete`",
             "`doctor_ok`: `true`",
-            "`release_command_count`: `161`",
+            "`release_command_count`: `167`",
             "does not claim workflow execution",
         ],
     )

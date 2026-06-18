@@ -1,0 +1,75 @@
+{
+  "suite_id": "v80-continuation-boundary",
+  "fixtures": [
+    {
+      "id": "ready-source-control-plane",
+      "required": true,
+      "preflight": {
+        "status": "queue-preflight-ready",
+        "risk_codes": []
+      },
+      "timing": {
+        "status": "graph-timing-recorded",
+        "decision": "progress-only-visible"
+      },
+      "visibility": {
+        "status": "readme-graph-visibility-ready",
+        "decision": "readme_visibility_ready"
+      },
+      "expected_decision": "continue_source_control_plane"
+    },
+    {
+      "id": "network-risk-blocked",
+      "required": true,
+      "preflight": {
+        "status": "queue-preflight-ready",
+        "risk_codes": [
+          "network"
+        ]
+      },
+      "timing": {
+        "status": "graph-timing-recorded",
+        "decision": "progress-only-visible"
+      },
+      "visibility": {
+        "status": "readme-graph-visibility-ready",
+        "decision": "readme_visibility_ready"
+      },
+      "expected_decision": "blocked"
+    },
+    {
+      "id": "public-graph-blocked",
+      "required": true,
+      "preflight": {
+        "status": "queue-preflight-ready",
+        "risk_codes": []
+      },
+      "timing": {
+        "status": "graph-timing-recorded",
+        "decision": "public-benchmark-visible"
+      },
+      "visibility": {
+        "status": "readme-graph-visibility-ready",
+        "decision": "readme_visibility_ready"
+      },
+      "expected_decision": "blocked"
+    },
+    {
+      "id": "readme-visibility-blocked",
+      "required": true,
+      "preflight": {
+        "status": "queue-preflight-ready",
+        "risk_codes": []
+      },
+      "timing": {
+        "status": "graph-timing-recorded",
+        "decision": "progress-only-visible"
+      },
+      "visibility": {
+        "status": "readme-graph-visibility-blocked",
+        "decision": "blocked"
+      },
+      "expected_decision": "blocked"
+    }
+  ]
+}

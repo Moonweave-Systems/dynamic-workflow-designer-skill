@@ -116,6 +116,12 @@ promotion requires real release history.
 - V79: `docs/v79-readme-graph-visibility-spec.md` added
   `readme-graph-visibility.json` and `readme-graph-visibility.md` to audit
   README graph visibility against V78 graph timing.
+- V80: `docs/v80-continuation-boundary-spec.md` added
+  `continuation-boundary.json` and `continuation-boundary.md` to define where
+  continuous source-only work must stop.
+- V81: `docs/v81-multi-slice-batch-spec.md` added `multi-slice-batch.json`
+  and `multi-slice-batch.md` to plan several safe slices before the V84 human
+  gate.
 
 ## Current Public Boundaries
 
@@ -127,3 +133,5 @@ promotion requires real release history.
   benchmark graph.
 - README graph visibility must stay aligned with graph timing and overclaim
   blockers.
+- Multi-slice continuation is allowed only for source-only or fixture-only
+  work before actual queued command execution.

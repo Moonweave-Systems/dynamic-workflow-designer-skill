@@ -1,0 +1,67 @@
+{
+  "suite_id": "v81-multi-slice-batch",
+  "fixtures": [
+    {
+      "id": "ready-batch",
+      "required": true,
+      "boundary": {
+        "decision": "continue_source_control_plane",
+        "can_continue_without_human": true,
+        "continuous_until": "V83 source-only control-plane and receipt-schema work",
+        "first_human_gate": {
+          "id": "V84",
+          "reason": "actual execution"
+        },
+        "safe_batchable_slices": [
+          {
+            "id": "V80",
+            "name": "continuation boundary gate",
+            "risk": "source-only"
+          },
+          {
+            "id": "V81",
+            "name": "multi-slice batch planner",
+            "risk": "source-only"
+          },
+          {
+            "id": "V82",
+            "name": "execution receipt schema preflight",
+            "risk": "source-only"
+          },
+          {
+            "id": "V83",
+            "name": "runner receipt dry-run gate",
+            "risk": "fixture-only"
+          }
+        ]
+      },
+      "expected_decision": "batch_ready"
+    },
+    {
+      "id": "boundary-blocked",
+      "required": true,
+      "boundary": {
+        "decision": "blocked",
+        "can_continue_without_human": false,
+        "safe_batchable_slices": []
+      },
+      "expected_decision": "blocked"
+    },
+    {
+      "id": "human-required-blocked",
+      "required": true,
+      "boundary": {
+        "decision": "continue_source_control_plane",
+        "can_continue_without_human": false,
+        "safe_batchable_slices": [
+          {
+            "id": "V81",
+            "name": "multi-slice batch planner",
+            "risk": "source-only"
+          }
+        ]
+      },
+      "expected_decision": "blocked"
+    }
+  ]
+}
