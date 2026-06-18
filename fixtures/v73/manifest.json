@@ -1,0 +1,348 @@
+{
+  "fixtures": [
+    {
+      "expected_status": "large-workflow-controlled",
+      "id": "large-workflow-ready",
+      "required": true,
+      "workflow": {
+        "artifact_contracts": [
+          "workflow.plan.json",
+          "receipt.json",
+          "status.json"
+        ],
+        "automation": [
+          "resume next safe packet",
+          "generate control receipt"
+        ],
+        "budget": {
+          "max_retries": 1,
+          "max_rounds": 3,
+          "time_box": "large task slice"
+        },
+        "claim_limits": [
+          "internal workflow control evidence only",
+          "no external benchmark superiority"
+        ],
+        "drift_checks": [
+          "compare next action with original objective",
+          "block unsupported public claims"
+        ],
+        "evidence": {
+          "receipts": [
+            "large-workflow-control.json"
+          ],
+          "source_hashes": {
+            "fixture": "ready"
+          }
+        },
+        "metrics": {
+          "commands_run": 0,
+          "duration_ms": 0,
+          "files_touched": 0,
+          "human_interruptions": 0
+        },
+        "objective": "Carry a large repository task from user intent to verified output without direction drift.",
+        "parallelism": {
+          "concurrency_cap": 2,
+          "fan_in_rule": "fan in only for synthesis"
+        },
+        "phases": [
+          {
+            "depends_on": [],
+            "id": "scope",
+            "slice_size": "small"
+          },
+          {
+            "depends_on": [
+              "scope"
+            ],
+            "id": "decompose",
+            "slice_size": "medium"
+          },
+          {
+            "depends_on": [
+              "decompose"
+            ],
+            "id": "execute",
+            "slice_size": "medium"
+          },
+          {
+            "depends_on": [
+              "execute"
+            ],
+            "id": "verify",
+            "slice_size": "small"
+          }
+        ],
+        "quality_gates": [
+          "tests pass",
+          "review passes",
+          "claim limits pass"
+        ],
+        "repair_paths": [
+          "repair failed verification",
+          "redesign bad decomposition",
+          "ask human at real gate"
+        ],
+        "resume": {
+          "invalidators": [
+            "objective changed",
+            "artifact hash drift"
+          ],
+          "restart_points": [
+            "scope",
+            "decompose",
+            "execute",
+            "verify"
+          ]
+        },
+        "review_repair_loop": {
+          "repair": "bounded retry",
+          "review": "adversarial"
+        },
+        "risk_gates": [
+          {
+            "safe_default": "stop and request approval",
+            "trigger": "write/deploy/secret/external action"
+          }
+        ],
+        "success_criteria": [
+          "direction preserved",
+          "quality verified",
+          "human gates only for real risk"
+        ],
+        "summary": "Internal control-plane assessment for a large DWM workflow.",
+        "user_intent_trace": [
+          "original objective",
+          "non-goals",
+          "success criteria"
+        ],
+        "verification": [
+          "contract self-test",
+          "independent review",
+          "artifact hash checks"
+        ]
+      }
+    },
+    {
+      "expected_status": "large-workflow-blocked",
+      "id": "missing-direction-drift-blocked",
+      "required": true,
+      "workflow": {
+        "artifact_contracts": [
+          "workflow.plan.json"
+        ],
+        "automation": [
+          "resume next safe packet"
+        ],
+        "budget": {
+          "max_rounds": 2
+        },
+        "claim_limits": [
+          "internal workflow control evidence only"
+        ],
+        "evidence": {
+          "receipts": [
+            "large-workflow-control.json"
+          ],
+          "source_hashes": {
+            "fixture": "missing-direction"
+          }
+        },
+        "metrics": {
+          "commands_run": 0
+        },
+        "objective": "Carry a large repository task.",
+        "parallelism": {
+          "concurrency_cap": 2
+        },
+        "phases": [
+          {
+            "depends_on": [],
+            "id": "scope",
+            "slice_size": "small"
+          },
+          {
+            "depends_on": [
+              "scope"
+            ],
+            "id": "execute",
+            "slice_size": "medium"
+          },
+          {
+            "depends_on": [
+              "execute"
+            ],
+            "id": "verify",
+            "slice_size": "small"
+          }
+        ],
+        "quality_gates": [
+          "tests pass"
+        ],
+        "repair_paths": [
+          "repair failed verification"
+        ],
+        "resume": {
+          "invalidators": [
+            "artifact hash drift"
+          ],
+          "restart_points": [
+            "scope",
+            "execute",
+            "verify"
+          ]
+        },
+        "review_repair_loop": {
+          "review": "adversarial"
+        },
+        "risk_gates": [
+          {
+            "safe_default": "stop and request approval",
+            "trigger": "write action"
+          }
+        ],
+        "success_criteria": [
+          "quality verified"
+        ],
+        "user_intent_trace": [
+          "original objective"
+        ],
+        "verification": [
+          "contract self-test"
+        ]
+      }
+    },
+    {
+      "expected_status": "large-workflow-blocked",
+      "id": "overclaim-blocked",
+      "required": true,
+      "workflow": {
+        "artifact_contracts": [
+          "workflow.plan.json",
+          "receipt.json",
+          "status.json"
+        ],
+        "automation": [
+          "resume next safe packet",
+          "generate control receipt"
+        ],
+        "budget": {
+          "max_retries": 1,
+          "max_rounds": 3,
+          "time_box": "large task slice"
+        },
+        "claim_limits": [
+          "internal workflow control evidence only",
+          "no external benchmark superiority"
+        ],
+        "drift_checks": [
+          "compare next action with original objective",
+          "block unsupported public claims"
+        ],
+        "evidence": {
+          "receipts": [
+            "large-workflow-control.json"
+          ],
+          "source_hashes": {
+            "fixture": "overclaim"
+          }
+        },
+        "metrics": {
+          "commands_run": 0,
+          "duration_ms": 0,
+          "files_touched": 0,
+          "human_interruptions": 0
+        },
+        "objective": "Carry a large repository task from user intent to verified output without direction drift.",
+        "parallelism": {
+          "concurrency_cap": 2,
+          "fan_in_rule": "fan in only for synthesis"
+        },
+        "phases": [
+          {
+            "depends_on": [],
+            "id": "scope",
+            "slice_size": "small"
+          },
+          {
+            "depends_on": [
+              "scope"
+            ],
+            "id": "decompose",
+            "slice_size": "medium"
+          },
+          {
+            "depends_on": [
+              "decompose"
+            ],
+            "id": "execute",
+            "slice_size": "medium"
+          },
+          {
+            "depends_on": [
+              "execute"
+            ],
+            "id": "verify",
+            "slice_size": "small"
+          }
+        ],
+        "public_claim": "external benchmark superiority",
+        "quality_gates": [
+          "tests pass",
+          "review passes",
+          "claim limits pass"
+        ],
+        "repair_paths": [
+          "repair failed verification",
+          "redesign bad decomposition",
+          "ask human at real gate"
+        ],
+        "resume": {
+          "invalidators": [
+            "objective changed",
+            "artifact hash drift"
+          ],
+          "restart_points": [
+            "scope",
+            "decompose",
+            "execute",
+            "verify"
+          ]
+        },
+        "review_repair_loop": {
+          "repair": "bounded retry",
+          "review": "adversarial"
+        },
+        "risk_gates": [
+          {
+            "safe_default": "stop and request approval",
+            "trigger": "write/deploy/secret/external action"
+          }
+        ],
+        "success_criteria": [
+          "direction preserved",
+          "quality verified",
+          "human gates only for real risk"
+        ],
+        "summary": "Internal control-plane assessment for a large DWM workflow.",
+        "user_intent_trace": [
+          "original objective",
+          "non-goals",
+          "success criteria"
+        ],
+        "verification": [
+          "contract self-test",
+          "independent review",
+          "artifact hash checks"
+        ]
+      }
+    }
+  ],
+  "required_fixture_ids": [
+    "large-workflow-ready",
+    "missing-direction-drift-blocked",
+    "overclaim-blocked"
+  ],
+  "suite_id": "v73-large-workflow-control"
+}

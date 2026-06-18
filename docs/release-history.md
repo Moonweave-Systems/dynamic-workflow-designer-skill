@@ -96,6 +96,9 @@ promotion requires real release history.
 - V72: `docs/v72-release-timing-history-spec.md` added
   `timing-history.json`, `timing-history.md`, and `status.json` for release
   timing history evidence.
+- V73: `docs/v73-large-workflow-control-spec.md` added the six-axis
+  large-workflow control evaluator for direction fidelity, decomposition,
+  execution quality, efficiency, recovery, and evidence.
 
 ## Current Public Boundaries
 
