@@ -139,6 +139,9 @@ RELEASE_COMMANDS = [
     "python scripts/dwm_large_workflow_control.py --self-test",
     "python scripts/dwm_large_workflow_control.py --manifest fixtures/v73/manifest.json --out out/large-workflow-control/v73-final",
     "python scripts/evaluate_plan.py --plan docs/v73-large-workflow-control.workflow.plan.json",
+    "python scripts/dwm_large_workflow_dogfood.py --self-test",
+    "python scripts/dwm_large_workflow_dogfood.py --manifest fixtures/v74/manifest.json --out out/large-workflow-dogfood/v74-final",
+    "python scripts/dwm_large_workflow_dogfood.py record --run out/v9/v32-semantic-dogfood --out out/large-workflow-dogfood/v74-canonical",
     "python scripts/dwm_daily_operator.py --self-test",
     "python scripts/dwm_daily_operator.py --manifest fixtures/v48/manifest.json --out out/daily-operator/v48-final",
     "python scripts/dwm_release_candidate.py --self-test",
@@ -319,6 +322,8 @@ BASE_REQUIRED_PATHS = [
     "docs/v73-large-workflow-control-spec.md",
     "docs/v73-large-workflow-control-blueprint.md",
     "docs/v73-large-workflow-control.workflow.plan.json",
+    "docs/v74-decision.md",
+    "docs/v74-large-workflow-dogfood-spec.md",
     "docs/command-reference.md",
     "docs/release-history.md",
     "packaging/dwm-benchmark-attempts.json",
@@ -375,6 +380,7 @@ BASE_REQUIRED_PATHS = [
     "scripts/dwm_release_timing.py",
     "scripts/dwm_release_timing_history.py",
     "scripts/dwm_large_workflow_control.py",
+    "scripts/dwm_large_workflow_dogfood.py",
     "scripts/dwm_daily_operator.py",
     "scripts/dwm_adapter_live_matrix.py",
     "fixtures/v49/manifest.json",
@@ -446,6 +452,9 @@ BASE_REQUIRED_PATHS = [
     "docs/v73-large-workflow-control-spec.md",
     "docs/v73-large-workflow-control-blueprint.md",
     "docs/v73-large-workflow-control.workflow.plan.json",
+    "fixtures/v74/manifest.json",
+    "docs/v74-decision.md",
+    "docs/v74-large-workflow-dogfood-spec.md",
 ]
 
 

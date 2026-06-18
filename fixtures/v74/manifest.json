@@ -1,0 +1,109 @@
+{
+  "fixtures": [
+    {
+      "expected_status": "dogfood-control-recorded",
+      "id": "ready-dogfood-control",
+      "required": true,
+      "run_path": "fixture-ready",
+      "run_status": {
+        "completed_phase_ids": [
+          "release_inventory",
+          "evidence_review",
+          "release_decision",
+          "human_gate"
+        ],
+        "human_approved_phase_ids": [
+          "human_gate"
+        ],
+        "invalidators": [],
+        "resume_state": "resumable",
+        "reviewed_phase_ids": [
+          "evidence_review",
+          "release_decision"
+        ],
+        "run_id": "fixture-ready",
+        "schema_version": "1.0",
+        "selected_phase_ids": [],
+        "snapshots": {
+          "journal_hash": "fixture-journal",
+          "run_hash": "fixture-run",
+          "state_hash": "fixture-state"
+        },
+        "status": "workflow-complete"
+      }
+    },
+    {
+      "expected_status": "dogfood-control-blocked",
+      "id": "missing-human-gate-blocked",
+      "required": true,
+      "run_path": "fixture-missing-human",
+      "run_status": {
+        "completed_phase_ids": [
+          "release_inventory",
+          "evidence_review",
+          "release_decision",
+          "human_gate"
+        ],
+        "human_approved_phase_ids": [],
+        "invalidators": [],
+        "resume_state": "resumable",
+        "reviewed_phase_ids": [
+          "evidence_review",
+          "release_decision"
+        ],
+        "run_id": "fixture-missing-human",
+        "schema_version": "1.0",
+        "selected_phase_ids": [],
+        "snapshots": {
+          "journal_hash": "fixture-journal",
+          "run_hash": "fixture-run",
+          "state_hash": "fixture-state"
+        },
+        "status": "workflow-complete"
+      }
+    },
+    {
+      "expected_status": "dogfood-control-blocked",
+      "id": "invalidated-dogfood-blocked",
+      "required": true,
+      "run_path": "fixture-invalidated",
+      "run_status": {
+        "completed_phase_ids": [
+          "release_inventory",
+          "evidence_review",
+          "release_decision",
+          "human_gate"
+        ],
+        "human_approved_phase_ids": [
+          "human_gate"
+        ],
+        "invalidators": [
+          {
+            "code": "ERR_STALE_STATUS",
+            "message": "fixture drift"
+          }
+        ],
+        "resume_state": "resumable",
+        "reviewed_phase_ids": [
+          "evidence_review",
+          "release_decision"
+        ],
+        "run_id": "fixture-invalidated",
+        "schema_version": "1.0",
+        "selected_phase_ids": [],
+        "snapshots": {
+          "journal_hash": "fixture-journal",
+          "run_hash": "fixture-run",
+          "state_hash": "fixture-state"
+        },
+        "status": "workflow-complete"
+      }
+    }
+  ],
+  "required_fixture_ids": [
+    "ready-dogfood-control",
+    "missing-human-gate-blocked",
+    "invalidated-dogfood-blocked"
+  ],
+  "suite_id": "v74-large-workflow-dogfood"
+}

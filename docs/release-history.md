@@ -99,6 +99,8 @@ promotion requires real release history.
 - V73: `docs/v73-large-workflow-control-spec.md` added the six-axis
   large-workflow control evaluator for direction fidelity, decomposition,
   execution quality, efficiency, recovery, and evidence.
+- V74: `docs/v74-large-workflow-dogfood-spec.md` applied the V73 six-axis
+  control evaluator to canonical dogfood workflow status.
 
 ## Current Public Boundaries
 

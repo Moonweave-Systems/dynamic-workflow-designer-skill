@@ -1772,6 +1772,9 @@ def require_release_commands_pass() -> None:
         [sys.executable, "scripts/dwm_large_workflow_control.py", "--self-test"],
         [sys.executable, "scripts/dwm_large_workflow_control.py", "--manifest", "fixtures/v73/manifest.json", "--out", "out/large-workflow-control/v73-final"],
         [sys.executable, "scripts/evaluate_plan.py", "--plan", "docs/v73-large-workflow-control.workflow.plan.json"],
+        [sys.executable, "scripts/dwm_large_workflow_dogfood.py", "--self-test"],
+        [sys.executable, "scripts/dwm_large_workflow_dogfood.py", "--manifest", "fixtures/v74/manifest.json", "--out", "out/large-workflow-dogfood/v74-final"],
+        [sys.executable, "scripts/dwm_large_workflow_dogfood.py", "record", "--run", "out/v9/v32-semantic-dogfood", "--out", "out/large-workflow-dogfood/v74-canonical"],
         [sys.executable, "scripts/run_workflow.py", "--self-test"],
         [sys.executable, "scripts/run_workflow.py", "--manifest", "fixtures/v3/manifest.json", "--out", "out/v3/final"],
         [sys.executable, "scripts/orchestrate_workflow.py", "--self-test"],
@@ -3357,6 +3360,7 @@ def main() -> None:
             "python scripts/dwm_release_timing.py measure --limit 3 --out out/release-timing/<timing_id>",
             "python scripts/dwm_release_timing_history.py build --timing-root out/release-timing --out out/release-timing-history/<history_id>",
             "python scripts/dwm_large_workflow_control.py assess --workflow workflow.json --out out/large-workflow-control/<control_id>",
+            "python scripts/dwm_large_workflow_dogfood.py record --run out/v9/v32-semantic-dogfood --out out/large-workflow-dogfood/<dogfood_id>",
             "report.json.graph_metrics",
             "benchmark-graph.json",
             "dogfood-progress.json",
@@ -3384,6 +3388,7 @@ def main() -> None:
             "docs/v71-release-timing-spec.md",
             "docs/v72-release-timing-history-spec.md",
             "docs/v73-large-workflow-control-spec.md",
+            "docs/v74-large-workflow-dogfood-spec.md",
             "generated `out/` directories are verification evidence, not source of truth",
             "direct-agent superiority is not claimed",
             "process progress is not an upward benchmark claim",
@@ -4643,6 +4648,35 @@ def main() -> None:
         ],
     )
     require_terms(
+        "docs/v74-large-workflow-dogfood-spec.md",
+        [
+            "status: implemented v73 control receipt over real dwm dogfood state in",
+            "`scripts/dwm_large_workflow_dogfood.py`",
+            "`out/v9/v32-semantic-dogfood`",
+            "`dogfood-control.json`",
+            "`dogfood-control.md`",
+            "`large-workflow-control.json`",
+            "missing human gate blocking",
+            "invalidated dogfood blocking",
+            "does not claim fully autonomous completion",
+        ],
+    )
+    require_terms(
+        "docs/v74-decision.md",
+        [
+            "decision: keep",
+            "python scripts/dwm_large_workflow_dogfood.py --manifest fixtures/v74/manifest.json --out out/large-workflow-dogfood/v74-final",
+            "`suite_id`: `v74-large-workflow-dogfood`",
+            "`fixture_count`: 3",
+            "`required_passed`: 3",
+            "`decision`: `keep`",
+            "applying v73 control to dogfood status",
+            "missing human gate blocking",
+            "invalidator blocking",
+            "does not execute live adapters",
+        ],
+    )
+    require_terms(
         "docs/v7.5-decision.md",
         [
             "decision: keep",
@@ -4691,7 +4725,7 @@ def main() -> None:
             "python scripts/dwm.py commands --kind release --json",
             "`status`: `workflow-complete`",
             "`doctor_ok`: `true`",
-            "`release_command_count`: `143`",
+            "`release_command_count`: `146`",
             "does not claim workflow execution",
         ],
     )
