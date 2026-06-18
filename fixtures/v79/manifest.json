@@ -1,0 +1,129 @@
+{
+  "suite_id": "v79-readme-graph-visibility",
+  "fixtures": [
+    {
+      "id": "current-safe-visibility",
+      "required": true,
+      "readme_text": "# DWM\n## Evidence Graphs\n### Process Progress\n![DWM dogfood evidence progress](assets/dwm-dogfood-progress.svg)\nIt is not a public benchmark graph and does not claim upward performance.\n### Benchmark Evidence\n![DWM live benchmark evidence](assets/dwm-live-benchmark.svg)\nBenchmark visuals are source-bound.\nTrend promotion is blocked until release history supports the claim; public trend promotion requires real release history.\n",
+      "timing": {
+        "status": "graph-timing-recorded",
+        "decision": "progress-only-visible",
+        "decisions": [
+          {
+            "graph_type": "process_progress",
+            "ready": true,
+            "public_claim_allowed": false,
+            "blocked_by": []
+          },
+          {
+            "graph_type": "public_benchmark_trend",
+            "ready": false,
+            "public_claim_allowed": false,
+            "blocked_by": [
+              {
+                "code": "ERR_GRAPH_TIMING_PUBLIC_PROMOTION_MISSING"
+              }
+            ]
+          }
+        ]
+      },
+      "expected_decision": "readme_visibility_ready"
+    },
+    {
+      "id": "missing-process-label-blocked",
+      "required": true,
+      "readme_text": "# DWM\n## Evidence Graphs\n![DWM dogfood evidence progress](assets/dwm-dogfood-progress.svg)\n![DWM live benchmark evidence](assets/dwm-live-benchmark.svg)\nBenchmark visuals are source-bound.\nTrend promotion is blocked until release history supports the claim; public trend promotion requires real release history.\n",
+      "timing": {
+        "status": "graph-timing-recorded",
+        "decision": "progress-only-visible",
+        "decisions": [
+          {
+            "graph_type": "process_progress",
+            "ready": true,
+            "public_claim_allowed": false,
+            "blocked_by": []
+          },
+          {
+            "graph_type": "public_benchmark_trend",
+            "ready": false,
+            "public_claim_allowed": false,
+            "blocked_by": []
+          }
+        ]
+      },
+      "expected_decision": "blocked"
+    },
+    {
+      "id": "benchmark-label-missing-blocked",
+      "required": true,
+      "readme_text": "# DWM\n## Evidence Graphs\n![DWM dogfood evidence progress](assets/dwm-dogfood-progress.svg)\nIt is not a public benchmark graph and does not claim upward performance.\n![DWM live benchmark evidence](assets/dwm-live-benchmark.svg)\n",
+      "timing": {
+        "status": "graph-timing-recorded",
+        "decision": "progress-only-visible",
+        "decisions": [
+          {
+            "graph_type": "process_progress",
+            "ready": true,
+            "public_claim_allowed": false,
+            "blocked_by": []
+          },
+          {
+            "graph_type": "public_benchmark_trend",
+            "ready": false,
+            "public_claim_allowed": false,
+            "blocked_by": []
+          }
+        ]
+      },
+      "expected_decision": "blocked"
+    },
+    {
+      "id": "public-trend-ready-blocked",
+      "required": true,
+      "readme_text": "# DWM\n## Evidence Graphs\n![DWM dogfood evidence progress](assets/dwm-dogfood-progress.svg)\nIt is not a public benchmark graph and does not claim upward performance.\n![DWM live benchmark evidence](assets/dwm-live-benchmark.svg)\nBenchmark visuals are source-bound.\nTrend promotion is blocked until release history supports the claim; public trend promotion requires real release history.\n",
+      "timing": {
+        "status": "graph-timing-recorded",
+        "decision": "public-benchmark-visible",
+        "decisions": [
+          {
+            "graph_type": "process_progress",
+            "ready": true,
+            "public_claim_allowed": false,
+            "blocked_by": []
+          },
+          {
+            "graph_type": "public_benchmark_trend",
+            "ready": true,
+            "public_claim_allowed": true,
+            "blocked_by": []
+          }
+        ]
+      },
+      "expected_decision": "blocked"
+    },
+    {
+      "id": "forbidden-claim-blocked",
+      "required": true,
+      "readme_text": "# DWM\n## Evidence Graphs\n![DWM dogfood evidence progress](assets/dwm-dogfood-progress.svg)\nIt is not a public benchmark graph and does not claim upward performance.\nBenchmark visuals are source-bound.\nTrend promotion is blocked until release history supports the claim; public trend promotion requires real release history.\nDWM beats Claude.\n",
+      "timing": {
+        "status": "graph-timing-recorded",
+        "decision": "progress-only-visible",
+        "decisions": [
+          {
+            "graph_type": "process_progress",
+            "ready": true,
+            "public_claim_allowed": false,
+            "blocked_by": []
+          },
+          {
+            "graph_type": "public_benchmark_trend",
+            "ready": false,
+            "public_claim_allowed": false,
+            "blocked_by": []
+          }
+        ]
+      },
+      "expected_decision": "blocked"
+    }
+  ]
+}

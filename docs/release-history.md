@@ -113,6 +113,9 @@ promotion requires real release history.
 - V78: `docs/v78-graph-timing-gate-spec.md` added `graph-timing.json` and
   `graph-timing.md` to distinguish process progress visibility from public
   benchmark trend promotion.
+- V79: `docs/v79-readme-graph-visibility-spec.md` added
+  `readme-graph-visibility.json` and `readme-graph-visibility.md` to audit
+  README graph visibility against V78 graph timing.
 
 ## Current Public Boundaries
 
@@ -122,3 +125,5 @@ promotion requires real release history.
 - Benchmark promotion remains gated by history, review, and claim policy.
 - Graph timing keeps process progress visible without forcing a public upward
   benchmark graph.
+- README graph visibility must stay aligned with graph timing and overclaim
+  blockers.

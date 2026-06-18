@@ -154,6 +154,9 @@ RELEASE_COMMANDS = [
     "python scripts/dwm_graph_timing_gate.py --self-test",
     "python scripts/dwm_graph_timing_gate.py --manifest fixtures/v78/manifest.json --out out/graph-timing/v78-final",
     "python scripts/dwm_graph_timing_gate.py check --progress out/dogfood-progress/local-v66-current/dogfood-progress.json --readiness out/dogfood-pair-series/local-v64-selected-series/graph-readiness.json --preflight out/large-workflow-queue-preflight/v77-canonical/queue-preflight.json --out out/graph-timing/v78-canonical",
+    "python scripts/dwm_readme_graph_visibility.py --self-test",
+    "python scripts/dwm_readme_graph_visibility.py --manifest fixtures/v79/manifest.json --out out/readme-graph-visibility/v79-final",
+    "python scripts/dwm_readme_graph_visibility.py audit --readme README.md --timing out/graph-timing/v78-canonical/graph-timing.json --out out/readme-graph-visibility/v79-canonical",
     "python scripts/dwm_daily_operator.py --self-test",
     "python scripts/dwm_daily_operator.py --manifest fixtures/v48/manifest.json --out out/daily-operator/v48-final",
     "python scripts/dwm_release_candidate.py --self-test",
@@ -344,6 +347,8 @@ BASE_REQUIRED_PATHS = [
     "docs/v77-large-workflow-queue-preflight-spec.md",
     "docs/v78-decision.md",
     "docs/v78-graph-timing-gate-spec.md",
+    "docs/v79-decision.md",
+    "docs/v79-readme-graph-visibility-spec.md",
     "docs/command-reference.md",
     "docs/release-history.md",
     "packaging/dwm-benchmark-attempts.json",
@@ -405,6 +410,7 @@ BASE_REQUIRED_PATHS = [
     "scripts/dwm_large_workflow_queue_bridge.py",
     "scripts/dwm_large_workflow_queue_preflight.py",
     "scripts/dwm_graph_timing_gate.py",
+    "scripts/dwm_readme_graph_visibility.py",
     "scripts/dwm_daily_operator.py",
     "scripts/dwm_adapter_live_matrix.py",
     "fixtures/v49/manifest.json",
@@ -491,6 +497,9 @@ BASE_REQUIRED_PATHS = [
     "fixtures/v78/manifest.json",
     "docs/v78-decision.md",
     "docs/v78-graph-timing-gate-spec.md",
+    "fixtures/v79/manifest.json",
+    "docs/v79-decision.md",
+    "docs/v79-readme-graph-visibility-spec.md",
 ]
 
 

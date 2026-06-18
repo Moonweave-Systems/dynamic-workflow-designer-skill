@@ -108,6 +108,7 @@ python scripts/dwm_large_workflow_next.py select --control out/large-workflow-do
 python scripts/dwm_large_workflow_queue_bridge.py bridge --selection out/large-workflow-next/v75-canonical/large-workflow-next.json --out out/large-workflow-queue-bridge/<bridge_id> --queue-out out/workflow-queues/<queue_id>
 python scripts/dwm_large_workflow_queue_preflight.py preflight --queue out/workflow-queues/v76-canonical/queue.json --out out/large-workflow-queue-preflight/<preflight_id>
 python scripts/dwm_graph_timing_gate.py check --progress out/dogfood-progress/local-v66-current/dogfood-progress.json --readiness out/dogfood-pair-series/local-v64-selected-series/graph-readiness.json --preflight out/large-workflow-queue-preflight/v77-canonical/queue-preflight.json --out out/graph-timing/<timing_id>
+python scripts/dwm_readme_graph_visibility.py audit --readme README.md --timing out/graph-timing/v78-canonical/graph-timing.json --out out/readme-graph-visibility/<visibility_id>
 ```
 
 Release artifacts include `operator-loop.json`, `today.md`,
@@ -119,6 +120,7 @@ Release artifacts include `operator-loop.json`, `today.md`,
 `large-workflow-next.json`, `large-workflow-next.md`, `queue-bridge.json`,
 `queue-packets.json`, `queue-bridge.md`, `queue-preflight.json`,
 `queue-preflight.md`, `graph-timing.json`, `graph-timing.md`, and
+`readme-graph-visibility.json`, `readme-graph-visibility.md`, and
 `status.json`.
 
 ## Repository Map
@@ -152,6 +154,7 @@ Release artifacts include `operator-loop.json`, `today.md`,
 | `scripts/dwm_dogfood_progress.py` | Dogfood evidence process progress graph. |
 | `scripts/dwm_dogfood_progress_asset_promotion.py` | Reviewable README asset bundle for the dogfood process graph. |
 | `scripts/dwm_graph_timing_gate.py` | Graph timing gate that separates process progress visibility from public benchmark trends. |
+| `scripts/dwm_readme_graph_visibility.py` | README graph visibility audit aligned with V78 graph timing. |
 | `scripts/dwm_daily_operator.py` | Daily operator loop for ready, blocked, and freshness state. |
 | `scripts/dwm_adapters.py` | Adapter registry, normalized evidence, and parity matrix checks. |
 | `scripts/dwm_adapter_live_matrix.py` | Local adapter command availability and auth-assumption matrix. |

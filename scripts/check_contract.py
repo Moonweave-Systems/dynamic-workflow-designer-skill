@@ -1788,6 +1788,9 @@ def require_release_commands_pass() -> None:
         [sys.executable, "scripts/dwm_graph_timing_gate.py", "--self-test"],
         [sys.executable, "scripts/dwm_graph_timing_gate.py", "--manifest", "fixtures/v78/manifest.json", "--out", "out/graph-timing/v78-final"],
         [sys.executable, "scripts/dwm_graph_timing_gate.py", "check", "--progress", "out/dogfood-progress/local-v66-current/dogfood-progress.json", "--readiness", "out/dogfood-pair-series/local-v64-selected-series/graph-readiness.json", "--preflight", "out/large-workflow-queue-preflight/v77-canonical/queue-preflight.json", "--out", "out/graph-timing/v78-canonical"],
+        [sys.executable, "scripts/dwm_readme_graph_visibility.py", "--self-test"],
+        [sys.executable, "scripts/dwm_readme_graph_visibility.py", "--manifest", "fixtures/v79/manifest.json", "--out", "out/readme-graph-visibility/v79-final"],
+        [sys.executable, "scripts/dwm_readme_graph_visibility.py", "audit", "--readme", "README.md", "--timing", "out/graph-timing/v78-canonical/graph-timing.json", "--out", "out/readme-graph-visibility/v79-canonical"],
         [sys.executable, "scripts/run_workflow.py", "--self-test"],
         [sys.executable, "scripts/run_workflow.py", "--manifest", "fixtures/v3/manifest.json", "--out", "out/v3/final"],
         [sys.executable, "scripts/orchestrate_workflow.py", "--self-test"],
@@ -3378,6 +3381,7 @@ def main() -> None:
             "python scripts/dwm_large_workflow_queue_bridge.py bridge --selection out/large-workflow-next/v75-canonical/large-workflow-next.json --out out/large-workflow-queue-bridge/<bridge_id> --queue-out out/workflow-queues/<queue_id>",
             "python scripts/dwm_large_workflow_queue_preflight.py preflight --queue out/workflow-queues/v76-canonical/queue.json --out out/large-workflow-queue-preflight/<preflight_id>",
             "python scripts/dwm_graph_timing_gate.py check --progress out/dogfood-progress/local-v66-current/dogfood-progress.json --readiness out/dogfood-pair-series/local-v64-selected-series/graph-readiness.json --preflight out/large-workflow-queue-preflight/v77-canonical/queue-preflight.json --out out/graph-timing/<timing_id>",
+            "python scripts/dwm_readme_graph_visibility.py audit --readme readme.md --timing out/graph-timing/v78-canonical/graph-timing.json --out out/readme-graph-visibility/<visibility_id>",
             "report.json.graph_metrics",
             "benchmark-graph.json",
             "dogfood-progress.json",
@@ -3390,6 +3394,8 @@ def main() -> None:
             "queue-preflight.md",
             "graph-timing.json",
             "graph-timing.md",
+            "readme-graph-visibility.json",
+            "readme-graph-visibility.md",
             "dwm-dogfood-progress.svg",
             "assets/dwm-hero.svg",
             "assets/dwm-live-benchmark.svg",
@@ -3419,6 +3425,7 @@ def main() -> None:
             "docs/v76-large-workflow-queue-bridge-spec.md",
             "docs/v77-large-workflow-queue-preflight-spec.md",
             "docs/v78-graph-timing-gate-spec.md",
+            "docs/v79-readme-graph-visibility-spec.md",
             "generated `out/` directories are verification evidence, not source of truth",
             "direct-agent superiority is not claimed",
             "process progress is not an upward benchmark claim",
@@ -4829,6 +4836,34 @@ def main() -> None:
         ],
     )
     require_terms(
+        "docs/v79-readme-graph-visibility-spec.md",
+        [
+            "status: implemented readme graph visibility audit in",
+            "`scripts/dwm_readme_graph_visibility.py`",
+            "`readme-graph-visibility.json`",
+            "`readme-graph-visibility.md`",
+            "`progress-only-visible`",
+            "not a public benchmark graph",
+            "trend promotion is blocked",
+            "public upward benchmark claims remain blocked",
+            "does not generate a graph",
+        ],
+    )
+    require_terms(
+        "docs/v79-decision.md",
+        [
+            "decision: keep",
+            "python scripts/dwm_readme_graph_visibility.py --manifest fixtures/v79/manifest.json --out out/readme-graph-visibility/v79-final",
+            "`suite_id`: `v79-readme-graph-visibility`",
+            "`fixture_count`: 5",
+            "`required_passed`: 5",
+            "`decision`: `keep`",
+            "readme graph surface aligned with v78",
+            "not a public benchmark graph",
+            "keeps public upward benchmark claims blocked",
+        ],
+    )
+    require_terms(
         "docs/v7.5-decision.md",
         [
             "decision: keep",
@@ -4877,7 +4912,7 @@ def main() -> None:
             "python scripts/dwm.py commands --kind release --json",
             "`status`: `workflow-complete`",
             "`doctor_ok`: `true`",
-            "`release_command_count`: `158`",
+            "`release_command_count`: `161`",
             "does not claim workflow execution",
         ],
     )
