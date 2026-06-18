@@ -104,6 +104,9 @@ promotion requires real release history.
 - V75: `docs/v75-large-workflow-next-spec.md` added control-bound
   next-action selection with command-ready, human-gate-required, and blocked
   decisions.
+- V76: `docs/v76-large-workflow-queue-bridge-spec.md` added V75-to-V46 queue
+  bridging so command-ready selections become queue packets without executing
+  the selected command.
 
 ## Current Public Boundaries
 

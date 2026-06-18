@@ -145,6 +145,9 @@ RELEASE_COMMANDS = [
     "python scripts/dwm_large_workflow_next.py --self-test",
     "python scripts/dwm_large_workflow_next.py --manifest fixtures/v75/manifest.json --out out/large-workflow-next/v75-final",
     "python scripts/dwm_large_workflow_next.py select --control out/large-workflow-dogfood/v74-canonical/dogfood-control.json --out out/large-workflow-next/v75-canonical",
+    "python scripts/dwm_large_workflow_queue_bridge.py --self-test",
+    "python scripts/dwm_large_workflow_queue_bridge.py --manifest fixtures/v76/manifest.json --out out/large-workflow-queue-bridge/v76-final",
+    "python scripts/dwm_large_workflow_queue_bridge.py bridge --selection out/large-workflow-next/v75-canonical/large-workflow-next.json --out out/large-workflow-queue-bridge/v76-canonical --queue-out out/workflow-queues/v76-canonical",
     "python scripts/dwm_daily_operator.py --self-test",
     "python scripts/dwm_daily_operator.py --manifest fixtures/v48/manifest.json --out out/daily-operator/v48-final",
     "python scripts/dwm_release_candidate.py --self-test",
@@ -329,6 +332,8 @@ BASE_REQUIRED_PATHS = [
     "docs/v74-large-workflow-dogfood-spec.md",
     "docs/v75-decision.md",
     "docs/v75-large-workflow-next-spec.md",
+    "docs/v76-decision.md",
+    "docs/v76-large-workflow-queue-bridge-spec.md",
     "docs/command-reference.md",
     "docs/release-history.md",
     "packaging/dwm-benchmark-attempts.json",
@@ -387,6 +392,7 @@ BASE_REQUIRED_PATHS = [
     "scripts/dwm_large_workflow_control.py",
     "scripts/dwm_large_workflow_dogfood.py",
     "scripts/dwm_large_workflow_next.py",
+    "scripts/dwm_large_workflow_queue_bridge.py",
     "scripts/dwm_daily_operator.py",
     "scripts/dwm_adapter_live_matrix.py",
     "fixtures/v49/manifest.json",
@@ -464,6 +470,9 @@ BASE_REQUIRED_PATHS = [
     "fixtures/v75/manifest.json",
     "docs/v75-decision.md",
     "docs/v75-large-workflow-next-spec.md",
+    "fixtures/v76/manifest.json",
+    "docs/v76-decision.md",
+    "docs/v76-large-workflow-queue-bridge-spec.md",
 ]
 
 

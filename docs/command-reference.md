@@ -105,6 +105,7 @@ python scripts/dwm_release_timing_history.py build --timing-root out/release-tim
 python scripts/dwm_large_workflow_control.py assess --workflow workflow.json --out out/large-workflow-control/<control_id>
 python scripts/dwm_large_workflow_dogfood.py record --run out/v9/v32-semantic-dogfood --out out/large-workflow-dogfood/<dogfood_id>
 python scripts/dwm_large_workflow_next.py select --control out/large-workflow-dogfood/v74-canonical/dogfood-control.json --out out/large-workflow-next/<next_id>
+python scripts/dwm_large_workflow_queue_bridge.py bridge --selection out/large-workflow-next/v75-canonical/large-workflow-next.json --out out/large-workflow-queue-bridge/<bridge_id> --queue-out out/workflow-queues/<queue_id>
 ```
 
 Release artifacts include `operator-loop.json`, `today.md`,
@@ -113,7 +114,8 @@ Release artifacts include `operator-loop.json`, `today.md`,
 `release-checklist.md`, `release-timing.json`, `release-timing.md`,
 `timing-history.json`, `timing-history.md`, `large-workflow-control.json`,
 `large-workflow-control.md`, `dogfood-control.json`, `dogfood-control.md`,
-`large-workflow-next.json`, `large-workflow-next.md`, and `status.json`.
+`large-workflow-next.json`, `large-workflow-next.md`, `queue-bridge.json`,
+`queue-packets.json`, `queue-bridge.md`, and `status.json`.
 
 ## Repository Map
 

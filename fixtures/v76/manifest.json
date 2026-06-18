@@ -1,0 +1,172 @@
+{
+  "fixtures": [
+    {
+      "build_queue": true,
+      "control_receipt": {
+        "status": "dogfood-control-recorded"
+      },
+      "expected_status": "queue-bridge-ready",
+      "id": "ready-selection-builds-queue-packet",
+      "required": true,
+      "selection": {
+        "blocked_by": [],
+        "command": "python scripts/dwm_workflow_queue.py --manifest fixtures/v46/manifest.json --out out/workflow-queues/v46-final",
+        "control_path": "fixture-control-placeholder",
+        "decision": "command_ready",
+        "gated_by": [],
+        "next_id": "fixture-ready",
+        "schema_version": "1.0",
+        "selected_candidate": {
+          "claim_limits": [
+            "internal workflow selection only"
+          ],
+          "evidence_requirements": [
+            "dogfood-control.json",
+            "large-workflow-next.json"
+          ],
+          "id": "large-workflow-queue-refresh",
+          "next_command": "python scripts/dwm_workflow_queue.py --manifest fixtures/v46/manifest.json --out out/workflow-queues/v46-final",
+          "objective": "Refresh the large-workflow queue from current control evidence.",
+          "priority": 90,
+          "risk_codes": [
+            "read-only",
+            "evidence"
+          ],
+          "success_criteria": [
+            "queue artifact generated"
+          ]
+        },
+        "source_hashes": {
+          "selection": "fixture-selection"
+        },
+        "status": "next-workflow-ready",
+        "tool": "dwm_large_workflow_next.py"
+      }
+    },
+    {
+      "control_receipt": {
+        "status": "dogfood-control-recorded"
+      },
+      "expected_status": "queue-bridge-blocked",
+      "id": "blocked-selection-does-not-build-packet",
+      "required": true,
+      "selection": {
+        "blocked_by": [
+          {
+            "code": "ERR_LARGE_WORKFLOW_NEXT_DOGFOOD_BLOCKED",
+            "message": "fixture blocked"
+          }
+        ],
+        "command": null,
+        "control_path": "fixture-control-placeholder",
+        "decision": "blocked",
+        "gated_by": [],
+        "next_id": "fixture-blocked",
+        "schema_version": "1.0",
+        "selected_candidate": null,
+        "source_hashes": {
+          "selection": "fixture-selection"
+        },
+        "status": "next-workflow-blocked",
+        "tool": "dwm_large_workflow_next.py"
+      }
+    },
+    {
+      "control_receipt": {
+        "status": "dogfood-control-recorded"
+      },
+      "expected_status": "queue-bridge-blocked",
+      "id": "gated-selection-does-not-build-packet",
+      "required": true,
+      "selection": {
+        "blocked_by": [],
+        "command": null,
+        "control_path": "fixture-control-placeholder",
+        "decision": "human_gate_required",
+        "gated_by": [
+          {
+            "code": "ERR_LARGE_WORKFLOW_NEXT_HUMAN_GATE_REQUIRED",
+            "risk_codes": [
+              "write"
+            ]
+          }
+        ],
+        "next_id": "fixture-gated",
+        "schema_version": "1.0",
+        "selected_candidate": {
+          "claim_limits": [
+            "human approval required"
+          ],
+          "evidence_requirements": [
+            "dogfood-control.json"
+          ],
+          "id": "write-risk-followup",
+          "next_command": "python scripts/dwm.py commands --kind release --json",
+          "objective": "Write-risk follow-up.",
+          "priority": 100,
+          "risk_codes": [
+            "write"
+          ],
+          "success_criteria": [
+            "must not run without approval"
+          ]
+        },
+        "source_hashes": {
+          "selection": "fixture-selection"
+        },
+        "status": "next-workflow-gate-required",
+        "tool": "dwm_large_workflow_next.py"
+      }
+    },
+    {
+      "control_receipt": {
+        "status": "dogfood-control-recorded"
+      },
+      "expected_selection_hash": "wrong-hash",
+      "expected_status": "queue-bridge-blocked",
+      "id": "selection-hash-drift-blocked",
+      "required": true,
+      "selection": {
+        "blocked_by": [],
+        "command": "python scripts/dwm_workflow_queue.py --manifest fixtures/v46/manifest.json --out out/workflow-queues/v46-final",
+        "control_path": "fixture-control-placeholder",
+        "decision": "command_ready",
+        "gated_by": [],
+        "next_id": "fixture-ready",
+        "schema_version": "1.0",
+        "selected_candidate": {
+          "claim_limits": [
+            "internal workflow selection only"
+          ],
+          "evidence_requirements": [
+            "dogfood-control.json",
+            "large-workflow-next.json"
+          ],
+          "id": "large-workflow-queue-refresh",
+          "next_command": "python scripts/dwm_workflow_queue.py --manifest fixtures/v46/manifest.json --out out/workflow-queues/v46-final",
+          "objective": "Refresh the large-workflow queue from current control evidence.",
+          "priority": 90,
+          "risk_codes": [
+            "read-only",
+            "evidence"
+          ],
+          "success_criteria": [
+            "queue artifact generated"
+          ]
+        },
+        "source_hashes": {
+          "selection": "fixture-selection"
+        },
+        "status": "next-workflow-ready",
+        "tool": "dwm_large_workflow_next.py"
+      }
+    }
+  ],
+  "required_fixture_ids": [
+    "ready-selection-builds-queue-packet",
+    "blocked-selection-does-not-build-packet",
+    "gated-selection-does-not-build-packet",
+    "selection-hash-drift-blocked"
+  ],
+  "suite_id": "v76-large-workflow-queue-bridge"
+}
