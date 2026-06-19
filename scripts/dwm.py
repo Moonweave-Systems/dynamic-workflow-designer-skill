@@ -178,6 +178,9 @@ RELEASE_COMMANDS = [
     "python scripts/dwm_brand_boundary_audit.py --self-test",
     "python scripts/dwm_brand_boundary_audit.py --manifest fixtures/v87/manifest.json --out out/brand-boundary-audits/v87-final",
     "python scripts/dwm_brand_boundary_audit.py audit --out out/brand-boundary-audits/v87-canonical",
+    "python scripts/dwm_roadmap_reconciliation.py --self-test",
+    "python scripts/dwm_roadmap_reconciliation.py --manifest fixtures/v88/manifest.json --out out/roadmap-reconciliations/v88-final",
+    "python scripts/dwm_roadmap_reconciliation.py audit --out out/roadmap-reconciliations/v88-canonical",
     "python scripts/dwm_daily_operator.py --self-test",
     "python scripts/dwm_daily_operator.py --manifest fixtures/v48/manifest.json --out out/daily-operator/v48-final",
     "python scripts/dwm_release_candidate.py --self-test",
@@ -386,6 +389,8 @@ BASE_REQUIRED_PATHS = [
     "docs/v86-keelplane-brand-spec.md",
     "docs/v87-decision.md",
     "docs/v87-brand-boundary-audit-spec.md",
+    "docs/v88-decision.md",
+    "docs/v88-roadmap-reconciliation-spec.md",
     "docs/command-reference.md",
     "docs/release-history.md",
     "packaging/dwm-benchmark-attempts.json",
@@ -455,6 +460,7 @@ BASE_REQUIRED_PATHS = [
     "scripts/dwm_installed_surface_audit.py",
     "scripts/dwm_workflow_activation.py",
     "scripts/dwm_brand_boundary_audit.py",
+    "scripts/dwm_roadmap_reconciliation.py",
     "scripts/dwm_daily_operator.py",
     "scripts/dwm_adapter_live_matrix.py",
     "fixtures/v49/manifest.json",
@@ -567,6 +573,9 @@ BASE_REQUIRED_PATHS = [
     "fixtures/v87/manifest.json",
     "docs/v87-decision.md",
     "docs/v87-brand-boundary-audit-spec.md",
+    "fixtures/v88/manifest.json",
+    "docs/v88-decision.md",
+    "docs/v88-roadmap-reconciliation-spec.md",
 ]
 
 

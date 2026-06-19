@@ -116,6 +116,7 @@ python scripts/dwm_runner_receipt_dry_run.py dry-run --schema out/execution-rece
 python scripts/dwm_installed_surface_audit.py audit --active-skill SKILL.md --out out/installed-surface-audits/<audit_id>
 python scripts/dwm_workflow_activation.py activate --audit out/installed-surface-audits/v84-canonical/installed-surface-audit.json --receipt out/runner-receipt-dry-runs/v83-canonical/runner-receipt.json --status out/v9/v32-semantic-dogfood/status.json --out out/workflow-activations/<activation_id>
 python scripts/dwm_brand_boundary_audit.py audit --out out/brand-boundary-audits/<audit_id>
+python scripts/dwm_roadmap_reconciliation.py audit --out out/roadmap-reconciliations/<audit_id>
 ```
 
 Release artifacts include `operator-loop.json`, `today.md`,
@@ -134,7 +135,8 @@ Release artifacts include `operator-loop.json`, `today.md`,
 `sample-receipt.json`, `runner-receipt.json`, `runner-receipt.md`, and
 `installed-surface-audit.json`, `installed-surface-audit.md`, and
 `workflow-activation.json`, `workflow-activation.md`,
-`brand-boundary-audit.json`, `brand-boundary-audit.md`, and
+`brand-boundary-audit.json`, `brand-boundary-audit.md`,
+`roadmap-reconciliation.json`, `roadmap-reconciliation.md`, and
 `status.json`.
 
 ## Repository Map
@@ -176,6 +178,7 @@ Release artifacts include `operator-loop.json`, `today.md`,
 | `scripts/dwm_installed_surface_audit.py` | Active local skill path and copied install drift audit. |
 | `scripts/dwm_workflow_activation.py` | Next workflow activation gate from install, receipt, and completed-run evidence. |
 | `scripts/dwm_brand_boundary_audit.py` | Public Keelplane, DWM Core, and compatibility name boundary audit. |
+| `scripts/dwm_roadmap_reconciliation.py` | Spec, roadmap, and release history alignment audit. |
 | `scripts/dwm_daily_operator.py` | Daily operator loop for ready, blocked, and freshness state. |
 | `scripts/dwm_adapters.py` | Adapter registry, normalized evidence, and parity matrix checks. |
 | `scripts/dwm_adapter_live_matrix.py` | Local adapter command availability and auth-assumption matrix. |

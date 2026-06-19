@@ -140,6 +140,10 @@ promotion requires real release history.
   `brand-boundary-audit.json` and `brand-boundary-audit.md` to keep public
   Keelplane naming, DWM Core internals, and `dynamic-workflow-designer`
   compatibility from drifting.
+- V88: `docs/v88-roadmap-reconciliation-spec.md` added
+  `roadmap-reconciliation.json` and `roadmap-reconciliation.md` to keep
+  `docs/spec.md`, `docs/automation-roadmap.md`, and this release history
+  aligned with implementation truth.
 
 ## Current Public Boundaries
 
@@ -157,3 +161,5 @@ promotion requires real release history.
   behind the V84 human gate.
 - Brand boundary audits preserve Keelplane as the public brand without claiming
   autonomous execution or renaming compatibility surfaces.
+- Roadmap reconciliation audits keep spec, roadmap, and release history aligned
+  before the next product wave is selected.

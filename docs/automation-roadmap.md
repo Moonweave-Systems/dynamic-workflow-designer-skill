@@ -1,13 +1,13 @@
-# DWM Automation Roadmap
+# Keelplane Automation Roadmap
 
-Status: draft; V3 entry runtime implemented; V7.5 frontier result review implemented; V8 frontier review ingestion implemented; V9 human gate resolution implemented; V10 product CLI implemented; V11 operator guidance implemented
-Date: 2026-06-15
+Status: V3 entry runtime implemented; V7.5 frontier result review implemented; V8 frontier review ingestion implemented; V9 human gate resolution implemented; V10 product CLI implemented; V11 operator guidance implemented; V12-V20 product roadmap implemented; V52-V87 product evidence, graph timing, activation, and brand boundary gates implemented; V88 roadmap reconciliation audit implemented
+Date: 2026-06-19
 
 ## Purpose
 
-DWM, the Deterministic Workflow Machine, is a large-task automation
+Keelplane is the public product brand for the DWM Core large-task automation
 control-plane: a system that can take a broad objective, decompose it into
-inspectable work, execute bounded slices, verify results, resume after
+inspectable work, execute bounded waves, verify results, resume after
 interruption, and stop at human gates for risky actions.
 
 This repo should not become a loose prompt pack or an unchecked agent launcher.
@@ -16,8 +16,9 @@ packets are explicit, hashed, reviewable, resumable, and falsifiable.
 
 ## Product Position
 
-DWM should become the control-plane for large Codex workflows. The legacy skill
-entrypoint remains `dynamic-workflow-designer`.
+Keelplane should become the control-plane for large Codex workflows. DWM Core
+remains the internal deterministic engine, and the legacy skill entrypoint
+remains `dynamic-workflow-designer`.
 
 | Layer | Responsibility | Repo stance |
 | --- | --- | --- |
@@ -597,9 +598,9 @@ Full operator guidance done means:
 - make stale, tampered, blocked, complete, and ready states visually distinct,
 - keep every recommendation falsifiable through hash-bound evidence.
 
-### V12-V20: Planned Final Product Roadmap
+### V12-V20: Implemented Product Roadmap
 
-Status: planned; not implemented.
+Status: implemented.
 
 Index: `docs/v12-to-v20-final-roadmap.md`.
 
@@ -687,9 +688,9 @@ The planned roadmap splits the remaining product into versioned specs:
 - V48 daily operator loop:
   `docs/v48-daily-operator-loop-spec.md`.
 
-These specs define the intended path to an independent DWM product that can use
-Codex CLI directly through DWM Runner while keeping optional adapter targets
-outside DWM Core.
+These specs define the implemented path to an independent Keelplane product
+that can use Codex CLI directly through DWM Runner while keeping optional
+adapter targets outside DWM Core.
 
 ### V43: Direction Check And Forward Roadmap
 
@@ -847,6 +848,44 @@ First canonical demo done means:
   daily-operator, and release-candidate artifacts;
 - unsafe and non-owned output paths are blocked;
 - `fixtures/v51/manifest.json` passes with `decision: "keep"`.
+
+### V52-V88: Product Evidence And Roadmap Reconciliation
+
+Status: implemented through V88.
+
+Purpose: move from a runnable demo into a product that can explain its current
+state, measure real dogfood evidence, gate graph claims, continue safely across
+several source-only waves, activate the next workflow, and keep public
+positioning coherent.
+
+Implemented continuation:
+
+- V52-V53 made the README and demo inspect path product-facing.
+- V54-V67 built dogfood attempts, measurements, pair comparisons, chart review,
+  chart rendering, and process-progress asset promotion.
+- V69-V72 added README quality and release timing evidence.
+- V73-V77 added six-axis large-workflow control, dogfood control receipts,
+  next-action selection, queue bridging, and queue preflight.
+- V78-V79 separated process progress visibility from public benchmark trend
+  claims.
+- V80-V83 defined how far source-only work can continue before queued execution
+  and live adapter execution must stop.
+- V84-V85 verified the installed skill surface and activated the next workflow
+  design path without executing queued commands.
+- V86-V87 set Keelplane as the public brand and added the brand boundary audit.
+- V88 roadmap reconciliation audit keeps this spec, roadmap, and release
+  history aligned with implementation truth.
+
+Next roadmap direction:
+
+1. Add a wave operator command that summarizes the next safe product wave from
+   existing control, activation, and roadmap reconciliation evidence.
+2. Increase real dogfood acquisition so future graphs show measured process
+   history rather than decorative upward motion.
+3. Improve public install and quickstart flow without renaming packages until a
+   migration gate proves compatibility.
+4. Expand read-only or pre-isolated live execution only where V84/V85 and queue
+   preflight evidence permit it.
 
 ## Strategic Decisions
 

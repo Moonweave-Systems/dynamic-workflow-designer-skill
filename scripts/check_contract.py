@@ -1812,6 +1812,9 @@ def require_release_commands_pass() -> None:
         [sys.executable, "scripts/dwm_brand_boundary_audit.py", "--self-test"],
         [sys.executable, "scripts/dwm_brand_boundary_audit.py", "--manifest", "fixtures/v87/manifest.json", "--out", "out/brand-boundary-audits/v87-final"],
         [sys.executable, "scripts/dwm_brand_boundary_audit.py", "audit", "--out", "out/brand-boundary-audits/v87-canonical"],
+        [sys.executable, "scripts/dwm_roadmap_reconciliation.py", "--self-test"],
+        [sys.executable, "scripts/dwm_roadmap_reconciliation.py", "--manifest", "fixtures/v88/manifest.json", "--out", "out/roadmap-reconciliations/v88-final"],
+        [sys.executable, "scripts/dwm_roadmap_reconciliation.py", "audit", "--out", "out/roadmap-reconciliations/v88-canonical"],
         [sys.executable, "scripts/run_workflow.py", "--self-test"],
         [sys.executable, "scripts/run_workflow.py", "--manifest", "fixtures/v3/manifest.json", "--out", "out/v3/final"],
         [sys.executable, "scripts/orchestrate_workflow.py", "--self-test"],
@@ -3413,6 +3416,7 @@ def main() -> None:
             "python scripts/dwm_installed_surface_audit.py audit --active-skill skill.md --out out/installed-surface-audits/<audit_id>",
             "python scripts/dwm_workflow_activation.py activate --audit out/installed-surface-audits/v84-canonical/installed-surface-audit.json --receipt out/runner-receipt-dry-runs/v83-canonical/runner-receipt.json --status out/v9/v32-semantic-dogfood/status.json --out out/workflow-activations/<activation_id>",
             "python scripts/dwm_brand_boundary_audit.py audit --out out/brand-boundary-audits/<audit_id>",
+            "python scripts/dwm_roadmap_reconciliation.py audit --out out/roadmap-reconciliations/<audit_id>",
             "report.json.graph_metrics",
             "benchmark-graph.json",
             "dogfood-progress.json",
@@ -3442,6 +3446,8 @@ def main() -> None:
             "workflow-activation.md",
             "brand-boundary-audit.json",
             "brand-boundary-audit.md",
+            "roadmap-reconciliation.json",
+            "roadmap-reconciliation.md",
             "dwm-dogfood-progress.svg",
             "assets/dwm-hero.svg",
             "assets/dwm-live-benchmark.svg",
@@ -3480,6 +3486,7 @@ def main() -> None:
             "docs/v85-workflow-activation-spec.md",
             "docs/v86-keelplane-brand-spec.md",
             "docs/v87-brand-boundary-audit-spec.md",
+            "docs/v88-roadmap-reconciliation-spec.md",
             "generated `out/` directories are verification evidence, not source of truth",
             "direct-agent superiority is not claimed",
             "process progress is not an upward benchmark claim",
@@ -3488,6 +3495,7 @@ def main() -> None:
             "active local skill path",
             "next safe action is workflow design",
             "brand boundary audits preserve keelplane as the public brand",
+            "roadmap reconciliation audits keep spec, roadmap, and release history aligned",
         ],
     )
     require_terms(
@@ -3548,6 +3556,33 @@ def main() -> None:
             "`public_product_brand`: `keelplane`",
             "`compatibility_skill_name`: `dynamic-workflow-designer`",
             "does not claim autonomous execution",
+        ],
+    )
+    require_terms(
+        "docs/v88-roadmap-reconciliation-spec.md",
+        [
+            "status: implemented roadmap reconciliation audit",
+            "`scripts/dwm_roadmap_reconciliation.py`",
+            "`roadmap-reconciliation.json`",
+            "`roadmap-reconciliation.md`",
+            "public product brand: `keelplane`",
+            "internal engine name: `dwm core`",
+            "latest reconciled version: `v88`",
+            "does not claim autonomous execution",
+        ],
+    )
+    require_terms(
+        "docs/v88-decision.md",
+        [
+            "decision: keep",
+            "python scripts/dwm_roadmap_reconciliation.py --manifest fixtures/v88/manifest.json --out out/roadmap-reconciliations/v88-final",
+            "`suite_id`: `v88-roadmap-reconciliation`",
+            "`fixture_count`: 4",
+            "`required_passed`: 4",
+            "`decision`: `keep`",
+            "`decision`: `roadmap_reconciled`",
+            "`latest_version`: `v88`",
+            "does not execute queued commands",
         ],
     )
     require_terms("docs/v0.5-plan-schema-evaluator-spec.md", V05_REQUIRED_TERMS)
@@ -5187,7 +5222,7 @@ def main() -> None:
             "python scripts/dwm.py commands --kind release --json",
             "`status`: `workflow-complete`",
             "`doctor_ok`: `true`",
-            "`release_command_count`: `182`",
+            "`release_command_count`: `185`",
             "does not claim workflow execution",
         ],
     )

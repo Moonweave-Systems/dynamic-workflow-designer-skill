@@ -1,14 +1,14 @@
-# DWM Skill And Control-Plane Spec
+# Keelplane / DWM Core Spec
 
-Status: V1 implemented, V2 release candidate, V2.5 first loop implemented, V3 entry runtime implemented, Last updated: 2026-06-15
+Status: V1 implemented, V2 release candidate, V2.5 first loop implemented, V3 entry runtime implemented, V12-V20 product slices implemented, V87 brand boundary audit implemented, V88 roadmap reconciliation, Last updated: 2026-06-19
 
 ## Purpose
 
-DWM, the Deterministic Workflow Machine, helps Codex design and operate large,
-situation-aware workflows for work that is too broad for a single normal agent
-turn. The installed skill entrypoint remains `dynamic-workflow-designer` for
-compatibility. DWM fills the gap between a thin route selector and a full
-workflow runtime.
+Keelplane is the public product brand. DWM Core, the Deterministic Workflow
+Machine, helps Codex design and operate large, situation-aware workflows for
+work that is too broad for a single normal agent turn. The installed skill
+entrypoint remains `dynamic-workflow-designer` for compatibility. Keelplane
+fills the gap between a thin route selector and a full workflow runtime.
 
 The skill entrypoint should produce a concrete workflow architecture: phases,
 workers, parallelism, handoff artifacts, verification gates, safety gates,
@@ -27,8 +27,13 @@ Positioning:
 - DWM / `dynamic-workflow-designer`: design an ultracode-style workflow for
   major work before execution, then move through deterministic control-plane
   artifacts.
-- Future `workflow-orchestrator` plugin/runtime: execute saved workflow plans
-  with resumability, monitoring, and subagent coordination.
+- DWM Runner: execute approved packets through bounded adapters while returning
+  normalized evidence to DWM Core.
+- DWM Product Shell: expose `run`, `resume`, `status`, `next`, installation,
+  HUD, and approval workflows without making any harness the source of truth.
+- Optional harness adapters: Codex CLI, Claude Code, OpenCode/OMO, local shell,
+  fixtures, or future tools may execute work only through declared adapter
+  capabilities and DWM gates.
 - V0.5 continuation gate: prove the machine-readable `workflow.plan.json`
   contract, deterministic fixture corpus, and evaluator before plugin/runtime
   work begins. V0.5 validates tracked sample artifacts; it does not run a live
@@ -44,6 +49,14 @@ Positioning:
 - V3 runtime-entry gate: consume trusted V2.5 terminal states, write a runtime
   journal and next-packet candidate, and reject stale or unsafe continuation
   states without executing later packets.
+- V12-V20 product gate: make the product usable as a local control-plane over
+  real tools without copying a full agent harness. The product path is command
+  planning, runner execution, session/worktree durability, review/repair,
+  bounded fanout, HUD, install packaging, adapter registry, and release
+  hardening.
+- V86-V88 brand and roadmap gate: make Keelplane the public product brand,
+  preserve DWM Core and `dynamic-workflow-designer` compatibility, and keep the
+  spec, roadmap, and release history aligned through audit artifacts.
 
 ## Users
 
@@ -63,10 +76,17 @@ Key conclusions:
 - Claude Dynamic Workflows move orchestration out of chat and into a script.
 - Community repos already explore JavaScript harnesses, MCP runtimes, viewers,
   journals, and workflow command distribution.
-- This repo should not copy a runtime yet. It should first define a checkable
-  workflow-design contract and deterministic samples that can later be tested
-  against live Codex output, existing subagent tools, a plugin, or a dedicated
-  runtime.
+- Oh-My-OpenAgent/OMO shows that agent harnesses become useful when they provide
+  low-friction commands, role presets, hooks, LSP/AST tools, background workers,
+  and a persistent "keep going" execution loop.
+- OMO also shows the cost of a harness-first approach: install footprint,
+  provider/model drift, hook compatibility issues, scratch-space leakage,
+  telemetry and global-config concerns, and difficulty separating model claims
+  from verified state transitions.
+- DWM should not become an OMO clone. It should treat OMO, Codex, Claude Code,
+  OpenCode, shell, and local fixtures as optional execution backends behind a
+  deterministic control-plane whose source of truth remains plans, packets,
+  evidence, reviews, hashes, gates, and resume state.
 
 ## Scope
 
@@ -149,14 +169,137 @@ scope:
 See `docs/automation-roadmap.md` for the full roadmap from V0 through product
 packaging.
 
+### V12-V20: Product Control-Plane Extension
+
+V12-V20 extend the early workflow contract into a product-level control-plane.
+The extension is not a new product thesis; it is the operational form of the
+same DWM rule: agents may act, but artifacts decide.
+
+The product stack is:
+
+```text
+DWM Product Shell
+-> DWM Core
+-> DWM Runner
+-> optional execution adapters
+-> normalized evidence, review, gates, resume
+```
+
+Layer ownership:
+
+- DWM Core owns plans, packets, gates, hash ledgers, review state, ingestion,
+  and next-action decisions.
+- DWM Runner owns process launch, session IDs, worktree/runtime directories,
+  stdout/stderr/transcript capture, timeouts, retries, and runner-local logs.
+- DWM Product Shell owns human commands, installation, HUD, approval queues, and
+  evidence browsing.
+- Adapters own harness-specific invocation only. They do not decide whether
+  work is trusted.
+
+The required operator commands are:
+
+```bash
+dwm run "<objective>"
+dwm plan "<objective>"
+dwm resume <run>
+dwm status <run>
+dwm next <run>
+```
+
+Each command must preserve the same safety contract as earlier slices: no
+destructive, networked, dependency-installing, secret-reading, external-message,
+database, production, or history-rewrite action occurs without a matching DWM
+gate and a safe default.
+
+### V86-V88: Brand And Roadmap Reconciliation
+
+V86-V88 align the product surface after the control-plane became broader than a
+single skill. The public product brand is Keelplane. DWM Core remains the
+internal deterministic engine. The compatibility skill name remains
+`dynamic-workflow-designer`, and the repository slug remains `dwm` until a
+separate migration gate proves a rename will not break install surfaces.
+
+V87 added a brand boundary audit so README, command reference, release history,
+and hero surfaces do not drift back to ambiguous public DWM naming or overclaim
+autonomous execution.
+
+V88 roadmap reconciliation keeps `docs/spec.md`, `docs/automation-roadmap.md`,
+and `docs/release-history.md` aligned with the current implementation state.
+This is still audit-only: it does not execute queued commands, run live
+adapters, publish benchmark claims, rename packages, or claim autonomous
+execution.
+
+### Harness Strategy
+
+DWM should learn from multi-agent harnesses without depending on one. The
+default product posture is:
+
+- start with one worker, one independent reviewer, and one verifier;
+- expand to two or three workers only when packets have independent ownership;
+- require deterministic fan-in before any synthesis or merge recommendation;
+- record backend, model/provider, prompt, cwd, files touched, commands,
+  verification output, transcript path, and adapter hash for every attempt;
+- keep all scratch, caches, worktrees, and downloaded assets under a declared
+  run-local or repo-local root unless the user approves another location;
+- disable or explicitly disclose telemetry in benchmark and release contexts;
+- prefer subscription-backed official provider paths when available, but do not
+  make API keys or third-party subscription workarounds required for DWM.
+
+Harness-specific decisions:
+
+- Codex CLI is the first native adapter target because it matches the primary
+  local operating environment.
+- Claude Code is an adapter target for direct Claude workflows, not a backend
+  that DWM should proxy through unofficial subscription workarounds.
+- OpenCode/OMO is optional prior art and a possible adapter target. DWM may
+  reuse its ideas around role presets, LSP/AST tooling, manual-QA loops, and
+  low-friction commands, but must not inherit global config mutation, opaque
+  hook chains, unrestricted team launch, or unbounded model fallback as product
+  defaults.
+- Shell and fixture adapters remain necessary for deterministic tests and local
+  smoke runs.
+
+### Role Pack
+
+DWM role presets are thin contracts, not personality branding. Each role must
+declare allowed tools, context limits, output schema, and evidence obligations.
+
+Required roles:
+
+| Role | Purpose | Trust boundary |
+| --- | --- | --- |
+| `planner` | turn objective into packets, gates, budgets, and ownership | cannot mark execution complete |
+| `explorer` | inspect repo/docs/runtime state and produce evidence-backed maps | read-only unless explicitly upgraded |
+| `worker` | perform one bounded packet | result is untrusted until reviewed and verified |
+| `reviewer` | find bugs, regressions, missing tests, and contract drift | cannot repair its own findings without a repair packet |
+| `verifier` | run tests, browser checks, artifact renders, or command smokes | reports evidence, not product success |
+| `operator` | summarize status and next safe action | cannot bypass gates |
+
+The first useful DWM "ulw-like" mode is not an unrestricted keep-going loop. It
+is a bounded packet loop:
+
+```text
+plan -> packet -> execute -> evidence -> review -> repair -> verify -> ingest -> next
+```
+
+Every loop has max rounds, retry limits, file-touch limits, and a stop condition
+for repeated failures, missing credentials, unsafe actions, or unavailable
+verification.
+
 ## Non-Goals
 
 - Do not replace `workflow-router`.
-- Do not build a full durable runtime in the first slice.
 - Do not vendor external runtime code.
 - Do not auto-spawn many subagents without explicit user authorization.
 - Do not hide destructive or costly actions behind workflow generation.
 - Do not treat a workflow blueprint as proof that work is complete.
+- Do not compete with Codex, Claude Code, OpenCode, or OMO as a monolithic
+  all-in-one harness.
+- Do not require API keys when an official subscription-backed local tool path
+  can be used directly.
+- Do not rely on unofficial subscription workarounds as a release requirement.
+- Do not use provider fallback, parallelism, or role count as a proxy for
+  quality.
 
 ## Activation Contract
 
@@ -247,6 +390,9 @@ Future changes should be tested against these prompts:
 | "Stress-test three architecture options before we pick one." | judge panel, rubric, synthesis with tradeoffs |
 | "Find every unsupported claim in this PR description." | claim extraction, repo-grounded verification, proof ledger |
 | "Make a workflow runtime for this skill." | plugin/runtime boundary, small first slice, no overbuild |
+| "Benchmark OMO against DWM on a failing-test repo." | isolated install, adapter evidence, footprint, hook/provider risks |
+| "Run DWM over Codex and Claude Code without API keys." | subscription-aware adapter routing, no unofficial workaround dependency |
+| "Use three workers to migrate independent modules." | bounded fanout, ownership, deterministic fan-in, reviewer queue |
 
 For each fixture, record:
 
@@ -255,6 +401,51 @@ For each fixture, record:
 - whether risky actions were gated
 - whether verification can falsify the result
 - whether the plan overclaims execution
+- which backend or adapter is in scope
+- whether scratch, cache, worktree, and downloaded artifacts stay inside the
+  declared sandbox
+- whether provider/model fallback changed the result or reproducibility
+
+### Harness Benchmark Gate
+
+Any claim that DWM improves over direct Codex, Claude Code, OpenCode/OMO, or a
+single-agent baseline must be backed by a small task corpus, not by narrative
+comparison.
+
+Minimum corpus:
+
+- failing test fix,
+- small refactor,
+- auth or permissions audit,
+- UI or rendered-artifact regression check,
+- docs/code consistency check,
+- multi-file migration with ownership conflicts.
+
+For each task, compare applicable modes:
+
+- direct Codex,
+- Codex through DWM,
+- Claude Code direct,
+- Claude Code through DWM when supported,
+- OpenCode/OMO when isolated and configured,
+- fixture or shell adapter for deterministic control cases.
+
+Record:
+
+- install/runtime footprint,
+- provider and model path,
+- commands run,
+- files touched,
+- test and verification output,
+- human interventions,
+- failed or missing hooks,
+- scratch locations,
+- telemetry state,
+- cost/time where observable,
+- final trusted DWM state.
+
+A benchmark passes only if DWM produces more inspectable evidence, safer resume,
+or fewer unreviewed changes without hiding failures behind synthesized success.
 
 ### Fixture Smoke Gate
 
