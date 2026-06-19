@@ -131,6 +131,8 @@ python scripts/dwm_control_deck_score.py score --narrative out/workflow-narrativ
 python scripts/dwm_control_deck_score_history.py build --score out/control-deck-scores/<score_id> --out out/control-deck-score-history/<history_id>
 # metric ladder
 python scripts/dwm_metric_ladder.py assess --history out/control-deck-score-history/<history_id>/control-deck-score-history.json --graph-timing out/graph-timing/<timing_id>/graph-timing.json --out out/metric-ladders/<ladder_id>
+# benchmark readiness
+python scripts/dwm_benchmark_readiness.py assess --ladder out/metric-ladders/<ladder_id>/metric-ladder.json --out out/benchmark-readiness/<readiness_id>
 # contract tiers
 python scripts/check_contract.py --tier smoke
 python scripts/check_contract.py --tier changed
@@ -160,7 +162,8 @@ Release artifacts include `operator-loop.json`, `today.md`,
 `control-deck-score.json`, `control-deck-score.md`,
 `control-deck-score-history.json`, `control-deck-score-history.md`,
 `control-deck-score-history.svg`, `metric-ladder.json`,
-`metric-ladder.md`, and `status.json`.
+`metric-ladder.md`, `benchmark-readiness.json`, `benchmark-readiness.md`, and
+`status.json`.
 
 ## Repository Map
 

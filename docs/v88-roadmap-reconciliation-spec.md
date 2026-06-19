@@ -9,13 +9,13 @@ Keep the product spec, automation roadmap, and release history aligned with the
 current Keelplane state. V88 prevents the project from looking half-planned and
 half-implemented after V52-V87 added product evidence, dogfood measurement,
 graph timing, activation, and brand boundary gates. The audit now reconciles
-through V96 metric ladder.
+through V97 benchmark readiness.
 
 ## Product Boundary
 
 - Public product brand: `Keelplane`.
 - Internal engine name: `DWM Core`.
-- Latest reconciled version: `V96`.
+- Latest reconciled version: `V97`.
 - `docs/release-history.md` remains the implementation-history source.
 - `docs/automation-roadmap.md` remains the operator-facing roadmap.
 - `docs/spec.md` remains the product contract and safety boundary.
@@ -32,10 +32,10 @@ It blocks when:
   reconciliation status, V89 command safety status, V90 activation v2
   status, V91 contract tiering status, V92 evidence oracle status, or V93
   workflow narrative status, V94 control deck score status, V95 score history
-  status, or V96 metric ladder status.
+  status, or V96 metric ladder, V97 benchmark readiness status.
 - `docs/automation-roadmap.md` still says V12-V20 are planned but not
   implemented.
-- `docs/automation-roadmap.md` lacks the V52-V96 continuation summary.
+- `docs/automation-roadmap.md` lacks the V52-V97 continuation summary.
 - `docs/release-history.md` lacks the V88, V89, V90, or V91 entry.
 
 ## Execution Policy

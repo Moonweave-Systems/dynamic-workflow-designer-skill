@@ -1,0 +1,123 @@
+{
+  "suite_id": "v97-benchmark-readiness",
+  "fixtures": [
+    {
+      "id": "operator-ready-public-blocked",
+      "required": true,
+      "ladder": {
+        "tool": "dwm_metric_ladder.py",
+        "decision": "metric_ladder_ready",
+        "claim_policy": {
+          "public_benchmark_requires_promotion": true
+        },
+        "levels": [
+          {
+            "id": "process_progress",
+            "ready": true,
+            "public_claim_allowed": false
+          },
+          {
+            "id": "operator_readiness",
+            "ready": true,
+            "public_claim_allowed": false
+          },
+          {
+            "id": "public_benchmark",
+            "ready": false,
+            "public_claim_allowed": false
+          }
+        ]
+      },
+      "expected_decision": "benchmark_readiness_recorded",
+      "expected_public_allowed": false
+    },
+    {
+      "id": "public-promotion-ready",
+      "required": true,
+      "ladder": {
+        "tool": "dwm_metric_ladder.py",
+        "decision": "metric_ladder_ready",
+        "claim_policy": {
+          "public_benchmark_requires_promotion": true
+        },
+        "levels": [
+          {
+            "id": "process_progress",
+            "ready": true,
+            "public_claim_allowed": false
+          },
+          {
+            "id": "operator_readiness",
+            "ready": true,
+            "public_claim_allowed": false
+          },
+          {
+            "id": "public_benchmark",
+            "ready": true,
+            "public_claim_allowed": true
+          }
+        ]
+      },
+      "expected_decision": "benchmark_readiness_recorded",
+      "expected_public_allowed": true
+    },
+    {
+      "id": "blocked-ladder",
+      "required": true,
+      "ladder": {
+        "tool": "dwm_metric_ladder.py",
+        "decision": "blocked",
+        "claim_policy": {
+          "public_benchmark_requires_promotion": true
+        },
+        "levels": [
+          {
+            "id": "process_progress",
+            "ready": true,
+            "public_claim_allowed": false
+          },
+          {
+            "id": "operator_readiness",
+            "ready": true,
+            "public_claim_allowed": false
+          },
+          {
+            "id": "public_benchmark",
+            "ready": false,
+            "public_claim_allowed": false
+          }
+        ]
+      },
+      "expected_decision": "blocked",
+      "expected_public_allowed": false
+    },
+    {
+      "id": "missing-promotion-policy",
+      "required": true,
+      "ladder": {
+        "tool": "dwm_metric_ladder.py",
+        "decision": "metric_ladder_ready",
+        "claim_policy": {},
+        "levels": [
+          {
+            "id": "process_progress",
+            "ready": true,
+            "public_claim_allowed": false
+          },
+          {
+            "id": "operator_readiness",
+            "ready": true,
+            "public_claim_allowed": false
+          },
+          {
+            "id": "public_benchmark",
+            "ready": false,
+            "public_claim_allowed": false
+          }
+        ]
+      },
+      "expected_decision": "blocked",
+      "expected_public_allowed": false
+    }
+  ]
+}

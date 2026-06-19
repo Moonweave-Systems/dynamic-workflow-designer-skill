@@ -163,6 +163,9 @@ promotion requires real release history.
   benchmark graph.
 - V96: `docs/v96-metric-ladder-spec.md` added graph claim-level assessment for
   process, operator-readiness, and public-benchmark metric levels.
+- V97: `docs/v97-benchmark-readiness-spec.md` added an internal benchmark
+  readiness report while keeping README benchmark publication behind promotion
+  evidence and human review.
 
 ## Current Public Boundaries
 
@@ -172,6 +175,8 @@ promotion requires real release history.
 - Benchmark promotion remains gated by history, review, and claim policy.
 - Graph timing keeps process progress visible without forcing a public upward
   benchmark graph.
+- Benchmark readiness is an internal indicator, not public benchmark
+  publication approval.
 - README graph visibility must stay aligned with graph timing and overclaim
   blockers.
 - Control Deck score history is internal operator readiness history, not public

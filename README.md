@@ -73,6 +73,7 @@ python scripts/dwm_workflow_narrative.py render --out out/workflow-narratives/lo
 python scripts/dwm_control_deck_score.py score --out out/control-deck-scores/local
 python scripts/dwm_control_deck_score_history.py build --score out/control-deck-scores/local --out out/control-deck-score-history/local
 python scripts/dwm_metric_ladder.py assess --history out/control-deck-score-history/local/control-deck-score-history.json --out out/metric-ladders/local
+python scripts/dwm_benchmark_readiness.py assess --ladder out/metric-ladders/local/metric-ladder.json --out out/benchmark-readiness/local
 ```
 
 The Control Deck may say things like `Chart: roadmap reconciled`, `Gate:
@@ -81,7 +82,9 @@ status rendering only; artifacts and source hashes remain the source of truth.
 The Control Deck score is operator readiness, not a public benchmark or upward
 trend claim. The score history can render an internal readiness SVG, but it is
 still not a public benchmark graph. The Metric Ladder states which graph level
-is currently supported before any benchmark claim is made.
+is currently supported before any benchmark claim is made. Benchmark Readiness
+records the current internal score and keeps README benchmark publication
+blocked until promotion evidence exists.
 
 Run the release contract before publishing changes:
 
@@ -112,6 +115,7 @@ python scripts/dwm.py commands --kind release
 | Readiness score | Scores Control Deck completeness for operator status without claiming benchmark progress. |
 | Readiness history | Records Control Deck score movement as internal operator history without publishing benchmark claims. |
 | Metric Ladder | Separates process, operator-readiness, and public-benchmark graph levels so metrics can grow without overclaiming. |
+| Benchmark readiness | Reports internal readiness and public benchmark publication state without granting README publication approval. |
 | Packaging | Validates repo-local install metadata, adapter registries, compatibility, and release evidence. |
 
 ## What Is Still Honest

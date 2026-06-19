@@ -202,6 +202,9 @@ RELEASE_COMMANDS = [
     "python scripts/dwm_metric_ladder.py --self-test",
     "python scripts/dwm_metric_ladder.py --manifest fixtures/v96/manifest.json --out out/metric-ladders/v96-final",
     "python scripts/dwm_metric_ladder.py assess --history out/control-deck-score-history/v95-canonical/control-deck-score-history.json --graph-timing out/graph-timing/v78-canonical/graph-timing.json --out out/metric-ladders/v96-canonical",
+    "python scripts/dwm_benchmark_readiness.py --self-test",
+    "python scripts/dwm_benchmark_readiness.py --manifest fixtures/v97/manifest.json --out out/benchmark-readiness/v97-final",
+    "python scripts/dwm_benchmark_readiness.py assess --ladder out/metric-ladders/v96-canonical/metric-ladder.json --out out/benchmark-readiness/v97-canonical",
     "python scripts/dwm_daily_operator.py --self-test",
     "python scripts/dwm_daily_operator.py --manifest fixtures/v48/manifest.json --out out/daily-operator/v48-final",
     "python scripts/dwm_release_candidate.py --self-test",
@@ -639,6 +642,10 @@ BASE_REQUIRED_PATHS = [
     "fixtures/v96/manifest.json",
     "docs/v96-decision.md",
     "docs/v96-metric-ladder-spec.md",
+    "scripts/dwm_benchmark_readiness.py",
+    "fixtures/v97/manifest.json",
+    "docs/v97-decision.md",
+    "docs/v97-benchmark-readiness-spec.md",
 ]
 
 
