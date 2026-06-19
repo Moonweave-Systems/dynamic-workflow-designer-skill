@@ -13,7 +13,7 @@ Decision: keep.
 Canonical audit:
 
 - `decision`: `roadmap_reconciled`
-- `latest_version`: `V92`
+- `latest_version`: `V93`
 - `public_product_brand`: `Keelplane`
 - `internal_engine_name`: `DWM Core`
 

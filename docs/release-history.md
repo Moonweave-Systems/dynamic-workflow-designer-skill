@@ -153,6 +153,9 @@ promotion requires real release history.
   boundary.
 - V92: `docs/v92-evidence-oracle-spec.md` added read-only artifact assertions
   for JSON fields, text evidence, missing artifacts, and source-hash drift.
+- V93: `docs/v93-workflow-narrative-spec.md` added the Keelplane Control Deck
+  renderer for artifact-backed chart, gate, activation, oracle, and next-move
+  status.
 
 ## Current Public Boundaries
 
@@ -174,3 +177,5 @@ promotion requires real release history.
   before the next product wave is selected.
 - Evidence oracle checks must pass before future scoring or graph promotion can
   treat generated artifacts as support for a claim.
+- Workflow narrative labels are status rendering only; artifacts and source
+  hashes remain the source of truth.

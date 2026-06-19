@@ -40,6 +40,7 @@ SAFE_SCRIPT_PATHS = {
     "scripts/dwm_large_workflow_dogfood.py",
     "scripts/dwm_large_workflow_next.py",
     "scripts/dwm_roadmap_reconciliation.py",
+    "scripts/dwm_workflow_narrative.py",
     "scripts/dwm_workflow_activation.py",
     "scripts/dwm_workflow_queue.py",
 }

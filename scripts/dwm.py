@@ -190,6 +190,9 @@ RELEASE_COMMANDS = [
     "python scripts/dwm_evidence_oracle.py --self-test",
     "python scripts/dwm_evidence_oracle.py --manifest fixtures/v92/manifest.json --out out/evidence-oracles/v92-final",
     "python scripts/dwm_evidence_oracle.py verify --claims fixtures/v92/canonical-claims.json --out out/evidence-oracles/v92-canonical",
+    "python scripts/dwm_workflow_narrative.py --self-test",
+    "python scripts/dwm_workflow_narrative.py --manifest fixtures/v93/manifest.json --out out/workflow-narratives/v93-final",
+    "python scripts/dwm_workflow_narrative.py render --roadmap out/roadmap-reconciliations/v88-canonical/roadmap-reconciliation.json --command-safety out/command-safety/v89-final/summary.json --activation out/workflow-activations/v90-canonical/workflow-activation.json --oracle out/evidence-oracles/v92-canonical/evidence-oracle.json --out out/workflow-narratives/v93-canonical",
     "python scripts/dwm_daily_operator.py --self-test",
     "python scripts/dwm_daily_operator.py --manifest fixtures/v48/manifest.json --out out/daily-operator/v48-final",
     "python scripts/dwm_release_candidate.py --self-test",
@@ -408,6 +411,8 @@ BASE_REQUIRED_PATHS = [
     "docs/v91-contract-tiering-spec.md",
     "docs/v92-decision.md",
     "docs/v92-evidence-oracle-spec.md",
+    "docs/v93-decision.md",
+    "docs/v93-workflow-narrative-spec.md",
     "docs/command-reference.md",
     "docs/release-history.md",
     "packaging/dwm-benchmark-attempts.json",
@@ -480,6 +485,7 @@ BASE_REQUIRED_PATHS = [
     "scripts/dwm_brand_boundary_audit.py",
     "scripts/dwm_roadmap_reconciliation.py",
     "scripts/dwm_evidence_oracle.py",
+    "scripts/dwm_workflow_narrative.py",
     "scripts/dwm_daily_operator.py",
     "scripts/dwm_adapter_live_matrix.py",
     "fixtures/v49/manifest.json",
@@ -607,6 +613,9 @@ BASE_REQUIRED_PATHS = [
     "fixtures/v92/canonical-claims.json",
     "docs/v92-decision.md",
     "docs/v92-evidence-oracle-spec.md",
+    "fixtures/v93/manifest.json",
+    "docs/v93-decision.md",
+    "docs/v93-workflow-narrative-spec.md",
 ]
 
 

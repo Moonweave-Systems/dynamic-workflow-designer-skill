@@ -123,6 +123,8 @@ python scripts/dwm_command_safety.py --manifest fixtures/v89/manifest.json --out
 python scripts/dwm_workflow_activation.py activate --audit out/installed-surface-audits/v84-canonical/installed-surface-audit.json --receipt out/runner-receipt-dry-runs/v83-canonical/runner-receipt.json --status out/v9/v32-semantic-dogfood/status.json --brand-audit out/brand-boundary-audits/v87-canonical/brand-boundary-audit.json --roadmap-reconciliation out/roadmap-reconciliations/v88-canonical/roadmap-reconciliation.json --command-safety out/command-safety/v89-final/summary.json --out out/workflow-activations/<activation_id>
 # evidence oracle
 python scripts/dwm_evidence_oracle.py verify --claims fixtures/v92/canonical-claims.json --out out/evidence-oracles/<oracle_id>
+# workflow narrative
+python scripts/dwm_workflow_narrative.py render --roadmap out/roadmap-reconciliations/v88-canonical/roadmap-reconciliation.json --command-safety out/command-safety/v89-final/summary.json --activation out/workflow-activations/v90-canonical/workflow-activation.json --oracle out/evidence-oracles/v92-canonical/evidence-oracle.json --out out/workflow-narratives/<narrative_id>
 # contract tiers
 python scripts/check_contract.py --tier smoke
 python scripts/check_contract.py --tier changed
@@ -147,7 +149,8 @@ Release artifacts include `operator-loop.json`, `today.md`,
 `workflow-activation.json`, `workflow-activation.md`,
 `brand-boundary-audit.json`, `brand-boundary-audit.md`,
 `roadmap-reconciliation.json`, `roadmap-reconciliation.md`, and
-`evidence-oracle.json`, `evidence-oracle.md`, and `status.json`.
+`evidence-oracle.json`, `evidence-oracle.md`,
+`workflow-narrative.json`, `workflow-narrative.md`, and `status.json`.
 
 ## Repository Map
 
@@ -190,6 +193,7 @@ Release artifacts include `operator-loop.json`, `today.md`,
 | `scripts/dwm_brand_boundary_audit.py` | Public Keelplane, DWM Core, and compatibility name boundary audit. |
 | `scripts/dwm_roadmap_reconciliation.py` | Spec, roadmap, and release history alignment audit. |
 | `scripts/dwm_evidence_oracle.py` | Read-only artifact assertion oracle for claim-level evidence. |
+| `scripts/dwm_workflow_narrative.py` | Artifact-backed Keelplane Control Deck and workflow narrative renderer. |
 | `scripts/dwm_daily_operator.py` | Daily operator loop for ready, blocked, and freshness state. |
 | `scripts/dwm_adapters.py` | Adapter registry, normalized evidence, and parity matrix checks. |
 | `scripts/dwm_adapter_live_matrix.py` | Local adapter command availability and auth-assumption matrix. |

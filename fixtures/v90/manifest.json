@@ -27,7 +27,7 @@
         "blocked_by": [],
         "decision": "roadmap_reconciled",
         "policy": {
-          "latest_version": "V92"
+          "latest_version": "V93"
         }
       },
       "run_status": {
@@ -68,7 +68,7 @@
         "blocked_by": [],
         "decision": "roadmap_reconciled",
         "policy": {
-          "latest_version": "V92"
+          "latest_version": "V93"
         }
       },
       "run_status": {
@@ -105,7 +105,7 @@
         "blocked_by": [],
         "decision": "roadmap_reconciled",
         "policy": {
-          "latest_version": "V91"
+          "latest_version": "V92"
         }
       },
       "run_status": {
@@ -142,7 +142,7 @@
         "blocked_by": [],
         "decision": "roadmap_reconciled",
         "policy": {
-          "latest_version": "V92"
+          "latest_version": "V93"
         }
       },
       "run_status": {
