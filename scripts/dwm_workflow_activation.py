@@ -186,7 +186,7 @@ def collect_blockers(
         if roadmap_reconciliation.get("blocked_by"):
             blockers.append({"code": "ERR_WORKFLOW_ACTIVATION_ROADMAP_BLOCKED", "message": "roadmap reconciliation contains blockers"})
         latest_version = (roadmap_reconciliation.get("policy") or {}).get("latest_version")
-        if latest_version != "V93":
+        if latest_version != "V94":
             blockers.append({"code": "ERR_WORKFLOW_ACTIVATION_ROADMAP_VERSION_STALE", "message": "roadmap reconciliation latest version is stale", "latest_version": latest_version})
     if command_safety is not None:
         if command_safety.get("decision") != "keep":
@@ -400,7 +400,7 @@ def ready_brand_audit() -> dict[str, Any]:
 
 
 def ready_roadmap_reconciliation() -> dict[str, Any]:
-    return {"decision": "roadmap_reconciled", "blocked_by": [], "policy": {"latest_version": "V93"}}
+    return {"decision": "roadmap_reconciled", "blocked_by": [], "policy": {"latest_version": "V94"}}
 
 
 def ready_command_safety() -> dict[str, Any]:
@@ -417,7 +417,7 @@ def self_test() -> None:
     blocked = make_activation("self-test-blocked", {"decision": "blocked", "blocked_by": [{"code": "stale"}]}, ready_receipt(), ready_run_status())
     if blocked["decision"] != "blocked":
         raise WorkflowActivationError("ERR_WORKFLOW_ACTIVATION_SELF_TEST_FAILED", "blocked install audit should block activation")
-    stale_roadmap = make_activation("self-test-stale-roadmap", ready_audit(), ready_receipt(), ready_run_status(), brand_audit=ready_brand_audit(), roadmap_reconciliation={"decision": "roadmap_reconciled", "blocked_by": [], "policy": {"latest_version": "V92"}}, command_safety=ready_command_safety())
+    stale_roadmap = make_activation("self-test-stale-roadmap", ready_audit(), ready_receipt(), ready_run_status(), brand_audit=ready_brand_audit(), roadmap_reconciliation={"decision": "roadmap_reconciled", "blocked_by": [], "policy": {"latest_version": "V93"}}, command_safety=ready_command_safety())
     if stale_roadmap["decision"] != "blocked":
         raise WorkflowActivationError("ERR_WORKFLOW_ACTIVATION_SELF_TEST_FAILED", "stale roadmap version should block v2 activation")
 

@@ -156,6 +156,8 @@ promotion requires real release history.
 - V93: `docs/v93-workflow-narrative-spec.md` added the Keelplane Control Deck
   renderer for artifact-backed chart, gate, activation, oracle, and next-move
   status.
+- V94: `docs/v94-control-deck-score-spec.md` added operator-readiness scoring
+  for Control Deck signals without claiming benchmark or upward trend progress.
 
 ## Current Public Boundaries
 
@@ -179,3 +181,5 @@ promotion requires real release history.
   treat generated artifacts as support for a claim.
 - Workflow narrative labels are status rendering only; artifacts and source
   hashes remain the source of truth.
+- Control Deck readiness scores are operator status, not public benchmark
+  evidence.

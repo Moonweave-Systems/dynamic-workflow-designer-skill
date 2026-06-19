@@ -1,0 +1,328 @@
+{
+  "fixtures": [
+    {
+      "artifacts": {
+        "activation": {
+          "blocked_by": [],
+          "decision": "ready_for_next_workflow_design",
+          "inputs": {
+            "roadmap_latest_version": "V94"
+          },
+          "next_safe_action": "design_next_workflow",
+          "source_hashes": {
+            "command_safety": "698cd9875689fe329db21b71c23026165b03632f0be9727b25c440f298d93bd6",
+            "roadmap_reconciliation": "88aecd1488c4a62d35960f7f22bf75326d4f0e324282b40def8733e090d9538f"
+          }
+        },
+        "command_safety": {
+          "decision": "keep",
+          "failed": 0,
+          "required_fixture_count": 4,
+          "required_passed": 4
+        },
+        "narrative": {
+          "blocked_by": [],
+          "decision": "control_deck_ready",
+          "execution_policy": {
+            "executes_commands": false
+          },
+          "source_hashes": {
+            "activation": "c1b9ddaef3ecc4034e55a651dea2c8ea758a7612400990a6bffd9e29c04eac70",
+            "command_safety": "698cd9875689fe329db21b71c23026165b03632f0be9727b25c440f298d93bd6",
+            "oracle": "7414d3b34ff1880206f0cc32f1378dcce59607e5093ac4e1a1a80867e53ad8de",
+            "roadmap": "88aecd1488c4a62d35960f7f22bf75326d4f0e324282b40def8733e090d9538f"
+          },
+          "stages": [
+            {
+              "id": "chart",
+              "status": "clear"
+            },
+            {
+              "id": "gate",
+              "status": "clear"
+            },
+            {
+              "id": "activation",
+              "status": "clear"
+            },
+            {
+              "id": "oracle",
+              "status": "clear"
+            }
+          ],
+          "voice_policy": {
+            "does_not_claim_autonomous_execution": true,
+            "labels_are_status_rendering_only": true
+          }
+        },
+        "oracle": {
+          "artifact_count": 4,
+          "assertion_count": 12,
+          "blocked_by": [],
+          "decision": "evidence_verified",
+          "execution_policy": {
+            "executes_commands": false
+          }
+        },
+        "roadmap": {
+          "blocked_by": [],
+          "decision": "roadmap_reconciled",
+          "policy": {
+            "latest_version": "V94"
+          }
+        }
+      },
+      "expected_decision": "score_ready",
+      "expected_readiness_percent": 100,
+      "id": "ready-score",
+      "required": true
+    },
+    {
+      "artifacts": {
+        "activation": {
+          "blocked_by": [],
+          "decision": "ready_for_next_workflow_design",
+          "inputs": {
+            "roadmap_latest_version": "V94"
+          },
+          "source_hashes": {
+            "command_safety": "698cd9875689fe329db21b71c23026165b03632f0be9727b25c440f298d93bd6",
+            "roadmap_reconciliation": "88aecd1488c4a62d35960f7f22bf75326d4f0e324282b40def8733e090d9538f"
+          }
+        },
+        "command_safety": {
+          "decision": "keep",
+          "failed": 0,
+          "required_fixture_count": 4,
+          "required_passed": 4
+        },
+        "narrative": {
+          "blocked_by": [
+            {
+              "code": "ERR_WORKFLOW_NARRATIVE_ORACLE_BLOCKED"
+            }
+          ],
+          "decision": "blocked",
+          "execution_policy": {
+            "executes_commands": false
+          },
+          "source_hashes": {
+            "activation": "c1b9ddaef3ecc4034e55a651dea2c8ea758a7612400990a6bffd9e29c04eac70",
+            "command_safety": "698cd9875689fe329db21b71c23026165b03632f0be9727b25c440f298d93bd6",
+            "oracle": "7414d3b34ff1880206f0cc32f1378dcce59607e5093ac4e1a1a80867e53ad8de",
+            "roadmap": "88aecd1488c4a62d35960f7f22bf75326d4f0e324282b40def8733e090d9538f"
+          },
+          "stages": [
+            {
+              "id": "chart",
+              "status": "clear"
+            },
+            {
+              "id": "gate",
+              "status": "clear"
+            },
+            {
+              "id": "activation",
+              "status": "clear"
+            },
+            {
+              "id": "oracle",
+              "status": "blocked"
+            }
+          ],
+          "voice_policy": {
+            "does_not_claim_autonomous_execution": true,
+            "labels_are_status_rendering_only": true
+          }
+        },
+        "oracle": {
+          "blocked_by": [],
+          "decision": "evidence_verified",
+          "execution_policy": {
+            "executes_commands": false
+          }
+        },
+        "roadmap": {
+          "blocked_by": [],
+          "decision": "roadmap_reconciled",
+          "policy": {
+            "latest_version": "V94"
+          }
+        }
+      },
+      "expected_blocked_codes": [
+        "ERR_CONTROL_DECK_SCORE_NARRATIVE_NOT_READY",
+        "ERR_CONTROL_DECK_SCORE_NARRATIVE_BLOCKED",
+        "ERR_CONTROL_DECK_SCORE_ACTIVATION_HASH_DRIFT",
+        "ERR_CONTROL_DECK_SCORE_ORACLE_HASH_DRIFT"
+      ],
+      "expected_decision": "blocked",
+      "id": "blocked-narrative",
+      "required": true
+    },
+    {
+      "artifacts": {
+        "activation": {
+          "blocked_by": [],
+          "decision": "ready_for_next_workflow_design",
+          "inputs": {
+            "roadmap_latest_version": "V94"
+          },
+          "source_hashes": {
+            "command_safety": "698cd9875689fe329db21b71c23026165b03632f0be9727b25c440f298d93bd6",
+            "roadmap_reconciliation": "88aecd1488c4a62d35960f7f22bf75326d4f0e324282b40def8733e090d9538f"
+          }
+        },
+        "command_safety": {
+          "decision": "keep",
+          "failed": 0,
+          "required_fixture_count": 4,
+          "required_passed": 4
+        },
+        "narrative": {
+          "blocked_by": [],
+          "decision": "control_deck_ready",
+          "execution_policy": {
+            "executes_commands": false
+          },
+          "source_hashes": {
+            "activation": "stale-activation-hash",
+            "command_safety": "698cd9875689fe329db21b71c23026165b03632f0be9727b25c440f298d93bd6",
+            "oracle": "7414d3b34ff1880206f0cc32f1378dcce59607e5093ac4e1a1a80867e53ad8de",
+            "roadmap": "88aecd1488c4a62d35960f7f22bf75326d4f0e324282b40def8733e090d9538f"
+          },
+          "stages": [
+            {
+              "id": "chart",
+              "status": "clear"
+            },
+            {
+              "id": "gate",
+              "status": "clear"
+            },
+            {
+              "id": "activation",
+              "status": "clear"
+            },
+            {
+              "id": "oracle",
+              "status": "clear"
+            }
+          ],
+          "voice_policy": {
+            "does_not_claim_autonomous_execution": true,
+            "labels_are_status_rendering_only": true
+          }
+        },
+        "oracle": {
+          "artifact_count": 4,
+          "assertion_count": 12,
+          "blocked_by": [],
+          "decision": "evidence_verified",
+          "execution_policy": {
+            "executes_commands": false
+          }
+        },
+        "roadmap": {
+          "blocked_by": [],
+          "decision": "roadmap_reconciled",
+          "policy": {
+            "latest_version": "V94"
+          }
+        }
+      },
+      "expected_blocked_codes": [
+        "ERR_CONTROL_DECK_SCORE_ACTIVATION_HASH_DRIFT"
+      ],
+      "expected_decision": "blocked",
+      "id": "blocked-hash-drift",
+      "required": true
+    },
+    {
+      "artifacts": {
+        "activation": {
+          "blocked_by": [],
+          "decision": "ready_for_next_workflow_design",
+          "inputs": {
+            "roadmap_latest_version": "V94"
+          },
+          "next_safe_action": "design_next_workflow",
+          "source_hashes": {
+            "command_safety": "698cd9875689fe329db21b71c23026165b03632f0be9727b25c440f298d93bd6",
+            "roadmap_reconciliation": "88aecd1488c4a62d35960f7f22bf75326d4f0e324282b40def8733e090d9538f"
+          }
+        },
+        "command_safety": {
+          "decision": "keep",
+          "failed": 0,
+          "required_fixture_count": 4,
+          "required_passed": 4
+        },
+        "narrative": {
+          "blocked_by": [],
+          "decision": "control_deck_ready",
+          "execution_policy": {
+            "executes_commands": false
+          },
+          "source_hashes": {
+            "activation": "c1b9ddaef3ecc4034e55a651dea2c8ea758a7612400990a6bffd9e29c04eac70",
+            "command_safety": "698cd9875689fe329db21b71c23026165b03632f0be9727b25c440f298d93bd6",
+            "oracle": "7414d3b34ff1880206f0cc32f1378dcce59607e5093ac4e1a1a80867e53ad8de",
+            "roadmap": "88aecd1488c4a62d35960f7f22bf75326d4f0e324282b40def8733e090d9538f"
+          },
+          "stages": [
+            {
+              "id": "chart",
+              "status": "clear"
+            },
+            {
+              "id": "gate",
+              "status": "clear"
+            },
+            {
+              "id": "activation",
+              "status": "clear"
+            },
+            {
+              "id": "oracle",
+              "status": "clear"
+            }
+          ],
+          "voice_policy": {
+            "does_not_claim_autonomous_execution": false,
+            "labels_are_status_rendering_only": false
+          }
+        },
+        "oracle": {
+          "artifact_count": 4,
+          "assertion_count": 12,
+          "blocked_by": [],
+          "decision": "evidence_verified",
+          "execution_policy": {
+            "executes_commands": false
+          }
+        },
+        "roadmap": {
+          "blocked_by": [],
+          "decision": "roadmap_reconciled",
+          "policy": {
+            "latest_version": "V94"
+          }
+        }
+      },
+      "expected_blocked_codes": [
+        "ERR_CONTROL_DECK_SCORE_VOICE_POLICY_UNSAFE"
+      ],
+      "expected_decision": "blocked",
+      "id": "blocked-voice-policy",
+      "required": true
+    }
+  ],
+  "required_fixture_ids": [
+    "ready-score",
+    "blocked-narrative",
+    "blocked-hash-drift",
+    "blocked-voice-policy"
+  ],
+  "suite_id": "v94-control-deck-score"
+}

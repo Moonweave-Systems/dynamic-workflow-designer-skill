@@ -70,11 +70,14 @@ Render the current Control Deck when V88-V93 evidence artifacts exist:
 
 ```bash
 python scripts/dwm_workflow_narrative.py render --out out/workflow-narratives/local
+python scripts/dwm_control_deck_score.py score --out out/control-deck-scores/local
 ```
 
 The Control Deck may say things like `Chart: roadmap reconciled`, `Gate:
 command safety clear`, and `Oracle: evidence claims verified`. Those labels are
 status rendering only; artifacts and source hashes remain the source of truth.
+The Control Deck score is operator readiness, not a public benchmark or upward
+trend claim.
 
 Run the release contract before publishing changes:
 
@@ -102,6 +105,7 @@ python scripts/dwm.py commands --kind release
 | HUD | Produces read-only status views and hash-bound approval artifacts. |
 | Live evidence | Plans adapter commands, preflights them, ingests receipts, judges receipts, scores verified evidence, and reports graph-ready metrics. |
 | Control Deck | Renders artifact-backed Chart, Gate, Activation, Oracle, and Next move status without claiming autonomous execution. |
+| Readiness score | Scores Control Deck completeness for operator status without claiming benchmark progress. |
 | Packaging | Validates repo-local install metadata, adapter registries, compatibility, and release evidence. |
 
 ## What Is Still Honest
