@@ -379,6 +379,8 @@ BASE_REQUIRED_PATHS = [
     "docs/v84-installed-surface-audit-spec.md",
     "docs/v85-decision.md",
     "docs/v85-workflow-activation-spec.md",
+    "docs/v86-decision.md",
+    "docs/v86-keelplane-brand-spec.md",
     "docs/command-reference.md",
     "docs/release-history.md",
     "packaging/dwm-benchmark-attempts.json",
@@ -554,6 +556,8 @@ BASE_REQUIRED_PATHS = [
     "fixtures/v85/manifest.json",
     "docs/v85-decision.md",
     "docs/v85-workflow-activation-spec.md",
+    "docs/v86-decision.md",
+    "docs/v86-keelplane-brand-spec.md",
 ]
 
 

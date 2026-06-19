@@ -3326,6 +3326,9 @@ def main() -> None:
     require_terms(
         "README.md",
         [
+            "# keelplane",
+            "dwm core",
+            "dynamic-workflow-designer",
             "python scripts/dwm_demo.py run --out out/demo/quickstart",
             "python scripts/dwm_demo.py inspect --demo out/demo/quickstart",
             "python scripts/dwm.py status --run out/v9/v32-semantic-dogfood",
@@ -3469,6 +3472,7 @@ def main() -> None:
             "docs/v83-runner-receipt-dry-run-spec.md",
             "docs/v84-installed-surface-audit-spec.md",
             "docs/v85-workflow-activation-spec.md",
+            "docs/v86-keelplane-brand-spec.md",
             "generated `out/` directories are verification evidence, not source of truth",
             "direct-agent superiority is not claimed",
             "process progress is not an upward benchmark claim",
@@ -3476,6 +3480,37 @@ def main() -> None:
             "receipt work is allowed through dry-run evidence only",
             "active local skill path",
             "next safe action is workflow design",
+        ],
+    )
+    require_terms(
+        "docs/dwm-branding.md",
+        [
+            "keelplane is the public product brand",
+            "dwm core stands for",
+            "dynamic-workflow-designer",
+            "repository slug remains `dwm`",
+            "do not claim autonomous execution",
+        ],
+    )
+    require_terms(
+        "docs/v86-keelplane-brand-spec.md",
+        [
+            "status: implemented first keelplane brand decision",
+            "public product brand: `keelplane`",
+            "internal engine name: `dwm core`",
+            "compatibility skill name: `dynamic-workflow-designer`",
+            "do not rename cli commands",
+            "do not claim autonomous execution",
+        ],
+    )
+    require_terms(
+        "docs/v86-decision.md",
+        [
+            "decision: keep",
+            "`readme.md` now leads with `keelplane`",
+            "`docs/dwm-branding.md` defines `keelplane`",
+            "`assets/dwm-hero.svg` names `keelplane`",
+            "does not claim autonomous execution",
         ],
     )
     require_terms("docs/v0.5-plan-schema-evaluator-spec.md", V05_REQUIRED_TERMS)

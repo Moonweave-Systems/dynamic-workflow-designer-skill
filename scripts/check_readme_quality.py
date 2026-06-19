@@ -80,7 +80,8 @@ def check_readme(path: Path = README) -> None:
 def self_test() -> None:
     good = "\n".join(
         [
-            "# DWM",
+            "# Keelplane",
+            "DWM Core",
             "## Quickstart",
             "## Normal Loop",
             "## What Exists Today",

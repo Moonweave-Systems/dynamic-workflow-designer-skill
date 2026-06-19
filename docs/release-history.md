@@ -1,4 +1,4 @@
-# DWM Release History
+# Keelplane Release History
 
 This is an implementation history, not the README product pitch.
 
@@ -133,6 +133,9 @@ promotion requires real release history.
 - V85: `docs/v85-workflow-activation-spec.md` added
   `workflow-activation.json` and `workflow-activation.md` to decide whether the
   next safe action is workflow design.
+- V86: `docs/v86-keelplane-brand-spec.md` set **Keelplane** as the public
+  product brand while preserving DWM Core and `dynamic-workflow-designer`
+  compatibility.
 
 ## Current Public Boundaries
 

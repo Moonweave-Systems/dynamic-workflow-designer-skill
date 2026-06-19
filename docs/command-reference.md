@@ -1,4 +1,4 @@
-# DWM Command Reference
+# Keelplane Command Reference
 
 This file keeps the full CLI and artifact reference out of the README. The
 README should explain the product; this page preserves operator detail.

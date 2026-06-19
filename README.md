@@ -1,27 +1,28 @@
-# DWM
+# Keelplane
 
-> Deterministic Workflow Machine: a local control-plane for agentic work that
-> turns large goals into hashed plans, packets, evidence, reviews, gates, and
-> resumable runtime state.
+> A deterministic control-plane for large AI-native work.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-4F46E5.svg)](LICENSE)
 [![Agent skill](https://img.shields.io/badge/agent%20skill-Codex-4F46E5.svg)](SKILL.md)
 [![Release](https://img.shields.io/github/v/release/Moonweave-Systems/dwm?color=4F46E5)](https://github.com/Moonweave-Systems/dwm/releases)
 [![Contract](https://img.shields.io/badge/contract-self--tested-059669.svg)](scripts/check_contract.py)
 
-![DWM hero](assets/dwm-hero.svg)
+![Keelplane hero](assets/dwm-hero.svg)
 
-**DWM** is a deterministic workflow control-plane for Codex-era agentic work.
-It sits above agent CLIs and local harnesses, records every important decision
-as an artifact, and refuses to blur planned work with executed work.
+**Keelplane** sits above agent CLIs, skills, plugins, and local harnesses. It
+records every important decision as an artifact and refuses to blur planned
+work with executed work.
 
 The installed skill remains named `dynamic-workflow-designer` for compatibility,
-but the product surface is broader: workflow design, packet compilation,
-bounded runner gates, review/repair evidence, live scoring artifacts, adapter
-parity checks, daily operator state, and release candidate checks.
+and the internal engine remains **DWM Core**: the Deterministic Workflow
+Machine. The product surface is broader than one skill: workflow design, packet
+compilation, bounded runner gates, review/repair evidence, live scoring
+artifacts, adapter parity checks, daily operator state, and release candidate
+checks.
 
-Use DWM when the question is not just "what should the agent do next?", but
-"what can be resumed, verified, reviewed, blocked, or released from evidence?"
+Use Keelplane when the question is not just "what should the agent do next?",
+but "what can be resumed, verified, reviewed, blocked, or released from
+evidence?"
 
 ## Quickstart
 
@@ -48,7 +49,7 @@ Use $dynamic-workflow-designer to design a workflow for auditing every route for
 
 ## Normal Loop
 
-For day-to-day use, DWM works as a local operator loop:
+For day-to-day use, Keelplane works as a local operator loop:
 
 1. design or resume a workflow,
 2. inspect the next safe action,
@@ -104,11 +105,11 @@ python scripts/dwm.py commands --kind release
 
 ## Safety Model
 
-DWM treats artifacts, not model claims, as the source of truth. A workflow is
-trusted only when the relevant plan, packet, prompt, evidence, review, approval,
-and status artifacts match their hash ledgers.
+Keelplane treats artifacts, not model claims, as the source of truth. A
+workflow is trusted only when the relevant plan, packet, prompt, evidence,
+review, approval, and status artifacts match their hash ledgers.
 
-DWM does not claim unrestricted autonomous execution. Destructive actions,
+Keelplane does not claim unrestricted autonomous execution. Destructive actions,
 network access, dependency installation, secret access, external messaging,
 database migration, production deployment, and history rewrite require explicit
 gates with a safe default.
@@ -155,9 +156,9 @@ Generated `out/` directories are verification evidence, not source of truth.
 
 ## Position
 
-DWM is not a prompt-only workflow router and not a clone of any one runtime.
-DWM is a deterministic control-plane above agent CLIs, local harnesses, and
-bounded adapter surfaces. The goal is to make agentic work inspectable,
+Keelplane is not a prompt-only workflow router and not a clone of any one
+runtime. It is a deterministic control-plane above agent CLIs, local harnesses,
+and bounded adapter surfaces. DWM Core keeps agentic work inspectable,
 reproducible, resumable, and honest about what has actually been executed.
 
 ## License
