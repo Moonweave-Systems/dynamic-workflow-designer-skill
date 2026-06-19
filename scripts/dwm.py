@@ -211,6 +211,9 @@ RELEASE_COMMANDS = [
     "python scripts/dwm_wave_receipt.py --self-test",
     "python scripts/dwm_wave_receipt.py --manifest fixtures/v99/manifest.json --out out/wave-receipts/v99-final",
     "python scripts/dwm_wave_receipt.py record --wave out/wave-operators/v98-canonical/wave-operator.json --acquisition out/dogfood-acquisitions/v61-final/summary.json --out out/wave-receipts/v99-canonical",
+    "python scripts/dwm_promotion_evidence.py --self-test",
+    "python scripts/dwm_promotion_evidence.py --manifest fixtures/v100/manifest.json --out out/promotion-evidence/v100-final",
+    "python scripts/dwm_promotion_evidence.py record --receipt out/wave-receipts/v99-canonical/wave-receipt.json --readiness out/benchmark-readiness/v97-canonical/benchmark-readiness.json --out out/promotion-evidence/v100-canonical",
     "python scripts/dwm_daily_operator.py --self-test",
     "python scripts/dwm_daily_operator.py --manifest fixtures/v48/manifest.json --out out/daily-operator/v48-final",
     "python scripts/dwm_release_candidate.py --self-test",
@@ -660,6 +663,10 @@ BASE_REQUIRED_PATHS = [
     "fixtures/v99/manifest.json",
     "docs/v99-decision.md",
     "docs/v99-wave-receipt-spec.md",
+    "scripts/dwm_promotion_evidence.py",
+    "fixtures/v100/manifest.json",
+    "docs/v100-decision.md",
+    "docs/v100-promotion-evidence-spec.md",
 ]
 
 

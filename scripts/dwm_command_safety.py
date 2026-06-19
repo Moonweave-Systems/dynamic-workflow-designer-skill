@@ -43,6 +43,7 @@ SAFE_SCRIPT_PATHS = {
     "scripts/dwm_benchmark_readiness.py",
     "scripts/dwm_wave_operator.py",
     "scripts/dwm_wave_receipt.py",
+    "scripts/dwm_promotion_evidence.py",
     "scripts/dwm_evidence_oracle.py",
     "scripts/dwm_large_workflow_dogfood.py",
     "scripts/dwm_large_workflow_next.py",

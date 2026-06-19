@@ -1,6 +1,6 @@
 # Keelplane Automation Roadmap
 
-Status: V3 entry runtime implemented; V7.5 frontier result review implemented; V8 frontier review ingestion implemented; V9 human gate resolution implemented; V10 product CLI implemented; V11 operator guidance implemented; V12-V20 product roadmap implemented; V52-V87 product evidence, graph timing, activation, and brand boundary gates implemented; V88 roadmap reconciliation audit implemented; V89 command safety gate implemented; V90 activation v2 implemented; V91 contract tiering implemented; V92 evidence oracle implemented; V93 workflow narrative implemented; V94 control deck score implemented; V95 score history implemented; V96 metric ladder implemented; V97 benchmark readiness implemented; V98 wave operator implemented
+Status: V3 entry runtime implemented; V7.5 frontier result review implemented; V8 frontier review ingestion implemented; V9 human gate resolution implemented; V10 product CLI implemented; V11 operator guidance implemented; V12-V20 product roadmap implemented; V52-V87 product evidence, graph timing, activation, and brand boundary gates implemented; V88 roadmap reconciliation audit implemented; V89 command safety gate implemented; V90 activation v2 implemented; V91 contract tiering implemented; V92 evidence oracle implemented; V93 workflow narrative implemented; V94 control deck score implemented; V95 score history implemented; V96 metric ladder implemented; V97 benchmark readiness implemented; V98 wave operator implemented; V99 wave receipt implemented; V100 promotion evidence implemented
 Date: 2026-06-19
 
 ## Purpose
@@ -849,9 +849,9 @@ First canonical demo done means:
 - unsafe and non-owned output paths are blocked;
 - `fixtures/v51/manifest.json` passes with `decision: "keep"`.
 
-### V52-V99: Product Evidence And Control Deck
+### V52-V100: Product Evidence And Control Deck
 
-Status: implemented through V99.
+Status: implemented through V100.
 
 Purpose: move from a runnable demo into a product that can explain its current
 state, measure real dogfood evidence, gate graph claims, continue safely across
@@ -899,10 +899,13 @@ Implemented continuation:
   activation evidence without executing commands.
 - V99 wave receipt verifies the selected dogfood evidence wave against
   acquisition evidence without publishing benchmark claims.
+- V100 promotion evidence records whether the source evidence can enter human
+  review for README graph publication while keeping publication blocked by
+  default.
 
 Next roadmap direction:
 
-1. Use the V99 wave receipt to continue dogfood evidence acquisition until promotion evidence can support a public graph.
+1. Use the V100 promotion evidence ledger to continue dogfood evidence acquisition until public graph promotion can enter human review.
 2. Increase real dogfood acquisition so future graphs show measured process
    history rather than decorative upward motion.
 3. Improve public install and quickstart flow without renaming packages until a

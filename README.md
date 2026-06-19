@@ -76,6 +76,7 @@ python scripts/dwm_metric_ladder.py assess --history out/control-deck-score-hist
 python scripts/dwm_benchmark_readiness.py assess --ladder out/metric-ladders/local/metric-ladder.json --out out/benchmark-readiness/local
 python scripts/dwm_wave_operator.py select --readiness out/benchmark-readiness/local/benchmark-readiness.json --activation out/workflow-activations/v90-canonical/workflow-activation.json --out out/wave-operators/local
 python scripts/dwm_wave_receipt.py record --wave out/wave-operators/local/wave-operator.json --acquisition out/dogfood-acquisitions/v61-final/summary.json --out out/wave-receipts/local
+python scripts/dwm_promotion_evidence.py record --receipt out/wave-receipts/local/wave-receipt.json --readiness out/benchmark-readiness/local/benchmark-readiness.json --out out/promotion-evidence/local
 ```
 
 The Control Deck may say things like `Chart: roadmap reconciled`, `Gate:
@@ -89,6 +90,8 @@ records the current internal score and keeps README benchmark publication
 blocked until promotion evidence exists. The Wave Operator selects the next
 source-only product wave from readiness and activation evidence. Wave Receipt
 checks that the selected dogfood evidence wave has usable acquisition evidence.
+Promotion Evidence records whether those source artifacts can enter human
+review for README graph publication; it does not publish benchmark claims.
 
 Run the release contract before publishing changes:
 
@@ -122,6 +125,7 @@ python scripts/dwm.py commands --kind release
 | Benchmark readiness | Reports internal readiness and public benchmark publication state without granting README publication approval. |
 | Wave Operator | Selects the next source-only product wave and keeps public benchmark publication behind human review. |
 | Wave Receipt | Verifies the selected dogfood evidence wave against acquisition evidence without publishing benchmark claims. |
+| Promotion Evidence | Records whether source evidence can enter human review while keeping README graph publication blocked by default. |
 | Packaging | Validates repo-local install metadata, adapter registries, compatibility, and release evidence. |
 
 ## What Is Still Honest

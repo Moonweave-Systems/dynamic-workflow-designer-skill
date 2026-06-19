@@ -1,0 +1,101 @@
+{
+  "suite_id": "v100-promotion-evidence",
+  "fixtures": [
+    {
+      "id": "records-internal-evidence-with-public-graph-blocked",
+      "receipt": {
+        "tool": "dwm_wave_receipt.py",
+        "decision": "wave_receipt_ready",
+        "selected_wave": "dogfood-evidence-wave",
+        "claim_policy": {
+          "wave_receipt_is_public_benchmark": false
+        }
+      },
+      "readiness": {
+        "tool": "dwm_benchmark_readiness.py",
+        "decision": "benchmark_readiness_recorded",
+        "readiness_score": 70,
+        "readiness_axes": {
+          "process_progress": true,
+          "operator_readiness": true,
+          "public_benchmark": false
+        },
+        "public_benchmark_publish_allowed": false
+      },
+      "expected_decision": "promotion_evidence_recorded",
+      "expected_promotion_ready": false
+    },
+    {
+      "id": "promotion-ready-still-needs-human-review",
+      "receipt": {
+        "tool": "dwm_wave_receipt.py",
+        "decision": "wave_receipt_ready",
+        "selected_wave": "dogfood-evidence-wave",
+        "claim_policy": {
+          "wave_receipt_is_public_benchmark": false
+        }
+      },
+      "readiness": {
+        "tool": "dwm_benchmark_readiness.py",
+        "decision": "benchmark_readiness_recorded",
+        "readiness_score": 100,
+        "readiness_axes": {
+          "process_progress": true,
+          "operator_readiness": true,
+          "public_benchmark": true
+        },
+        "public_benchmark_publish_allowed": true
+      },
+      "expected_decision": "promotion_evidence_recorded",
+      "expected_promotion_ready": true
+    },
+    {
+      "id": "blocked-receipt-blocks-ledger",
+      "receipt": {
+        "tool": "dwm_wave_receipt.py",
+        "decision": "blocked",
+        "selected_wave": "dogfood-evidence-wave",
+        "claim_policy": {
+          "wave_receipt_is_public_benchmark": false
+        }
+      },
+      "readiness": {
+        "tool": "dwm_benchmark_readiness.py",
+        "decision": "benchmark_readiness_recorded",
+        "readiness_score": 70,
+        "readiness_axes": {
+          "process_progress": true,
+          "operator_readiness": true,
+          "public_benchmark": false
+        },
+        "public_benchmark_publish_allowed": false
+      },
+      "expected_decision": "blocked",
+      "expected_promotion_ready": false
+    },
+    {
+      "id": "overclaim-receipt-blocks-ledger",
+      "receipt": {
+        "tool": "dwm_wave_receipt.py",
+        "decision": "wave_receipt_ready",
+        "selected_wave": "dogfood-evidence-wave",
+        "claim_policy": {
+          "wave_receipt_is_public_benchmark": true
+        }
+      },
+      "readiness": {
+        "tool": "dwm_benchmark_readiness.py",
+        "decision": "benchmark_readiness_recorded",
+        "readiness_score": 100,
+        "readiness_axes": {
+          "process_progress": true,
+          "operator_readiness": true,
+          "public_benchmark": true
+        },
+        "public_benchmark_publish_allowed": true
+      },
+      "expected_decision": "blocked",
+      "expected_promotion_ready": false
+    }
+  ]
+}

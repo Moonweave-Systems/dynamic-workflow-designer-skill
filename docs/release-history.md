@@ -170,6 +170,8 @@ promotion requires real release history.
   from benchmark readiness and activation evidence.
 - V99: `docs/v99-wave-receipt-spec.md` added source-only receipt validation
   for the selected dogfood evidence wave.
+- V100: `docs/v100-promotion-evidence-spec.md` added source-only promotion
+  evidence recording before any README graph publication review.
 
 ## Current Public Boundaries
 
