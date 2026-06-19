@@ -175,6 +175,9 @@ RELEASE_COMMANDS = [
     "python scripts/dwm_workflow_activation.py --self-test",
     "python scripts/dwm_workflow_activation.py --manifest fixtures/v85/manifest.json --out out/workflow-activations/v85-final",
     "python scripts/dwm_workflow_activation.py activate --audit out/installed-surface-audits/v84-canonical/installed-surface-audit.json --receipt out/runner-receipt-dry-runs/v83-canonical/runner-receipt.json --status out/v9/v32-semantic-dogfood/status.json --out out/workflow-activations/v85-canonical",
+    "python scripts/dwm_brand_boundary_audit.py --self-test",
+    "python scripts/dwm_brand_boundary_audit.py --manifest fixtures/v87/manifest.json --out out/brand-boundary-audits/v87-final",
+    "python scripts/dwm_brand_boundary_audit.py audit --out out/brand-boundary-audits/v87-canonical",
     "python scripts/dwm_daily_operator.py --self-test",
     "python scripts/dwm_daily_operator.py --manifest fixtures/v48/manifest.json --out out/daily-operator/v48-final",
     "python scripts/dwm_release_candidate.py --self-test",
@@ -381,6 +384,8 @@ BASE_REQUIRED_PATHS = [
     "docs/v85-workflow-activation-spec.md",
     "docs/v86-decision.md",
     "docs/v86-keelplane-brand-spec.md",
+    "docs/v87-decision.md",
+    "docs/v87-brand-boundary-audit-spec.md",
     "docs/command-reference.md",
     "docs/release-history.md",
     "packaging/dwm-benchmark-attempts.json",
@@ -449,6 +454,7 @@ BASE_REQUIRED_PATHS = [
     "scripts/dwm_runner_receipt_dry_run.py",
     "scripts/dwm_installed_surface_audit.py",
     "scripts/dwm_workflow_activation.py",
+    "scripts/dwm_brand_boundary_audit.py",
     "scripts/dwm_daily_operator.py",
     "scripts/dwm_adapter_live_matrix.py",
     "fixtures/v49/manifest.json",
@@ -558,6 +564,9 @@ BASE_REQUIRED_PATHS = [
     "docs/v85-workflow-activation-spec.md",
     "docs/v86-decision.md",
     "docs/v86-keelplane-brand-spec.md",
+    "fixtures/v87/manifest.json",
+    "docs/v87-decision.md",
+    "docs/v87-brand-boundary-audit-spec.md",
 ]
 
 

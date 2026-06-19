@@ -136,6 +136,10 @@ promotion requires real release history.
 - V86: `docs/v86-keelplane-brand-spec.md` set **Keelplane** as the public
   product brand while preserving DWM Core and `dynamic-workflow-designer`
   compatibility.
+- V87: `docs/v87-brand-boundary-audit-spec.md` added
+  `brand-boundary-audit.json` and `brand-boundary-audit.md` to keep public
+  Keelplane naming, DWM Core internals, and `dynamic-workflow-designer`
+  compatibility from drifting.
 
 ## Current Public Boundaries
 
@@ -151,3 +155,5 @@ promotion requires real release history.
   work before actual queued command execution.
 - Receipt work is allowed through dry-run evidence only; actual execution stays
   behind the V84 human gate.
+- Brand boundary audits preserve Keelplane as the public brand without claiming
+  autonomous execution or renaming compatibility surfaces.

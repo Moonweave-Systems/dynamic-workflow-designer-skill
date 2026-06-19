@@ -1,0 +1,53 @@
+{
+  "suite_id": "v87-brand-boundary-audit",
+  "fixtures": [
+    {
+      "id": "ready-keelplane-boundary",
+      "required": true,
+      "surfaces": {
+        "README.md": "# Keelplane\n\nKeelplane uses DWM Core while preserving dynamic-workflow-designer compatibility.\n",
+        "docs/dwm-branding.md": "# Keelplane Branding\n\nKeelplane is the public product brand.\nDWM Core stands for Deterministic Workflow Machine.\nThe compatibility skill name remains dynamic-workflow-designer.\nThe repository slug remains `dwm`.\nDo not claim autonomous execution.\n",
+        "docs/command-reference.md": "# Keelplane Command Reference\n",
+        "docs/release-history.md": "# Keelplane Release History\n\n- V86: docs/v86-keelplane-brand-spec.md\n",
+        "assets/dwm-hero.svg": "<svg><title>Keelplane</title><text>Powered by DWM Core</text></svg>\n"
+      },
+      "expected_decision": "brand_boundary_ready"
+    },
+    {
+      "id": "blocked-old-public-heading",
+      "required": true,
+      "surfaces": {
+        "README.md": "# DWM\n\nOld public product heading.\n",
+        "docs/dwm-branding.md": "# Keelplane Branding\n\nKeelplane is the public product brand.\nDWM Core stands for Deterministic Workflow Machine.\nThe compatibility skill name remains dynamic-workflow-designer.\nThe repository slug remains `dwm`.\nDo not claim autonomous execution.\n",
+        "docs/command-reference.md": "# Keelplane Command Reference\n",
+        "docs/release-history.md": "# Keelplane Release History\n\n- V86: docs/v86-keelplane-brand-spec.md\n",
+        "assets/dwm-hero.svg": "<svg><title>Keelplane</title><text>Powered by DWM Core</text></svg>\n"
+      },
+      "expected_decision": "blocked"
+    },
+    {
+      "id": "blocked-missing-compatibility-name",
+      "required": true,
+      "surfaces": {
+        "README.md": "# Keelplane\n\nKeelplane uses DWM Core while preserving dynamic-workflow-designer compatibility.\n",
+        "docs/dwm-branding.md": "# Keelplane Branding\n\nKeelplane is the public product brand.\nDWM Core stands for Deterministic Workflow Machine.\nThe repository slug remains `dwm`.\nDo not claim autonomous execution.\n",
+        "docs/command-reference.md": "# Keelplane Command Reference\n",
+        "docs/release-history.md": "# Keelplane Release History\n\n- V86: docs/v86-keelplane-brand-spec.md\n",
+        "assets/dwm-hero.svg": "<svg><title>Keelplane</title><text>Powered by DWM Core</text></svg>\n"
+      },
+      "expected_decision": "blocked"
+    },
+    {
+      "id": "blocked-live-execution-overclaim",
+      "required": true,
+      "surfaces": {
+        "README.md": "# Keelplane\n\nKeelplane uses DWM Core while preserving dynamic-workflow-designer compatibility. Keelplane executes live commands for you.\n",
+        "docs/dwm-branding.md": "# Keelplane Branding\n\nKeelplane is the public product brand.\nDWM Core stands for Deterministic Workflow Machine.\nThe compatibility skill name remains dynamic-workflow-designer.\nThe repository slug remains `dwm`.\nDo not claim autonomous execution.\n",
+        "docs/command-reference.md": "# Keelplane Command Reference\n",
+        "docs/release-history.md": "# Keelplane Release History\n\n- V86: docs/v86-keelplane-brand-spec.md\n",
+        "assets/dwm-hero.svg": "<svg><title>Keelplane</title><text>Powered by DWM Core</text></svg>\n"
+      },
+      "expected_decision": "blocked"
+    }
+  ]
+}
