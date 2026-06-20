@@ -1,0 +1,198 @@
+{
+  "activation": {
+    "decision": "activate",
+    "downgrade_target": null,
+    "matched_thresholds": [
+      "downstream-consumer",
+      "human-gates"
+    ],
+    "reason": "Keelplane autonomous loop needs the second live phase to extend the same source file while preserving phase one."
+  },
+  "assumptions": [
+    {
+      "claim": "The loop-owned immutable tests define the required evidence-summary behavior and regression guard.",
+      "verification": "python -m pytest -q fixtures/keelplane-loop/tests/test_part1.py fixtures/keelplane-loop/tests/test_part2.py"
+    }
+  ],
+  "budget": {
+    "file_touch_limit": "scripts/keelplane_run_summary.py only",
+    "max_agents": 1,
+    "max_retries": 0,
+    "max_rounds": 1,
+    "time_box": "120 seconds"
+  },
+  "created_by": "keelplane",
+  "execution_path": {
+    "consumer": "codex-agent",
+    "first_slice": {
+      "completion_check": "python -m pytest -q fixtures/keelplane-loop/tests/test_part1.py fixtures/keelplane-loop/tests/test_part2.py passes",
+      "expected_output": "scripts/keelplane_run_summary.py adds the evidence summary required by test_part2.py without breaking test_part1.py",
+      "forbidden_actions": [
+        "modifying loop-owned tests",
+        "modifying any file other than scripts/keelplane_run_summary.py",
+        "package manager changes",
+        "external service calls",
+        "credential reading",
+        "release actions",
+        "file removal",
+        "git commit",
+        "git publication",
+        "git ref mutation"
+      ],
+      "inputs": [
+        "workflow.plan.json",
+        "repository path",
+        "path:../tests/test_part1.py",
+        "path:../tests/test_part2.py",
+        "path:../../../scripts/keelplane_run_summary.py"
+      ],
+      "instruction": "Add the evidence-summary capability derived from fixtures/keelplane-loop/tests/test_part2.py while preserving the behavior from fixtures/keelplane-loop/tests/test_part1.py. You may modify ONLY scripts/keelplane_run_summary.py. Do not edit the tests. Implement the command-line behavior needed for test_part2.py and the part1 regression to pass."
+    },
+    "mode": "runtime"
+  },
+  "handoffs": [
+    {
+      "artifact": "scripts/keelplane_run_summary.py",
+      "artifact_schema": {
+        "format": "other",
+        "required_fields": [
+          "artifact_count",
+          "source_hash"
+        ],
+        "validation_command": "python -m pytest -q fixtures/keelplane-loop/tests/test_part1.py fixtures/keelplane-loop/tests/test_part2.py"
+      },
+      "from_phase": "part2",
+      "to_phase": "part2"
+    }
+  ],
+  "objective": "Extend the live Keelplane run summary with evidence fields.",
+  "parallelism": {
+    "barriers": [
+      "verify part2 after preserving part1"
+    ],
+    "concurrency_cap": 1,
+    "fan_in_rule": "single phase packet",
+    "shape": "pipeline"
+  },
+  "patterns": [
+    "Pipeline",
+    "Human Gate"
+  ],
+  "phases": [
+    {
+      "depends_on": [],
+      "entry_criteria": [
+        "part1 implementation exists",
+        "test_part2.py is available as loop-owned verification"
+      ],
+      "exit_criteria": [
+        "test_part1.py and test_part2.py pass"
+      ],
+      "id": "part2",
+      "name": "Evidence Summary",
+      "outputs": [
+        "scripts/keelplane_run_summary.py"
+      ],
+      "worker_ids": [
+        "run-summary-worker"
+      ]
+    }
+  ],
+  "plan_id": "keelplane-loop-live-part2",
+  "resume": {
+    "cacheable_outputs": [
+      "scripts/keelplane_run_summary.py"
+    ],
+    "invalidators": [
+      "test_part1.py changes",
+      "test_part2.py changes",
+      "plan changes",
+      "prompt changes"
+    ],
+    "restart_points": [
+      "part2"
+    ]
+  },
+  "risk_gates": [
+    {
+      "requires_user_approval": true,
+      "safe_default": "stop before boundary escape and ask for approval",
+      "trigger": "boundary escape"
+    }
+  ],
+  "schema_version": "0.5",
+  "source_prompt": "Create a bounded live packet for the second Keelplane run summary phase.",
+  "surfaces": [
+    {
+      "access_mode": "read-only",
+      "id": "repo",
+      "kind": "repo",
+      "locator": "."
+    }
+  ],
+  "verification": [
+    {
+      "claim_or_output": "The evidence summary reports artifact_count and source_hash while preserving status fields.",
+      "evidence_required": [
+        "pytest output for fixtures/keelplane-loop/tests/test_part1.py",
+        "pytest output for fixtures/keelplane-loop/tests/test_part2.py"
+      ],
+      "falsifier": "test_part2.py fails or the part1 regression fails"
+    }
+  ],
+  "workers": [
+    {
+      "context_budget": {
+        "max_files": 5,
+        "max_tokens": 4000,
+        "must_exclude": [
+          "out/"
+        ],
+        "must_include": [
+          "scripts/keelplane_run_summary.py",
+          "fixtures/keelplane-loop/tests/test_part1.py",
+          "fixtures/keelplane-loop/tests/test_part2.py"
+        ]
+      },
+      "forbidden_actions": [
+        "modifying loop-owned tests",
+        "modifying any file other than scripts/keelplane_run_summary.py",
+        "package manager changes",
+        "external service calls",
+        "credential reading",
+        "release actions",
+        "file removal",
+        "git commit",
+        "git publication",
+        "git ref mutation"
+      ],
+      "id": "run-summary-worker",
+      "ownership": [
+        "scripts/keelplane_run_summary.py"
+      ],
+      "prompt_contract": {
+        "inputs": [
+          "workflow.plan.json",
+          "repository path",
+          "fixtures/keelplane-loop/tests/test_part1.py",
+          "fixtures/keelplane-loop/tests/test_part2.py"
+        ],
+        "required_output_schema": "source change plus passing pytest output",
+        "stop_conditions": [
+          "missing loop-owned test",
+          "request to edit tests",
+          "request to change non-target files"
+        ]
+      },
+      "role": "Run summary implementer",
+      "tool_permissions": {
+        "mcp_connectors": [],
+        "network": false,
+        "read": true,
+        "requires_escalation_for": [],
+        "shell": false,
+        "write": false
+      }
+    }
+  ]
+}

@@ -431,8 +431,18 @@ def ensure_git_worktree(name: str | None, *, require_clean: bool = True) -> Path
             raise ExecError("ERR_EXEC_WORKTREE_REQUIRED", "existing worktree is not owned by this repository", path=path)
         if git_symbolic_branch(path):
             raise ExecError("ERR_EXEC_WORKTREE_REQUIRED", "existing worktree must be detached", path=path)
-        if git_text(["rev-parse", "HEAD"], path).strip() != git_text(["rev-parse", "HEAD"], ROOT).strip():
-            raise ExecError("ERR_EXEC_WORKTREE_REQUIRED", "existing worktree HEAD does not match source HEAD", path=path)
+        source_head = git_text(["rev-parse", "HEAD"], ROOT).strip()
+        worktree_head = git_text(["rev-parse", "HEAD"], path).strip()
+        ancestor = subprocess.run(
+            ["git", "merge-base", "--is-ancestor", source_head, worktree_head],
+            cwd=path,
+            check=False,
+            text=True,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        if ancestor.returncode != 0:
+            raise ExecError("ERR_EXEC_WORKTREE_REQUIRED", "existing worktree HEAD is not a source HEAD descendant", path=path)
     else:
         WORKTREE_ROOT.mkdir(parents=True, exist_ok=True)
         result = subprocess.run(

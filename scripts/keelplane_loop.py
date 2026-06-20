@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import sys
 import time
@@ -32,8 +33,11 @@ from dwm_live_proof import (  # noqa: E402
     run_process as trusted_run_process,
 )
 from execute_packet import (  # noqa: E402
+    ensure_git_worktree,
     execute_codex_cli,
     git_text,
+    repo_worktree_paths,
+    worktree_path,
     write_text as safe_write_text,
 )
 
@@ -197,6 +201,25 @@ def init_worktree(worktree: Path, pristine: dict[str, dict[str, str]]) -> str:
     run_git(["add", "."], worktree)
     run_git(["commit", "-m", "keelplane seed"], worktree)
     return run_git(["rev-parse", "HEAD"], worktree).strip()
+
+
+def live_worktree_name(out_dir: Path) -> str:
+    slug = re.sub(r"[^A-Za-z0-9._-]+", "-", out_dir.name).strip(".-_")
+    if not slug:
+        slug = "run"
+    return f"keelplane-{slug}-{sha256_text(str(out_dir.resolve(strict=False)))[:12]}"
+
+
+def init_live_worktree(name: str) -> tuple[Path, str]:
+    path = worktree_path(name)
+    if path.exists():
+        registered = path.resolve(strict=False) in repo_worktree_paths()
+        if registered:
+            git_text(["worktree", "remove", "--force", str(path)], ROOT)
+        else:
+            shutil.rmtree(path)
+    worktree = ensure_git_worktree(name)
+    return worktree, run_git(["rev-parse", "HEAD"], worktree).strip()
 
 
 def run_git(args: list[str], cwd: Path) -> str:
@@ -388,6 +411,7 @@ def execute_phase(
     packet: dict[str, Any],
     attempt: int,
     approve_live_codex: bool,
+    live_worktree: str | None,
     timeout_seconds: int,
 ) -> dict[str, Any]:
     target_files = {safe_rel_path(path, label="target file").as_posix() for path in require_str_list(phase, "target_files")}
@@ -413,7 +437,7 @@ def execute_phase(
         result = execute_codex_cli(
             v1_run,
             out_dir=ROOT / "out" / "v2" / f"keelplane-{out_dir.name}-{packet['phase_id']}-{attempt}",
-            worktree=str(worktree),
+            worktree=live_worktree,
             codex_cli={"mode": "installed-codex", "timeout_seconds": timeout_seconds},
             verification_commands=None,
         )
@@ -514,7 +538,8 @@ def run_loop(
         raise LoopError("ERR_KEELPLANE_MANIFEST_INVALID", "fixture phases must be a non-empty list")
     pristine = pristine_verification_map(phases)
     prepare_out_dir(out_dir, resume=resume)
-    worktree = out_dir / WORKTREE_DIRNAME
+    live_worktree = live_worktree_name(out_dir) if mode == "installed-codex" else None
+    worktree = worktree_path(live_worktree) if live_worktree is not None else out_dir / WORKTREE_DIRNAME
     if resume:
         journal = load_journal(out_dir)
         if not worktree.is_dir():
@@ -524,7 +549,7 @@ def run_loop(
             raise LoopError("ERR_KEELPLANE_RESUME_INVALID", "last checkpoint is missing")
         run_git(["reset", "--hard", last_commit], worktree)
     else:
-        seed_commit = init_worktree(worktree, pristine)
+        seed_commit = init_live_worktree(live_worktree)[1] if live_worktree is not None else init_worktree(worktree, pristine)
         journal = {
             "schema_version": SCHEMA_VERSION,
             "fixture_id": fixture_id,
@@ -589,6 +614,7 @@ def run_loop(
                     packet=packet,
                     attempt=attempt,
                     approve_live_codex=approve_live_codex,
+                    live_worktree=live_worktree,
                     timeout_seconds=timeout_seconds,
                 )
             )
@@ -687,6 +713,33 @@ def run_manifest(manifest_path: Path, out_dir: Path) -> dict[str, Any]:
     return summary
 
 
+def run_single_fixture(
+    manifest_path: Path,
+    out_dir: Path,
+    *,
+    mode: str,
+    resume: bool,
+    approve_live_codex: bool,
+    timeout_seconds: int,
+    max_calls: int,
+    max_wall_seconds: int,
+) -> dict[str, Any]:
+    manifest = read_manifest(resolve_existing_repo_file(str(manifest_path), label="manifest"))
+    fixtures = manifest["fixtures"]
+    if len(fixtures) != 1:
+        raise LoopError("ERR_KEELPLANE_MANIFEST_INVALID", "run requires a manifest with exactly one fixture", path=manifest_path)
+    return run_loop(
+        fixtures[0],
+        out_dir,
+        mode=mode,
+        resume=resume,
+        approve_live_codex=approve_live_codex,
+        timeout_seconds=timeout_seconds,
+        max_calls=max_calls,
+        max_wall_seconds=max_wall_seconds,
+    )
+
+
 def self_test() -> dict[str, Any]:
     out_dir = OUT_ROOT / "self-test"
     summary = run_manifest(ROOT / "fixtures" / "keelplane-loop" / "manifest.json", out_dir)
@@ -712,6 +765,7 @@ def self_test() -> dict[str, Any]:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Keelplane Autonomous Loop v1 deterministic core")
+    parser.add_argument("command", nargs="?", choices=["run"])
     parser.add_argument("--self-test", action="store_true")
     parser.add_argument("--manifest")
     parser.add_argument("--out")
@@ -723,6 +777,21 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--i-approve-live-codex", action="store_true")
     args = parser.parse_args(argv)
     try:
+        if args.command == "run":
+            if not args.manifest or not args.out:
+                raise LoopError("ERR_KEELPLANE_ARGS", "run requires --manifest and --out")
+            status = run_single_fixture(
+                Path(args.manifest),
+                resolve_out(args.out),
+                mode=args.mode,
+                resume=args.resume,
+                approve_live_codex=args.i_approve_live_codex,
+                timeout_seconds=args.timeout_seconds,
+                max_calls=args.max_calls,
+                max_wall_seconds=args.max_wall_seconds,
+            )
+            print(json.dumps({key: status[key] for key in ["terminal_state", "verified_phase_count", "evidence_chain_head"]}, sort_keys=True))
+            return 0 if status["terminal_state"] == "verified-complete" else 1
         if args.self_test:
             summary = self_test()
             print(f"keelplane_loop self-test: pass ({summary['passed']}/{summary['total']})")

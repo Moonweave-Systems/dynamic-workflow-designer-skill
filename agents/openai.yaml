@@ -2,4 +2,4 @@ interface:
   display_name: "Keelplane"
   short_description: "Design deterministic workflow control-plane artifacts"
   brand_color: "#4F46E5"
-  default_prompt: "Use $keelplane, the DWM entrypoint, to design a scalable workflow for this large task."
+  default_prompt: "Use $keelplane, the Keelplane entrypoint, to design a scalable workflow for this large task."

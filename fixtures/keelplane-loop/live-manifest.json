@@ -1,0 +1,26 @@
+{
+  "schema_version": "keelplane-loop-fixture-v1",
+  "suite_id": "keelplane-loop-live",
+  "fixtures": [
+    {
+      "id": "live-run-summary",
+      "expected_terminal": "verified-complete",
+      "phases": [
+        {
+          "id": "part1",
+          "target_files": ["scripts/keelplane_run_summary.py"],
+          "verification_files": ["fixtures/keelplane-loop/tests/test_part1.py"],
+          "verification_command": ["python", "-m", "pytest", "-q", "fixtures/keelplane-loop/tests/test_part1.py"],
+          "plan": "fixtures/keelplane-loop/plans/part1.workflow.plan.json"
+        },
+        {
+          "id": "part2",
+          "target_files": ["scripts/keelplane_run_summary.py"],
+          "verification_files": ["fixtures/keelplane-loop/tests/test_part2.py"],
+          "verification_command": ["python", "-m", "pytest", "-q", "fixtures/keelplane-loop/tests/test_part2.py"],
+          "plan": "fixtures/keelplane-loop/plans/part2.workflow.plan.json"
+        }
+      ]
+    }
+  ]
+}

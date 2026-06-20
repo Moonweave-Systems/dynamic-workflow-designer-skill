@@ -1,0 +1,192 @@
+{
+  "activation": {
+    "decision": "activate",
+    "downgrade_target": null,
+    "matched_thresholds": [
+      "downstream-consumer",
+      "human-gates"
+    ],
+    "reason": "Keelplane autonomous loop needs one bounded live phase for the run summary milestone."
+  },
+  "assumptions": [
+    {
+      "claim": "The loop-owned immutable test defines the required status-summary behavior.",
+      "verification": "python -m pytest -q fixtures/keelplane-loop/tests/test_part1.py"
+    }
+  ],
+  "budget": {
+    "file_touch_limit": "scripts/keelplane_run_summary.py only",
+    "max_agents": 1,
+    "max_retries": 0,
+    "max_rounds": 1,
+    "time_box": "120 seconds"
+  },
+  "created_by": "keelplane",
+  "execution_path": {
+    "consumer": "codex-agent",
+    "first_slice": {
+      "completion_check": "python -m pytest -q fixtures/keelplane-loop/tests/test_part1.py passes",
+      "expected_output": "scripts/keelplane_run_summary.py implements the status summary required by test_part1.py",
+      "forbidden_actions": [
+        "modifying loop-owned tests",
+        "modifying any file other than scripts/keelplane_run_summary.py",
+        "package manager changes",
+        "external service calls",
+        "credential reading",
+        "release actions",
+        "file removal",
+        "git commit",
+        "git publication",
+        "git ref mutation"
+      ],
+      "inputs": [
+        "workflow.plan.json",
+        "repository path",
+        "path:../tests/test_part1.py",
+        "path:../../../scripts/keelplane_run_summary.py"
+      ],
+      "instruction": "Implement the status-summary capability derived from fixtures/keelplane-loop/tests/test_part1.py. You may modify ONLY scripts/keelplane_run_summary.py. Do not edit the tests. Implement the command-line behavior needed for test_part1.py to pass."
+    },
+    "mode": "runtime"
+  },
+  "handoffs": [
+    {
+      "artifact": "scripts/keelplane_run_summary.py",
+      "artifact_schema": {
+        "format": "other",
+        "required_fields": [
+          "decision",
+          "valid"
+        ],
+        "validation_command": "python -m pytest -q fixtures/keelplane-loop/tests/test_part1.py"
+      },
+      "from_phase": "part1",
+      "to_phase": "part1"
+    }
+  ],
+  "objective": "Implement the first live Keelplane run summary phase.",
+  "parallelism": {
+    "barriers": [
+      "verify part1 before autonomous advance"
+    ],
+    "concurrency_cap": 1,
+    "fan_in_rule": "single phase packet",
+    "shape": "pipeline"
+  },
+  "patterns": [
+    "Pipeline",
+    "Human Gate"
+  ],
+  "phases": [
+    {
+      "depends_on": [],
+      "entry_criteria": [
+        "test_part1.py is available as loop-owned verification"
+      ],
+      "exit_criteria": [
+        "test_part1.py passes"
+      ],
+      "id": "part1",
+      "name": "Status Summary",
+      "outputs": [
+        "scripts/keelplane_run_summary.py"
+      ],
+      "worker_ids": [
+        "run-summary-worker"
+      ]
+    }
+  ],
+  "plan_id": "keelplane-loop-live-part1",
+  "resume": {
+    "cacheable_outputs": [
+      "scripts/keelplane_run_summary.py"
+    ],
+    "invalidators": [
+      "test_part1.py changes",
+      "plan changes",
+      "prompt changes"
+    ],
+    "restart_points": [
+      "part1"
+    ]
+  },
+  "risk_gates": [
+    {
+      "requires_user_approval": true,
+      "safe_default": "stop before boundary escape and ask for approval",
+      "trigger": "boundary escape"
+    }
+  ],
+  "schema_version": "0.5",
+  "source_prompt": "Create a bounded live packet for the first Keelplane run summary phase.",
+  "surfaces": [
+    {
+      "access_mode": "read-only",
+      "id": "repo",
+      "kind": "repo",
+      "locator": "."
+    }
+  ],
+  "verification": [
+    {
+      "claim_or_output": "The status summary reports decision and valid from status.json.",
+      "evidence_required": [
+        "pytest output for fixtures/keelplane-loop/tests/test_part1.py"
+      ],
+      "falsifier": "test_part1.py fails"
+    }
+  ],
+  "workers": [
+    {
+      "context_budget": {
+        "max_files": 4,
+        "max_tokens": 4000,
+        "must_exclude": [
+          "out/"
+        ],
+        "must_include": [
+          "scripts/keelplane_run_summary.py",
+          "fixtures/keelplane-loop/tests/test_part1.py"
+        ]
+      },
+      "forbidden_actions": [
+        "modifying loop-owned tests",
+        "modifying any file other than scripts/keelplane_run_summary.py",
+        "package manager changes",
+        "external service calls",
+        "credential reading",
+        "release actions",
+        "file removal",
+        "git commit",
+        "git publication",
+        "git ref mutation"
+      ],
+      "id": "run-summary-worker",
+      "ownership": [
+        "scripts/keelplane_run_summary.py"
+      ],
+      "prompt_contract": {
+        "inputs": [
+          "workflow.plan.json",
+          "repository path",
+          "fixtures/keelplane-loop/tests/test_part1.py"
+        ],
+        "required_output_schema": "source change plus passing pytest output",
+        "stop_conditions": [
+          "missing loop-owned test",
+          "request to edit tests",
+          "request to change non-target files"
+        ]
+      },
+      "role": "Run summary implementer",
+      "tool_permissions": {
+        "mcp_connectors": [],
+        "network": false,
+        "read": true,
+        "requires_escalation_for": [],
+        "shell": false,
+        "write": false
+      }
+    }
+  ]
+}
