@@ -1,6 +1,6 @@
 # Keelplane / DWM Core Spec
 
-Status: V1 implemented, V2 release candidate, V2.5 first loop implemented, V3 entry runtime implemented, V12-V20 product slices implemented, V87 brand boundary audit implemented, V88 roadmap reconciliation, V89 command safety, V90 activation v2, V91 contract tiering, V92 evidence oracle, V93 workflow narrative, V94 control deck score, V95 score history, V96 metric ladder, V97 benchmark readiness, V98 wave operator, V99 wave receipt, V100 promotion evidence, V101 promotion route, V102 deterministic live-proof recorder, Last updated: 2026-06-19
+Status: V1 implemented, V2 release candidate, V2.5 first loop implemented, V3 entry runtime implemented, V12-V20 product slices implemented, V87 brand boundary audit implemented, V88 roadmap reconciliation, V89 command safety, V90 activation v2, V91 contract tiering, V92 evidence oracle, V93 workflow narrative, V94 control deck score, V95 score history, V96 metric ladder, V97 benchmark readiness, V98 wave operator, V99 wave receipt, V100 promotion evidence, V101 promotion route, V102 deterministic live-proof recorder, V103 live-proof comparison schema, Last updated: 2026-06-20
 
 ## Purpose
 
@@ -214,9 +214,9 @@ destructive, networked, dependency-installing, secret-reading, external-message,
 database, production, or history-rewrite action occurs without a matching DWM
 gate and a safe default.
 
-### V86-V102: Brand, Roadmap, Command Safety, Activation, Contract Tiers, Evidence Oracle, Narrative, Score, History, Metrics, And Live Proof
+### V86-V103: Brand, Roadmap, Command Safety, Activation, Contract Tiers, Evidence Oracle, Narrative, Score, History, Metrics, And Live Proof
 
-V86-V102 align the product surface after the control-plane became broader than a
+V86-V103 align the product surface after the control-plane became broader than a
 single skill, harden the command boundary that follows next-action selection,
 make next-workflow activation consume those later evidence gates, and split
 verification into practical tiers. V92 adds a read-only evidence oracle so later
@@ -239,7 +239,10 @@ source artifacts can be recorded before any human review for README graph
 publication. V101 adds Promotion Route so that evidence becomes either a
 dogfood acquisition command plan or a README publication human gate. The V102
 deterministic live-proof recorder now records one bounded live Codex-backed n=1
-proof that passed red-green verification and independent review. The public
+proof that passed red-green verification and independent review. V103 adds a
+deterministic two-arm comparison schema for direct-codex versus dwm-controlled
+evidence richness; the live comparison remains opt-in and makes no pass-rate,
+speed, cost, or direct-agent superiority claim. The public
 product brand is Keelplane. DWM Core remains the internal
 deterministic engine. The compatibility skill name remains
 `dynamic-workflow-designer`, and the repository slug remains `dwm` until a

@@ -99,7 +99,7 @@ python scripts/dwm.py commands --kind release
 | Control Deck | Renders artifact-backed operator status without claiming autonomous execution. |
 | Readiness and graphs | Separates process progress, internal readiness, and public benchmark claims. |
 | Promotion route | Plans the next dogfood evidence command or stops at a README publication human gate. |
-| Live proof | V102 recorder and schema gate passed; one bounded live Codex run is recorded. |
+| Live proof | V102 recorded one bounded live Codex run; V103 adds a deterministic two-arm comparison schema. |
 | Packaging | Validates repo-local install metadata, adapter registries, compatibility, and release evidence. |
 
 ## What Is Still Honest
@@ -110,8 +110,8 @@ python scripts/dwm.py commands --kind release
 | Adapter parity | Implemented as a support matrix and blocker, not a live parity claim. |
 | Release candidate | Implemented from daily operator and adapter parity evidence. |
 | Benchmark graph | Source-bound graph artifacts exist; public trend promotion requires real release history. |
-| Live n=1 execution | live execution n=1 passed; no direct-agent superiority claim yet. |
-| Direct-agent superiority | Not claimed. Future comparison must come from measured dogfood attempts. |
+| Live n=1 execution | live execution n=1 passed; V103 comparison live run remains opt-in. |
+| Direct-agent superiority | Not claimed. V103 records evidence richness only, not pass-rate, speed, or cost superiority. |
 | Unrestricted autonomy | Not claimed. Risky work remains gate-bound by default. |
 
 ## Safety Model

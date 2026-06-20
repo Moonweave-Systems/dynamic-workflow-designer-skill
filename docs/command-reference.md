@@ -141,11 +141,13 @@ python scripts/dwm_wave_receipt.py record --wave out/wave-operators/<wave_id>/wa
 python scripts/dwm_promotion_evidence.py record --receipt out/wave-receipts/<receipt_id>/wave-receipt.json --readiness out/benchmark-readiness/<readiness_id>/benchmark-readiness.json --out out/promotion-evidence/<evidence_id>
 # promotion route
 python scripts/dwm_promotion_route.py route --evidence out/promotion-evidence/<evidence_id>/promotion-evidence.json --out out/promotion-routes/<route_id>
-# V102 live-proof contract
+# V102/V103 live-proof contract
 python scripts/dwm_live_proof.py --self-test
 python scripts/dwm_live_proof.py --manifest fixtures/v102/manifest.json --out out/v102/final
+python scripts/dwm_live_proof.py --manifest fixtures/v103/manifest.json --out out/v103/final
 # opt-in only; not part of the deterministic release gate
 python scripts/dwm_live_proof.py run --seed fixtures/live-proof/seed --plan fixtures/live-proof/live-proof-1.workflow.plan.json --out out/live-proofs/live-proof-1 --i-approve-live-codex
+python scripts/dwm_live_proof.py compare --seed fixtures/live-proof/seed --plan fixtures/live-proof/live-proof-1.workflow.plan.json --out out/live-proofs/live-proof-2 --i-approve-live-codex
 python scripts/dwm_live_proof.py inspect --proof out/live-proofs/live-proof-1
 # contract tiers
 python scripts/check_contract.py --tier smoke
@@ -227,7 +229,7 @@ Release artifacts include `operator-loop.json`, `today.md`,
 | `scripts/dwm_control_deck_score.py` | Operator-readiness scoring for Control Deck completeness. |
 | `scripts/dwm_control_deck_score_history.py` | Internal operator-readiness history and SVG rendering for Control Deck scores. |
 | `scripts/dwm_metric_ladder.py` | Graph claim-level gate for process, operator-readiness, and public benchmark metrics. |
-| `scripts/dwm_live_proof.py` | V102 live-proof recorder with deterministic schema tests and opt-in Codex execution. |
+| `scripts/dwm_live_proof.py` | V102 live-proof recorder plus V103 deterministic two-arm comparison schema; live Codex execution remains opt-in. |
 | `scripts/dwm_daily_operator.py` | Daily operator loop for ready, blocked, and freshness state. |
 | `scripts/dwm_adapters.py` | Adapter registry, normalized evidence, and parity matrix checks. |
 | `scripts/dwm_adapter_live_matrix.py` | Local adapter command availability and auth-assumption matrix. |

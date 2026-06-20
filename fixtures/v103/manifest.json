@@ -1,0 +1,115 @@
+{
+  "suite_id": "v103-live-proof-comparison",
+  "fixtures": [
+    {
+      "id": "both-green-evidence-richness",
+      "expected_decision": "keep",
+      "expected_valid": true,
+      "comparison": {
+        "comparison_id": "both-green-evidence-richness",
+        "schema_version": "103.0.0",
+        "tool": "dwm_live_proof.py",
+        "task": {
+          "id": "live-proof-1",
+          "seed_path": "fixtures/live-proof/seed",
+          "verification_command": "python -m pytest -q"
+        },
+        "arms": [
+          {
+            "mode": "direct-codex",
+            "worktree": {"path": "out/live-proofs/both-green/direct-workspace", "isolated": true, "pre_state": {}, "post_state": {"status": " M live_math.py"}},
+            "verification": {"before": "red", "after": "green", "returncode": 0, "passed": true},
+            "files_touched": ["live_math.py"],
+            "transcript_path": "direct-transcript.md",
+            "elapsed_seconds": 1.1,
+            "has_independent_review": false,
+            "has_hash_bound_bundle": false,
+            "legitimacy_verdict": null,
+            "blocked_by": []
+          },
+          {
+            "mode": "dwm-controlled",
+            "proof_ref": "dwm/live-proof.json",
+            "decision": "live-proof-pass",
+            "verification": {"before": "red", "after": "green", "returncode": 0, "passed": true},
+            "files_touched": ["live_math.py"],
+            "transcript_path": "dwm/transcript.md",
+            "elapsed_seconds": 1.3,
+            "has_independent_review": true,
+            "has_hash_bound_bundle": true,
+            "legitimacy_verdict": {"decision": "approved", "checks": {"verification_passed": true, "test_files_unchanged": true, "source_changed": true}},
+            "blocked_by": []
+          }
+        ],
+        "differentiators": {
+          "independent_legitimacy_review": "dwm-controlled only",
+          "hash_bound_evidence_bundle": "dwm-controlled only"
+        },
+        "honest_conclusion": "Both arms reached a green check on this task. Only the dwm-controlled arm recorded an independent legitimacy verdict and hash-bound evidence. This records evidence richness, not pass-rate, speed, or cost superiority.",
+        "claim_policy": "comparison on n=1; no direct-agent superiority claim",
+        "repo_tracked_diff_unchanged": true,
+        "source_hashes": {"seed": "3333333333333333333333333333333333333333333333333333333333333333", "plan": "4444444444444444444444444444444444444444444444444444444444444444"}
+      }
+    },
+    {
+      "id": "direct-arm-blocked",
+      "expected_decision": "keep",
+      "expected_valid": true,
+      "comparison": {
+        "comparison_id": "direct-arm-blocked",
+        "schema_version": "103.0.0",
+        "tool": "dwm_live_proof.py",
+        "task": {"id": "live-proof-1", "seed_path": "fixtures/live-proof/seed", "verification_command": "python -m pytest -q"},
+        "arms": [
+          {"mode": "direct-codex", "worktree": {"path": "out/live-proofs/direct-blocked/direct-workspace", "isolated": true, "pre_state": {}, "post_state": {}}, "verification": {"before": "red", "after": "not-run", "returncode": null, "passed": false}, "files_touched": [], "transcript_path": "direct-transcript.md", "elapsed_seconds": 0.1, "has_independent_review": false, "has_hash_bound_bundle": false, "legitimacy_verdict": null, "blocked_by": [{"code": "ERR_EXEC_BACKEND_AUTH"}]},
+          {"mode": "dwm-controlled", "proof_ref": "dwm/live-proof.json", "decision": "live-proof-pass", "verification": {"before": "red", "after": "green", "returncode": 0, "passed": true}, "files_touched": ["live_math.py"], "transcript_path": "dwm/transcript.md", "elapsed_seconds": 1.3, "has_independent_review": true, "has_hash_bound_bundle": true, "legitimacy_verdict": {"decision": "approved", "checks": {"verification_passed": true, "test_files_unchanged": true, "source_changed": true}}, "blocked_by": []}
+        ],
+        "differentiators": {"independent_legitimacy_review": "dwm-controlled only", "hash_bound_evidence_bundle": "dwm-controlled only"},
+        "honest_conclusion": "Both arms reached a green check on this task. Only the dwm-controlled arm recorded an independent legitimacy verdict and hash-bound evidence. This records evidence richness, not pass-rate, speed, or cost superiority.",
+        "claim_policy": "comparison on n=1; no direct-agent superiority claim",
+        "repo_tracked_diff_unchanged": true,
+        "source_hashes": {"seed": "3333333333333333333333333333333333333333333333333333333333333333", "plan": "4444444444444444444444444444444444444444444444444444444444444444"}
+      }
+    },
+    {
+      "id": "dwm-arm-failed",
+      "expected_decision": "keep",
+      "expected_valid": true,
+      "comparison": {
+        "comparison_id": "dwm-arm-failed",
+        "schema_version": "103.0.0",
+        "tool": "dwm_live_proof.py",
+        "task": {"id": "live-proof-1", "seed_path": "fixtures/live-proof/seed", "verification_command": "python -m pytest -q"},
+        "arms": [
+          {"mode": "direct-codex", "worktree": {"path": "out/live-proofs/dwm-failed/direct-workspace", "isolated": true, "pre_state": {}, "post_state": {"status": " M live_math.py"}}, "verification": {"before": "red", "after": "green", "returncode": 0, "passed": true}, "files_touched": ["live_math.py"], "transcript_path": "direct-transcript.md", "elapsed_seconds": 1.1, "has_independent_review": false, "has_hash_bound_bundle": false, "legitimacy_verdict": null, "blocked_by": []},
+          {"mode": "dwm-controlled", "proof_ref": "dwm/live-proof.json", "decision": "failed", "verification": {"before": "red", "after": "red", "returncode": 1, "passed": false}, "files_touched": ["live_math.py"], "transcript_path": "dwm/transcript.md", "elapsed_seconds": 1.3, "has_independent_review": true, "has_hash_bound_bundle": true, "legitimacy_verdict": {"decision": "request-changes", "checks": {"verification_passed": false, "test_files_unchanged": true, "source_changed": true}}, "blocked_by": [{"code": "ERR_EXEC_VERIFY_FAILED"}]}
+        ],
+        "differentiators": {"independent_legitimacy_review": "dwm-controlled only", "hash_bound_evidence_bundle": "dwm-controlled only"},
+        "honest_conclusion": "Both arms reached a green check on this task. Only the dwm-controlled arm recorded an independent legitimacy verdict and hash-bound evidence. This records evidence richness, not pass-rate, speed, or cost superiority.",
+        "claim_policy": "comparison on n=1; no direct-agent superiority claim",
+        "repo_tracked_diff_unchanged": true,
+        "source_hashes": {"seed": "3333333333333333333333333333333333333333333333333333333333333333", "plan": "4444444444444444444444444444444444444444444444444444444444444444"}
+      }
+    },
+    {
+      "id": "direct-borrowed-verdict-rejected",
+      "expected_decision": "adjust",
+      "expected_valid": false,
+      "comparison": {
+        "comparison_id": "direct-borrowed-verdict-rejected",
+        "schema_version": "103.0.0",
+        "tool": "dwm_live_proof.py",
+        "task": {"id": "live-proof-1", "seed_path": "fixtures/live-proof/seed", "verification_command": "python -m pytest -q"},
+        "arms": [
+          {"mode": "direct-codex", "verification": {"before": "red", "after": "green", "returncode": 0, "passed": true}, "files_touched": ["live_math.py"], "transcript_path": "direct-transcript.md", "elapsed_seconds": 1.1, "has_independent_review": true, "has_hash_bound_bundle": false, "legitimacy_verdict": {"decision": "approved"}, "blocked_by": []},
+          {"mode": "dwm-controlled", "proof_ref": "dwm/live-proof.json", "decision": "live-proof-pass", "verification": {"before": "red", "after": "green", "returncode": 0, "passed": true}, "files_touched": ["live_math.py"], "transcript_path": "dwm/transcript.md", "elapsed_seconds": 1.3, "has_independent_review": true, "has_hash_bound_bundle": true, "legitimacy_verdict": {"decision": "approved", "checks": {"verification_passed": true, "test_files_unchanged": true, "source_changed": true}}, "blocked_by": []}
+        ],
+        "differentiators": {"independent_legitimacy_review": "dwm-controlled only", "hash_bound_evidence_bundle": "dwm-controlled only"},
+        "honest_conclusion": "Both arms reached a green check on this task. Only the dwm-controlled arm recorded an independent legitimacy verdict and hash-bound evidence. This records evidence richness, not pass-rate, speed, or cost superiority.",
+        "claim_policy": "comparison on n=1; no direct-agent superiority claim",
+        "repo_tracked_diff_unchanged": true,
+        "source_hashes": {"seed": "3333333333333333333333333333333333333333333333333333333333333333", "plan": "4444444444444444444444444444444444444444444444444444444444444444"}
+      }
+    }
+  ]
+}

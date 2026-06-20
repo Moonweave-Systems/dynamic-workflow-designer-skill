@@ -1961,6 +1961,9 @@ def require_release_commands_pass() -> None:
             "--out",
             "out/promotion-routes/v101-canonical",
         ],
+        [sys.executable, "scripts/dwm_live_proof.py", "--self-test"],
+        [sys.executable, "scripts/dwm_live_proof.py", "--manifest", "fixtures/v102/manifest.json", "--out", "out/v102/final"],
+        [sys.executable, "scripts/dwm_live_proof.py", "--manifest", "fixtures/v103/manifest.json", "--out", "out/v103/final"],
         [sys.executable, "scripts/run_workflow.py", "--self-test"],
         [sys.executable, "scripts/run_workflow.py", "--manifest", "fixtures/v3/manifest.json", "--out", "out/v3/final"],
         [sys.executable, "scripts/orchestrate_workflow.py", "--self-test"],
@@ -2392,6 +2395,9 @@ def require_changed_surface_commands_pass() -> None:
             "--out",
             "out/promotion-routes/v101-canonical",
         ],
+        [sys.executable, "scripts/dwm_live_proof.py", "--self-test"],
+        [sys.executable, "scripts/dwm_live_proof.py", "--manifest", "fixtures/v102/manifest.json", "--out", "out/v102/final"],
+        [sys.executable, "scripts/dwm_live_proof.py", "--manifest", "fixtures/v103/manifest.json", "--out", "out/v103/final"],
         [sys.executable, "scripts/dwm.py", "doctor", "--json"],
         [sys.executable, "scripts/check_release_text.py", "."],
     ]
@@ -4002,7 +4008,7 @@ def main() -> None:
             "`roadmap-reconciliation.md`",
             "public product brand: `keelplane`",
             "internal engine name: `dwm core`",
-            "latest reconciled version: `v102`",
+            "latest reconciled version: `v103`",
             "does not claim autonomous execution",
         ],
     )
@@ -4016,7 +4022,7 @@ def main() -> None:
             "`required_passed`: 4",
             "`decision`: `keep`",
             "`decision`: `roadmap_reconciled`",
-            "`latest_version`: `v102`",
+            "`latest_version`: `v103`",
             "does not execute queued commands",
         ],
     )
@@ -4068,7 +4074,7 @@ def main() -> None:
             "`fixture_count`: 4",
             "`required_passed`: 4",
             "`decision`: `keep`",
-            "`roadmap_latest_version`: `v102`",
+            "`roadmap_latest_version`: `v103`",
             "`command_safety_decision`: `keep`",
         ],
     )
@@ -5995,7 +6001,7 @@ def main() -> None:
             "python scripts/dwm.py commands --kind release --json",
             "`status`: `workflow-complete`",
             "`doctor_ok`: `true`",
-            "`release_command_count`: `223`",
+            "`release_command_count`: `224`",
             "does not claim workflow execution",
         ],
     )

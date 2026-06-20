@@ -179,6 +179,10 @@ promotion requires real release history.
   live n=1 Codex execution is recorded in
   `docs/releases/v102-live-proof-1.md` with `decision: live-proof-pass`,
   red-green verification, and approved independent review.
+- V103: `docs/v103-live-proof-2-spec.md` added a deterministic two-arm
+  comparison schema for direct-codex versus dwm-controlled evidence richness.
+  The live comparison remains opt-in and makes no pass-rate, speed, cost, or
+  direct-agent superiority claim.
 
 ## Current Public Boundaries
 
