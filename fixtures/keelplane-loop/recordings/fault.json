@@ -1,0 +1,5 @@
+{
+  "writes": {
+    "scripts/keelplane_run_summary.py": "#!/usr/bin/env python3\nfrom __future__ import annotations\n\nraise SystemExit(2)\n"
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "schema_version": "keelplane-loop-fixture-v1",
+  "suite_id": "keelplane-loop",
+  "fixtures": [
+    {
+      "id": "clean-multi-phase",
+      "expected_terminal": "verified-complete",
+      "phases": [
+        {
+          "id": "part1",
+          "target_files": ["scripts/keelplane_run_summary.py"],
+          "verification_files": ["fixtures/keelplane-loop/tests/test_part1.py"],
+          "verification_command": ["python", "-m", "pytest", "-q", "fixtures/keelplane-loop/tests/test_part1.py"],
+          "recording": "fixtures/keelplane-loop/recordings/part1.json"
+        },
+        {
+          "id": "part2",
+          "target_files": ["scripts/keelplane_run_summary.py"],
+          "verification_files": ["fixtures/keelplane-loop/tests/test_part2.py"],
+          "verification_command": ["python", "-m", "pytest", "-q", "fixtures/keelplane-loop/tests/test_part2.py"],
+          "recording": "fixtures/keelplane-loop/recordings/part2.json"
+        }
+      ]
+    },
+    {
+      "id": "fault-injected",
+      "expected_terminal": "failed",
+      "phases": [
+        {
+          "id": "part1",
+          "target_files": ["scripts/keelplane_run_summary.py"],
+          "verification_files": ["fixtures/keelplane-loop/tests/test_part1.py"],
+          "verification_command": ["python", "-m", "pytest", "-q", "fixtures/keelplane-loop/tests/test_part1.py"],
+          "recording": "fixtures/keelplane-loop/recordings/fault.json",
+          "repair_recording": "fixtures/keelplane-loop/recordings/fault.json"
+        }
+      ]
+    },
+    {
+      "id": "regression-guard",
+      "expected_terminal": "failed",
+      "phases": [
+        {
+          "id": "part1",
+          "target_files": ["scripts/keelplane_run_summary.py"],
+          "verification_files": ["fixtures/keelplane-loop/tests/test_part1.py"],
+          "verification_command": ["python", "-m", "pytest", "-q", "fixtures/keelplane-loop/tests/test_part1.py"],
+          "recording": "fixtures/keelplane-loop/recordings/part1.json"
+        },
+        {
+          "id": "part2-breaks-part1",
+          "target_files": ["scripts/keelplane_run_summary.py"],
+          "verification_files": ["fixtures/keelplane-loop/tests/test_part2.py"],
+          "verification_command": ["python", "-m", "pytest", "-q", "fixtures/keelplane-loop/tests/test_part2.py"],
+          "recording": "fixtures/keelplane-loop/recordings/regression_part2.json",
+          "repair_recording": "fixtures/keelplane-loop/recordings/regression_part2.json"
+        }
+      ]
+    },
+    {
+      "id": "immutable-restore",
+      "expected_terminal": "verified-complete",
+      "phases": [
+        {
+          "id": "part1-edits-test",
+          "target_files": ["scripts/keelplane_run_summary.py"],
+          "verification_files": ["fixtures/keelplane-loop/tests/test_part1.py"],
+          "verification_command": ["python", "-m", "pytest", "-q", "fixtures/keelplane-loop/tests/test_part1.py"],
+          "recording": "fixtures/keelplane-loop/recordings/edit_test.json"
+        }
+      ]
+    },
+    {
+      "id": "side-channel",
+      "expected_terminal": "failed",
+      "phases": [
+        {
+          "id": "part1-side-channel",
+          "target_files": ["scripts/keelplane_run_summary.py"],
+          "verification_files": ["fixtures/keelplane-loop/tests/test_part1.py"],
+          "verification_command": ["python", "-m", "pytest", "-q", "fixtures/keelplane-loop/tests/test_part1.py"],
+          "recording": "fixtures/keelplane-loop/recordings/side_channel.json"
+        }
+      ]
+    },
+    {
+      "id": "resume-mid-run",
+      "expected_terminal": "verified-complete",
+      "resume_after_phases": 1,
+      "phases": [
+        {
+          "id": "part1",
+          "target_files": ["scripts/keelplane_run_summary.py"],
+          "verification_files": ["fixtures/keelplane-loop/tests/test_part1.py"],
+          "verification_command": ["python", "-m", "pytest", "-q", "fixtures/keelplane-loop/tests/test_part1.py"],
+          "recording": "fixtures/keelplane-loop/recordings/part1.json"
+        },
+        {
+          "id": "part2",
+          "target_files": ["scripts/keelplane_run_summary.py"],
+          "verification_files": ["fixtures/keelplane-loop/tests/test_part2.py"],
+          "verification_command": ["python", "-m", "pytest", "-q", "fixtures/keelplane-loop/tests/test_part2.py"],
+          "recording": "fixtures/keelplane-loop/recordings/part2.json"
+        }
+      ]
+    }
+  ]
+}

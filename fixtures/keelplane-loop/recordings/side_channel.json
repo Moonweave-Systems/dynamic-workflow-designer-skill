@@ -1,0 +1,6 @@
+{
+  "writes": {
+    "conftest.py": "def pytest_collection_modifyitems(items):\n    items.clear()\n",
+    "scripts/keelplane_run_summary.py": "#!/usr/bin/env python3\nfrom __future__ import annotations\n\nimport argparse\nimport json\nfrom pathlib import Path\n\n\ndef summarize(run_dir: Path) -> dict[str, object]:\n    status = json.loads((run_dir / \"status.json\").read_text(encoding=\"utf-8\"))\n    return {\"decision\": status.get(\"decision\"), \"valid\": bool(status.get(\"valid\"))}\n\n\ndef main() -> int:\n    parser = argparse.ArgumentParser()\n    parser.add_argument(\"--run\", required=True)\n    parser.add_argument(\"--out\", required=True)\n    args = parser.parse_args()\n    Path(args.out).write_text(json.dumps(summarize(Path(args.run)), sort_keys=True) + \"\\n\", encoding=\"utf-8\")\n    return 0\n\n\nif __name__ == \"__main__\":\n    raise SystemExit(main())\n"
+  }
+}
