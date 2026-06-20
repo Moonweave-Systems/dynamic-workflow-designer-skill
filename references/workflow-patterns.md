@@ -40,7 +40,7 @@ Rules:
 - Define a shared output schema.
 - Add a fan-in worker only after all required branches finish.
 
-## Adversarial Verify
+## Adversarial Verify (Against Source)
 
 Use when outputs can be plausible but wrong.
 
@@ -50,7 +50,18 @@ Rules:
 
 - The verifier must be independent of the producer.
 - The verifier tries to refute the finding, not rubber-stamp it.
+- Verify against GROUND TRUTH, not the producer's (or the brief's) claims: read
+  the actual source, data, or artifact and cite it (file:line, value). Any
+  "verified" or "confirmed" label arriving as input is itself a claim to refute,
+  not a fact.
+- Default to refuted/flagged when the ground truth does not support the claim.
 - The final report separates confirmed, refuted, and unverified items.
+
+This against-source variant is the highest-value form: in practice it is what
+catches a confident brief whose "verified" assumptions are wrong (e.g. skeptics
+reading real source line-by-line falsified four "verified" claims and a blind
+spot a single pass had accepted). Prefer it whenever a real source, dataset, or
+artifact exists to check the claim against.
 
 ## Judge Panel
 
