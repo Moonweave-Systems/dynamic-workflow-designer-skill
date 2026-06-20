@@ -1,0 +1,26 @@
+{
+  "schema_version": "keelplane-promote-fixture-v1",
+  "suite_id": "keelplane-promote",
+  "fixtures": [
+    {
+      "id": "clean-promote",
+      "kind": "clean",
+      "expected_decision": "local_branch_ready"
+    },
+    {
+      "id": "scope-violation",
+      "kind": "scope-violation",
+      "expected_error": "ERR_KEELPLANE_PROMOTE_SCOPE"
+    },
+    {
+      "id": "not-verified-complete",
+      "kind": "not-verified-complete",
+      "expected_error": "ERR_KEELPLANE_PROMOTE_NOT_VERIFIED"
+    },
+    {
+      "id": "conflict",
+      "kind": "conflict",
+      "expected_error": "ERR_KEELPLANE_PROMOTE_CONFLICT"
+    }
+  ]
+}

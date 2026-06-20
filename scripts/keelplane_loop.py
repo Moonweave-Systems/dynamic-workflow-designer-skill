@@ -49,6 +49,7 @@ WORKTREE_DIRNAME = "worktree"
 JOURNAL = "journal.json"
 JOURNAL_EVENTS = "journal.ndjson"
 STATUS = "status.json"
+SENTINEL = ".keelplane-loop-owned.json"
 TERMINAL_EXPLANATIONS = {
     "verified-complete": "all declared checks passed; this does not mean the feature is correct in unchecked ways",
     "blocked": "risk gate, prerequisite, or budget cap stopped the loop",
@@ -174,6 +175,14 @@ def prepare_out_dir(out_dir: Path, *, resume: bool) -> None:
             raise LoopError("ERR_KEELPLANE_OUT_UNSAFE", "output exists and is not a directory", path=out_dir)
         shutil.rmtree(out_dir)
     out_dir.mkdir(parents=True)
+    write_json_atomic(out_dir / SENTINEL, {"tool": TOOL, "schema_version": SCHEMA_VERSION, "created_at": now_utc()}, root=out_dir)
+
+
+def declared_target_files(phases: list[dict[str, Any]]) -> list[str]:
+    targets: set[str] = set()
+    for phase in phases:
+        targets.update(safe_rel_path(path, label="target file").as_posix() for path in require_str_list(phase, "target_files"))
+    return sorted(targets)
 
 
 def pristine_verification_map(phases: list[dict[str, Any]]) -> dict[str, dict[str, str]]:
@@ -458,6 +467,19 @@ def checkpoint(worktree: Path, phase_id: str) -> str:
     return run_git(["rev-parse", "HEAD"], worktree)
 
 
+def verified_ref_name(out_dir: Path) -> str:
+    slug = re.sub(r"[^A-Za-z0-9._-]+", "-", out_dir.name).strip(".-_")
+    if not slug:
+        slug = "run"
+    return f"refs/keelplane/{slug}"
+
+
+def stamp_verified_ref(worktree: Path, out_dir: Path, checkpoint_commit: str) -> str:
+    ref_name = verified_ref_name(out_dir)
+    run_git(["update-ref", ref_name, checkpoint_commit], worktree)
+    return ref_name
+
+
 def phase_evidence(
     *,
     fixture_id: str,
@@ -536,12 +558,15 @@ def run_loop(
     phases = fixture.get("phases")
     if not isinstance(phases, list) or not phases:
         raise LoopError("ERR_KEELPLANE_MANIFEST_INVALID", "fixture phases must be a non-empty list")
+    target_files = declared_target_files(phases)
     pristine = pristine_verification_map(phases)
     prepare_out_dir(out_dir, resume=resume)
     live_worktree = live_worktree_name(out_dir) if mode == "installed-codex" else None
     worktree = worktree_path(live_worktree) if live_worktree is not None else out_dir / WORKTREE_DIRNAME
     if resume:
         journal = load_journal(out_dir)
+        journal.setdefault("run_base", journal.get("seed_commit"))
+        journal.setdefault("target_files", target_files)
         if not worktree.is_dir():
             raise LoopError("ERR_KEELPLANE_RESUME_INVALID", "worktree is missing", path=worktree)
         last_commit = journal.get("last_checkpoint")
@@ -554,8 +579,10 @@ def run_loop(
             "schema_version": SCHEMA_VERSION,
             "fixture_id": fixture_id,
             "mode": mode,
+            "run_base": seed_commit,
             "seed_commit": seed_commit,
             "last_checkpoint": seed_commit,
+            "target_files": target_files,
             "chain_head": "0" * 64,
             "phases": [],
         }
@@ -664,6 +691,23 @@ def run_loop(
             return status
 
     status = terminal_status(terminal="verified-complete", fixture_id=fixture_id, journal=journal)
+    ref_name = stamp_verified_ref(worktree, out_dir, str(journal["last_checkpoint"]))
+    journal["terminal_state"] = status["terminal_state"]
+    journal["evidence_chain_head"] = status["evidence_chain_head"]
+    journal["status_hash"] = status["status_hash"]
+    journal["verified_ref"] = ref_name
+    write_journal(out_dir, journal)
+    append_journal_event(
+        out_dir,
+        {
+            "event": "verified-complete",
+            "last_checkpoint": journal["last_checkpoint"],
+            "verified_ref": ref_name,
+            "chain_head": journal["chain_head"],
+            "status_hash": status["status_hash"],
+            "recorded_at": now_utc(),
+        },
+    )
     write_status(out_dir, status)
     return status
 
