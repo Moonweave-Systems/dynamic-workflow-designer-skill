@@ -23,7 +23,7 @@ Selected patterns:
 
 - Pipeline
 - Parallel Fan-Out / Fan-In
-- Adversarial Verify (Against Source)
+- Adversarial Verify
 - Human Gate
 
 Generated workflow output:
@@ -71,7 +71,7 @@ Stress-test three architecture options before we pick one.
 Selected patterns:
 
 - Judge Panel
-- Adversarial Verify (Against Source)
+- Adversarial Verify
 - Human Gate
 - Resume And Cache
 

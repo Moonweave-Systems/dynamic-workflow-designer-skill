@@ -40,7 +40,7 @@ Rules:
 - Define a shared output schema.
 - Add a fan-in worker only after all required branches finish.
 
-## Adversarial Verify (Against Source)
+## Adversarial Verify
 
 Use when outputs can be plausible but wrong.
 
