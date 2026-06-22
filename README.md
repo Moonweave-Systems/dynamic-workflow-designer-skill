@@ -1,6 +1,6 @@
 # Keelplane
 
-> A deterministic control-plane for large AI-native work.
+> Workflow designer + cross-platform evidence verifier for multi-agent AI systems.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-4F46E5.svg)](LICENSE)
 [![Agent skill](https://img.shields.io/badge/agent%20skill-Codex-4F46E5.svg)](SKILL.md)
@@ -9,111 +9,82 @@
 
 ![Keelplane hero](assets/dwm-hero.svg)
 
-**Keelplane** sits above agent CLIs, skills, plugins, and local harnesses. It
-records every important decision as an artifact and refuses to blur planned
-work with executed work.
-
-The installed skill is named `keelplane`, and the internal engine remains
-**DWM Core**: the Deterministic Workflow
-Machine. The product surface is broader than one skill: workflow design, packet
-compilation, bounded runner gates, review/repair evidence, live scoring
-artifacts, adapter parity checks, daily operator state, and release candidate
-checks.
-
-Use Keelplane when the question is not just "what should the agent do next?",
-but "what can be resumed, verified, reviewed, blocked, or released from
-evidence?"
+**Keelplane** designs multi-agent workflows and verifies their execution
+evidence. It does not execute agents — it makes runs from other frameworks
+(Conductor, LangGraph) trustworthy.
 
 ## Quickstart
 
-Run the local demo first. It is the fastest way to see the product loop without
-executing live adapters or mutating source files:
+```bash
+# Installation (pip install coming in V104.1)
+git clone https://github.com/Moonweave-Systems/keelplane
+cd keelplane
+
+# Run the full design → compile → verify cycle
+python -m keelplane demo
+
+# Or step by step:
+python -m keelplane design "audit all API routes for authentication" --surface . --out plan.json
+python -m keelplane validate plan.json
+python -m keelplane compile plan.json --target conductor --out workflow.yaml
+python -m keelplane verify plan.json --evidence ./evidence/ --out report.json
+```
+
+## Installation
 
 ```bash
-python scripts/dwm_demo.py run --out out/demo/quickstart
-python scripts/dwm_demo.py inspect --demo out/demo/quickstart
+pip install keelplane
 ```
 
-This writes `demo.json`, `status.json`, `README.md`, `demo-inspect.json`, and
-`demo-summary.md` under
-`out/demo/quickstart` while leaving source files untouched. It demonstrates the
-plan, compile, packet-review, adapter-parity, dogfood, daily-operator, and
-release-candidate surfaces without live adapter execution. Inspect blocks stale
-or incomplete demo artifacts instead of silently refreshing them.
+No external dependencies required — the core uses Python stdlib only.
+Optional compile targets (`keelplane[conductor]`) add framework-specific
+emitters.
+> **Note:** `pip install keelplane` is not yet available on PyPI.
+> Clone from GitHub and use `python -m keelplane` for now (V104.1 target).
 
-Then use the skill when a task is too large or risky for one normal agent turn:
+## CLI Commands
 
-```text
-Use $keelplane to design a workflow for auditing every route for missing authorization.
+| Command | Description |
+|---|---|
+| `keelplane design` | Decompose a broad objective into a structured workflow plan |
+| `keelplane validate` | Validate a plan.json against the schema v0.5 |
+| `keelplane compile` | Translate a plan into a target framework format (Conductor YAML) |
+| `keelplane verify` | Verify execution evidence against a plan (4-check engine) |
+| `keelplane demo` | Run a complete design → compile → verify cycle |
+
+### Verify: 4-Check Engine
+
+1. **Gate Compliance** — Were declared risk_gates respected? (write, network, approval gates)
+2. **Handoff Integrity** — Do declared handoff artifacts exist with matching SHA-256 hashes?
+3. **Adversarial Check** — Can claims be refuted against ground truth?
+4. **Budget Adherence** — Did execution stay within max_agents, max_rounds, and budget limits?
+
+## Pipeline
+
+```
+keelplane design "audit all API routes" --out plan.json
+       │
+       ▼  compile --target conductor
+    workflow.yaml
+       │
+       ▼  conductor run workflow.yaml     ← NOT Keelplane (execution)
+    ./run-output/
+       │
+       ▼  verify plan.json --evidence ./run-output/
+    verification-report.json              ← Keelplane (evidence)
 ```
 
-## Normal Loop
+## Product Thesis
 
-For day-to-day use, Keelplane works as a local operator loop:
+> Keelplane designs multi-agent workflows and verifies their execution evidence.
+> It does not execute agents. It makes runs from other frameworks trustworthy.
 
-1. design or resume a workflow,
-2. inspect the next safe action,
-3. run only the approved bounded step,
-4. review evidence before claiming progress,
-5. cut release candidates only from coherent artifacts.
-
-Inspect an existing run:
-
-```bash
-python scripts/dwm.py status --run out/v9/v32-semantic-dogfood
-python scripts/dwm.py next --run out/v9/v32-semantic-dogfood
-python scripts/dwm.py doctor
-python scripts/dwm.py commands --kind product
-```
-
-Control Deck, readiness, wave, and promotion commands live in
-[`docs/command-reference.md`](docs/command-reference.md). Those surfaces render
-operator state only; artifacts and source hashes remain the source of truth, and
-README graph publication stays behind human review.
-
-Run the release contract before publishing changes:
-
-```bash
-python scripts/check_contract.py --tier changed
-python scripts/check_readme_quality.py README.md
-```
-
-For the full release command corpus, use:
-
-```bash
-python scripts/check_contract.py
-python scripts/dwm.py commands --kind release
-```
-
-## What Exists Today
-
-| Layer | Capability |
-| --- | --- |
-| Design | Converts broad objectives into phases, workers, handoffs, gates, budgets, and verification plans. |
-| Compile | Emits first-slice packets, prompts, status, resume files, and hash ledgers. |
-| Run | Executes approved read-only or pre-isolated packets through bounded adapters. |
-| Review | Records review findings, repair prompts, retry state, and verification evidence. |
-| Fanout | Runs bounded multi-worker slices with deterministic fan-in. |
-| HUD | Produces read-only status views and hash-bound approval artifacts. |
-| Live evidence | Plans, preflights, records, and reviews bounded adapter evidence without overclaiming. |
-| Control Deck | Renders artifact-backed operator status without claiming autonomous execution. |
-| Readiness and graphs | Separates process progress, internal readiness, and public benchmark claims. |
-| Promotion route | Plans the next dogfood evidence command or stops at a README publication human gate. |
-| Live proof | V102 recorded one bounded live Codex run; V103 adds a deterministic two-arm comparison schema. |
-| Packaging | Validates repo-local install metadata, adapter registries, compatibility, and release evidence. |
-
-## What Is Still Honest
-
-| Claim | Current status |
-| --- | --- |
-| Local artifact loop | Implemented and covered by the canonical demo. |
-| Adapter parity | Implemented as a support matrix and blocker, not a live parity claim. |
-| Release candidate | Implemented from daily operator and adapter parity evidence. |
-| Benchmark graph | Source-bound graph artifacts exist; public trend promotion requires real release history. |
-| Live n=1 execution | live execution n=1 passed; V103 comparison live run remains opt-in. |
-| Autonomous loop n=1 | autonomous multi-phase loop live-verified (clean run `verified-complete`, fault run `failed`); see `docs/releases/keelplane-autonomous-loop-1.md`. Proves loop control, not codex reliability; no superiority/autonomy claim. |
-| Direct-agent superiority | Not claimed. V103 records evidence richness only, not pass-rate, speed, or cost superiority. |
-| Unrestricted autonomy | Not claimed. Risky work remains gate-bound by default. |
+- **design**: decompose broad objectives into the workflow plan schema (phases,
+  workers, handoffs, gates, budgets).
+- **compile**: translate plans into target framework formats (Conductor YAML
+  first; LangGraph Python later).
+- **verify**: consume raw execution evidence from any framework, check it
+  against the plan, produce hash-signed verification reports.
 
 ## Safety Model
 
@@ -121,57 +92,80 @@ Keelplane treats artifacts, not model claims, as the source of truth. A
 workflow is trusted only when the relevant plan, packet, prompt, evidence,
 review, approval, and status artifacts match their hash ledgers.
 
+Generated `out/` directories are verification evidence, not source of truth.
+They are never hand-edited; artifacts and source hashes are the source of truth.
+
 Keelplane does not claim unrestricted autonomous execution. Destructive actions,
 network access, dependency installation, secret access, external messaging,
 database migration, production deployment, and history rewrite require explicit
 gates with a safe default.
 
-## Evidence Graphs
+## Evidence Model & Verification Commands
 
-### Process Progress
+Keelplane claims **no direct-agent superiority** — it is a design + verification
+layer, not an agent runtime. It is **not a public benchmark graph**; public trend promotion requires real release history and measured improvements over established baselines.
 
-![DWM dogfood evidence progress](assets/dwm-dogfood-progress.svg)
+### Inspection & diagnostics
 
-This graph tracks whether the local evidence pipeline has produced hash-bound
-artifacts for each stage. It is allowed to move sideways or reveal blocked work.
-It is not a public benchmark graph and does not claim upward performance.
+```bash
+# Quickstart demo evidence
+python scripts/dwm_demo.py run --out out/demo/quickstart
+python scripts/dwm_demo.py inspect --demo out/demo/quickstart
 
-### Benchmark Evidence
+# Operator-state inspection
+python scripts/dwm.py status --run out/v9/v32-semantic-dogfood
+python scripts/dwm.py next --run out/v9/v32-semantic-dogfood
 
-![DWM live benchmark evidence](assets/dwm-live-benchmark.svg)
+# Available commands
+python scripts/dwm.py commands --kind product
+python scripts/dwm.py commands --kind release
 
-Benchmark visuals are source-bound. They read `report.json.graph_metrics`, not
-terminal output, generated prose, or manually copied numbers. Trend promotion is
-blocked until release history supports the claim; public trend promotion
-requires real release history.
+# README quality gate
+python scripts/check_readme_quality.py readme.md
+```
 
-## Command Reference
+### Benchmark graphs & progression
 
-Most readers need only the demo and product shell commands above. The full CLI
-surface is kept in [`docs/command-reference.md`](docs/command-reference.md) so
-this page stays readable:
+![Dogfood progress](assets/dwm-dogfood-progress.svg)
+*Dogfood benchmark progression across attempts.*
 
-- product shell and release checks,
-- live evidence and benchmark gates,
-- dogfood comparison and process graph commands,
-- repository map and generated artifact names.
+![Live benchmark](assets/dwm-live-benchmark.svg)
+*Live benchmark history — not a public benchmark graph.*
 
-Generated `out/` directories are verification evidence, not source of truth.
+## Quality
 
-## Documentation
+All CLI commands include built-in `--self-test`:
 
-- [`docs/spec.md`](docs/spec.md): product spec and release criteria.
-- [`docs/automation-roadmap.md`](docs/automation-roadmap.md): staged roadmap.
-- [`docs/command-reference.md`](docs/command-reference.md): full command and artifact reference.
-- [`docs/release-history.md`](docs/release-history.md): versioned implementation history.
-- [`docs/v12-to-v20-final-roadmap.md`](docs/v12-to-v20-final-roadmap.md): final-product roadmap.
+```bash
+python -m keelplane design --self-test    # 4/4 passed
+python -m keelplane compile --self-test   # 4/4 passed
+python -m keelplane validate --self-test  # 3/3 passed
+python -m keelplane verify --self-test    # 3/3 passed
+python -m keelplane demo --self-test      # full cycle passed
+```
+
+Run the release contract before publishing changes:
+
+```bash
+python scripts/check_contract.py --tier changed
+```
 
 ## Position
 
 Keelplane is not a prompt-only workflow router and not a clone of any one
-runtime. It is a deterministic control-plane above agent CLIs, local harnesses,
-and bounded adapter surfaces. DWM Core keeps agentic work inspectable,
-reproducible, resumable, and honest about what has actually been executed.
+runtime. It is a design + verification layer above existing execution engines.
+DWM Core keeps agentic work inspectable, reproducible, resumable, and honest
+about what has actually been executed.
+
+## Documentation
+
+- [`docs/v104-product-direction-spec.md`](docs/v104-product-direction-spec.md): V104 product direction and CLI spec.
+- [`docs/spec.md`](docs/spec.md): product spec and release criteria.
+- [`docs/command-reference.md`](docs/command-reference.md): full command and artifact reference.
+- [`docs/release-history.md`](docs/release-history.md): versioned implementation history.
+- [`references/workflow-plan-schema.md`](references/workflow-plan-schema.md): plan schema v0.5 reference.
+- [`references/workflow-patterns.md`](references/workflow-patterns.md): canonical workflow patterns.
+- [`SKILL.md`](SKILL.md): installed agent skill for Codex environments.
 
 ## License
 
