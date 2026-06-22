@@ -16,7 +16,7 @@ evidence. It does not execute agents — it makes runs from other frameworks
 ## Quickstart
 
 ```bash
-# Installation (pip install coming in V104.1)
+# Installation from source
 git clone https://github.com/Moonweave-Systems/keelplane
 cd keelplane
 
@@ -37,12 +37,17 @@ pip install keelplane
 ```
 
 No external dependencies required — the core uses Python stdlib only.
-Optional compile targets (`keelplane[conductor]`) add framework-specific
-emitters.
+Optional extras such as `keelplane[conductor]` are currently empty placeholders;
+they install no additional runtime dependencies.
 > **Note:** `pip install keelplane` is not yet available on PyPI.
 > Clone from GitHub and use `python -m keelplane` for now (V104.1 target).
 
-## CLI Commands
+## What Exists Today
+
+Keelplane ships the stdlib-only CLI, a strict plan validator, a Conductor YAML
+emitter, a generic evidence adapter, and the 4-check verification engine.
+
+## Command Reference
 
 | Command | Description |
 |---|---|
@@ -59,7 +64,7 @@ emitters.
 3. **Adversarial Check** — Can claims be refuted against ground truth?
 4. **Budget Adherence** — Did execution stay within max_agents, max_rounds, and budget limits?
 
-## Pipeline
+## Normal Loop
 
 ```
 keelplane design "audit all API routes" --out plan.json
@@ -100,10 +105,12 @@ network access, dependency installation, secret access, external messaging,
 database migration, production deployment, and history rewrite require explicit
 gates with a safe default.
 
-## Evidence Model & Verification Commands
+## What Is Still Honest
 
 Keelplane claims **no direct-agent superiority** — it is a design + verification
-layer, not an agent runtime. It is **not a public benchmark graph**; public trend promotion requires real release history and measured improvements over established baselines.
+layer, not an agent runtime. It does not claim upward performance. It is **not a
+public benchmark graph**; public trend promotion requires real release history
+and measured improvements over established baselines.
 
 ### Inspection & diagnostics
 
@@ -121,10 +128,10 @@ python scripts/dwm.py commands --kind product
 python scripts/dwm.py commands --kind release
 
 # README quality gate
-python scripts/check_readme_quality.py readme.md
+python scripts/check_readme_quality.py README.md
 ```
 
-### Benchmark graphs & progression
+## Evidence Graphs
 
 ![Dogfood progress](assets/dwm-dogfood-progress.svg)
 *Dogfood benchmark progression across attempts.*
