@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68.0"]
+build-backend = "setuptools.backends._legacy:_Backend"
+
+[project]
+name = "keelplane"
+version = "104.0.0"
+description = "Workflow designer + cross-platform evidence verifier for AI agent orchestration"
+license = { text = "MIT" }
+readme = "README.md"
+authors = [
+    { name = "Moonweave Systems" },
+]
+requires-python = ">=3.10"
+keywords = ["workflow", "orchestration", "ai-agents", "verification", "conductor"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Orchestration",
+]
+
+[project.urls]
+Homepage = "https://github.com/Moonweave-Systems/keelplane"
+Repository = "https://github.com/Moonweave-Systems/keelplane"
+Documentation = "https://github.com/Moonweave-Systems/keelplane#readme"
+
+[project.optional-dependencies]
+conductor = []
+all = []
+
+[project.scripts]
+keelplane = "keelplane.__main__:main"
+
+[tool.setuptools.packages.find]
+include = ["keelplane*"]
