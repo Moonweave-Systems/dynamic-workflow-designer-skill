@@ -8,7 +8,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-from keelplane.core.plan_schema import load_plan, validate_plan, validate_plan_strict, format_errors
+from keelplane.core.plan_schema import (
+    load_plan,
+    validate_plan,
+    validate_plan_strict,
+    format_errors,
+)
 
 
 def run(args: argparse.Namespace) -> None:
@@ -37,6 +42,44 @@ def run(args: argparse.Namespace) -> None:
     sys.exit(1 if errors else 0)
 
 
+def _embedded_parity_holds() -> bool:
+    import copy
+
+    from keelplane.cli.demo import _generate_demo_plan
+    from keelplane.core.embedded_plan_contract import validate_embedded_contract
+    from keelplane.core.plan_schema import _load_repo_evaluator
+
+    base = _generate_demo_plan()
+    vectors: list[tuple[str, bool, dict]] = [("valid-base", True, base)]
+    for field in (
+        "assumptions",
+        "patterns",
+        "phases",
+        "workers",
+        "handoffs",
+        "verification",
+        "risk_gates",
+    ):
+        broken = copy.deepcopy(base)
+        broken[field] = []
+        vectors.append((f"empty-{field}", False, broken))
+    no_approval = copy.deepcopy(base)
+    no_approval["risk_gates"][0]["requires_user_approval"] = False
+    vectors.append(("gate-no-approval", False, no_approval))
+
+    canonical = _load_repo_evaluator()
+    for _name, expected_valid, plan in vectors:
+        embedded_valid = not validate_embedded_contract(plan)
+        if embedded_valid != expected_valid:
+            return False
+        if canonical is not None and embedded_valid:
+            try:
+                canonical(plan)
+            except ValueError:
+                return False
+    return True
+
+
 def _self_test() -> None:
     """Run a basic self-test."""
     print("keelplane validate --self-test")
@@ -50,20 +93,48 @@ def _self_test() -> None:
         "plan_id": "self-test",
         "created_by": "keelplane",
         "source_prompt": "self-test",
-        "activation": {"decision": "activate", "matched_thresholds": ["downstream-consumer", "human-gates"], "downgrade_target": None, "reason": "test"},
+        "activation": {
+            "decision": "activate",
+            "matched_thresholds": ["downstream-consumer", "human-gates"],
+            "downgrade_target": None,
+            "reason": "test",
+        },
         "objective": "self-test objective",
-        "surfaces": [{"id": "test", "kind": "repo", "locator": ".", "access_mode": "read-only"}],
+        "surfaces": [
+            {"id": "test", "kind": "repo", "locator": ".", "access_mode": "read-only"}
+        ],
         "assumptions": [],
         "patterns": ["Sequential"],
         "phases": [],
         "workers": [],
         "handoffs": [],
-        "parallelism": {"shape": "none", "concurrency_cap": 1, "barriers": [], "fan_in_rule": "all"},
+        "parallelism": {
+            "shape": "none",
+            "concurrency_cap": 1,
+            "barriers": [],
+            "fan_in_rule": "all",
+        },
         "verification": [],
         "risk_gates": [],
-        "budget": {"max_agents": 1, "max_rounds": 1, "max_retries": 0, "time_box": "5m", "file_touch_limit": "3"},
+        "budget": {
+            "max_agents": 1,
+            "max_rounds": 1,
+            "max_retries": 0,
+            "time_box": "5m",
+            "file_touch_limit": "3",
+        },
         "resume": {"cacheable_outputs": [], "invalidators": [], "restart_points": []},
-        "execution_path": {"mode": "direct-codex", "first_slice": {"instruction": "do it", "inputs": ["task"], "expected_output": "done", "completion_check": "check", "forbidden_actions": ["write"]}, "consumer": "human"},
+        "execution_path": {
+            "mode": "direct-codex",
+            "first_slice": {
+                "instruction": "do it",
+                "inputs": ["task"],
+                "expected_output": "done",
+                "completion_check": "check",
+                "forbidden_actions": ["write"],
+            },
+            "consumer": "human",
+        },
     }
     errs = validate_plan(valid_plan)
     if not errs:
@@ -91,6 +162,14 @@ def _self_test() -> None:
         print(f"  [PASS] Test {tests}: bad schema version rejected")
     else:
         print(f"  [FAIL] Test {tests}: bad schema version accepted")
+
+    # Test 4: embedded contract stays self-consistent and never looser than canonical
+    tests += 1
+    if _embedded_parity_holds():
+        passed += 1
+        print(f"  [PASS] Test {tests}: embedded contract parity")
+    else:
+        print(f"  [FAIL] Test {tests}: embedded contract drift detected")
 
     print(f"\nSelf-test: {passed}/{tests} passed")
     if passed == tests:
