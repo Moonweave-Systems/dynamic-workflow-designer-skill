@@ -101,7 +101,7 @@ def check_gate_compliance(
         elif denial_path in known_files:
             results.append(GateCheck(gate_id=gid, trigger=gid, complied=False, evidence_path=denial_path))
         else:
-            results.append(GateCheck(gate_id=gid, trigger=gid, complied=True))
+            results.append(GateCheck(gate_id=gid, trigger=gid, complied=False))
     return results
 
 
@@ -265,13 +265,14 @@ def run_verification(
         handoff_refuted = any(h.status == "refuted" for h in phase_handoffs)
         handoff_insufficient = any(h.status == "insufficient-evidence" for h in phase_handoffs)
         adv_refuted = any(a.refuted for a in phase_adv)
-        gate_failed = not all(g.complied for g in phase_gates)
+        gate_refuted = any((not g.complied) and g.evidence_path is not None for g in phase_gates)
+        gate_insufficient = any((not g.complied) and g.evidence_path is None for g in phase_gates)
         budget_exceeded = not budget.within_limits
 
-        if gate_failed or handoff_refuted or adv_refuted or budget_exceeded:
+        if gate_refuted or handoff_refuted or adv_refuted or budget_exceeded:
             st: Literal["passed", "failed", "skipped"] = "failed"
             any_refuted = True
-        elif handoff_insufficient:
+        elif gate_insufficient or handoff_insufficient:
             st = "passed"  # phase itself is OK, but evidence is incomplete
             any_insufficient = True
         else:

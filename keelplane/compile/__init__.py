@@ -21,6 +21,10 @@ def run(args: argparse.Namespace) -> None:
         return
 
     target = args.target
+    if not args.plan:
+        print("Usage: keelplane compile <plan.json> --target conductor [--out workflow.yaml]", file=sys.stderr)
+        sys.exit(1)
+
     if target is None:
         print("Error: --target is required (choices: conductor, langgraph)", file=sys.stderr)
         sys.exit(1)
@@ -28,8 +32,8 @@ def run(args: argparse.Namespace) -> None:
     if target == "conductor":
         conductor.run(args)
     elif target == "langgraph":
-        print("[stub] langgraph compile not yet implemented in V104.0", file=sys.stderr)
-        sys.exit(0)
+        print("Error: langgraph compile is not implemented", file=sys.stderr)
+        sys.exit(1)
     else:
         print(f"Error: unknown compile target: {target}", file=sys.stderr)
         sys.exit(1)

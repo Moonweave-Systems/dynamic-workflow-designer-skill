@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib
 import json
 import sys
 import tempfile
@@ -17,13 +18,31 @@ def run(args: argparse.Namespace) -> None:
         _self_test()
         return
 
-    plan = load_plan(args.plan)
-    adapter_mod = resolve(args.adapter)
+    if not args.plan:
+        print("Usage: keelplane verify <plan.json> --evidence <evidence-dir>", file=sys.stderr)
+        sys.exit(1)
+    if not args.evidence:
+        print("Error: --evidence is required", file=sys.stderr)
+        sys.exit(1)
 
-    # Import the adapter module and get read_evidence
-    import importlib
+    try:
+        plan = load_plan(args.plan)
+    except (FileNotFoundError, json.JSONDecodeError) as exc:
+        print(f"Error: cannot load plan: {exc}", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        adapter_mod = resolve(args.adapter)
+    except ValueError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
+
     mod = importlib.import_module(adapter_mod)
-    evidence = mod.read_evidence(args.evidence)
+    try:
+        evidence = mod.read_evidence(args.evidence)
+    except NotADirectoryError as exc:
+        print(f"Error: {exc}", file=sys.stderr)
+        sys.exit(1)
 
     report = run_verification(plan, evidence, framework=args.adapter)
 
@@ -295,6 +314,19 @@ def _self_test() -> None:
             print(f"  [PASS] Test {tests}: hash tamper (canonical) → refuted")
         else:
             print(f"  [FAIL] Test {tests}: expected refuted, got {report.verdict}")
+
+    tests += 1
+    with tempfile.TemporaryDirectory() as tmp:
+        ctx = _create_evidence_dir(tmp, tamper=False)
+        approved = Path(ctx["evidence_dir"]) / "gates" / "write" / "approved"
+        approved.unlink()
+        evidence = generic.read_evidence(ctx["evidence_dir"])
+        report = run_verification(ctx["plan"], evidence)
+        if report.verdict == "insufficient-evidence":
+            passed += 1
+            print(f"  [PASS] Test {tests}: missing required gate evidence → insufficient-evidence")
+        else:
+            print(f"  [FAIL] Test {tests}: expected insufficient-evidence, got {report.verdict}")
 
     print(f"\nSelf-test: {passed}/{tests} passed")
     sys.exit(0 if passed == tests else 1)
