@@ -47,6 +47,10 @@ they install no additional runtime dependencies.
 Keelplane ships the stdlib-only CLI, a strict plan validator, a Conductor YAML
 emitter, a generic evidence adapter, and the 4-check verification engine.
 
+Run model: a `slice` is one atomic worker task, a `wave` is a gated group of
+one or more slices, and a `run` is one or more waves verified by receipts and
+evidence gates.
+
 ## Command Reference
 
 | Command | Description |
@@ -107,10 +111,13 @@ gates with a safe default.
 
 ## What Is Still Honest
 
-Keelplane claims **no direct-agent superiority** — it is a design + verification
-layer, not an agent runtime. It does not claim upward performance. It is **not a
-public benchmark graph**; public trend promotion requires real release history
-and measured improvements over established baselines.
+Keelplane claims **no direct-agent superiority** — it is a design + verification layer, not an agent runtime.
+
+It does not claim upward performance.
+It is not a public benchmark graph.
+For that reason, public trend promotion requires real release history and measured improvements over established baselines.
+Trend promotion is blocked until release history supports the claim.
+The skill is named `keelplane`.
 
 ### Inspection & diagnostics
 
@@ -137,7 +144,7 @@ python scripts/check_readme_quality.py README.md
 *Dogfood benchmark progression across attempts.*
 
 ![Live benchmark](assets/dwm-live-benchmark.svg)
-*Live benchmark history — not a public benchmark graph.*
+*Live benchmark history — not a public benchmark graph. Benchmark visuals are source-bound.*
 
 ## Quality
 

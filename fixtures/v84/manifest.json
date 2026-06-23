@@ -8,7 +8,7 @@
         "label": "active",
         "path": "SKILL.md",
         "exists": true,
-        "content_hash": "27261b50e6811ad03073544983f5e4b4905a9c9035f2d1b8f044a4ee24b49798",
+        "content_hash": "4720ffef70c1d156ee73fd8f7dacb1f84f4cc57397f4b1d6ed25097e9707ca87",
         "is_repo_skill": true
       },
       "installed_surfaces": [],
@@ -21,7 +21,7 @@
         "label": "active",
         "path": "SKILL.md",
         "exists": true,
-        "content_hash": "27261b50e6811ad03073544983f5e4b4905a9c9035f2d1b8f044a4ee24b49798",
+        "content_hash": "4720ffef70c1d156ee73fd8f7dacb1f84f4cc57397f4b1d6ed25097e9707ca87",
         "is_repo_skill": true
       },
       "installed_surfaces": [
@@ -29,7 +29,7 @@
           "label": "installed-copy",
           "path": "~/.codex/skills/keelplane/SKILL.md",
           "exists": true,
-          "content_hash": "27261b50e6811ad03073544983f5e4b4905a9c9035f2d1b8f044a4ee24b49798",
+          "content_hash": "4720ffef70c1d156ee73fd8f7dacb1f84f4cc57397f4b1d6ed25097e9707ca87",
           "is_repo_skill": false
         }
       ],
@@ -42,7 +42,7 @@
         "label": "active",
         "path": "SKILL.md",
         "exists": true,
-        "content_hash": "27261b50e6811ad03073544983f5e4b4905a9c9035f2d1b8f044a4ee24b49798",
+        "content_hash": "4720ffef70c1d156ee73fd8f7dacb1f84f4cc57397f4b1d6ed25097e9707ca87",
         "is_repo_skill": true
       },
       "installed_surfaces": [

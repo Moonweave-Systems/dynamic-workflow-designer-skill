@@ -1,6 +1,6 @@
 # Keelplane Automation Roadmap
 
-Status: V3 entry runtime implemented; V7.5 frontier result review implemented; V8 frontier review ingestion implemented; V9 human gate resolution implemented; V10 product CLI implemented; V11 operator guidance implemented; V12-V20 product roadmap implemented; V52-V87 product evidence, graph timing, activation, and brand boundary gates implemented; V88 roadmap reconciliation audit implemented; V89 command safety gate implemented; V90 activation v2 implemented; V91 contract tiering implemented; V92 evidence oracle implemented; V93 workflow narrative implemented; V94 control deck score implemented; V95 score history implemented; V96 metric ladder implemented; V97 benchmark readiness implemented; V98 wave operator implemented; V99 wave receipt implemented; V100 promotion evidence implemented; V101 promotion route implemented; V102 deterministic live-proof recorder implemented; V103 live-proof comparison schema implemented; V94-V101 meta layer frozen; live proof n=1 completed
+Status: V3 entry runtime implemented; V7.5 frontier result review implemented; V8 frontier review ingestion implemented; V9 human gate resolution implemented; V10 product CLI implemented; V11 operator guidance implemented; V12-V20 product roadmap implemented; V52-V87 product evidence, graph timing, activation, and brand boundary gates implemented; V88 roadmap reconciliation audit implemented; V89 command safety gate implemented; V90 activation v2 implemented; V91 contract tiering implemented; V92 evidence oracle implemented; V93 workflow narrative implemented; V94 control deck score implemented; V95 score history implemented; V96 metric ladder implemented; V97 benchmark readiness implemented; V98 wave operator implemented; V99 wave receipt implemented; V100 promotion evidence implemented; V101 promotion route implemented; V102 deterministic live-proof recorder implemented; V103 live-proof comparison schema implemented; V104 product direction implemented; V105 verify wedge implemented; V106 multi-wave validation implemented; V94-V101 meta layer frozen; live proof n=1 completed
 Date: 2026-06-20
 
 ## Purpose
@@ -850,10 +850,10 @@ First canonical demo done means:
 - unsafe and non-owned output paths are blocked;
 - `fixtures/v51/manifest.json` passes with `decision: "keep"`.
 
-### V52-V103: Product Evidence And Control Deck
+### V52-V106: Product Evidence And Control Deck
 
-Status: implemented through the V103 deterministic comparison schema; live
-two-arm comparison remains behind explicit approval; V94-V101 meta layer is frozen.
+Status: implemented through V106 multi-wave validation; the V103 live two-arm
+comparison remains behind explicit approval; V94-V101 meta layer is frozen.
 
 Purpose: move from a runnable demo into a product that can explain its current
 state, measure real dogfood evidence, gate graph claims, continue safely across
@@ -914,6 +914,12 @@ Implemented continuation:
 - V103 live proof comparison adds a deterministic two-arm schema for direct-codex
   versus dwm-controlled evidence richness. It records no pass-rate, speed, cost,
   or direct-agent superiority claim; the live two-arm run remains opt-in.
+- V104 repositioned Keelplane as a workflow designer plus cross-platform evidence
+  verifier above existing agent execution engines.
+- V105 added root-controlled evidence-contract wedge fixtures for missing logs,
+  forbidden touches, test weakening, missing contracts, and control-file shadows.
+- V106 added optional multi-wave execution-path validation while preserving
+  first-slice compatibility and existing human gates.
 
 Next roadmap direction:
 

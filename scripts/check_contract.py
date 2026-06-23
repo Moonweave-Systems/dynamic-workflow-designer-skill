@@ -10,7 +10,6 @@ import signal
 import subprocess
 import sys
 
-import compile_workflow
 import evaluate_plan
 
 
@@ -1964,6 +1963,8 @@ def require_release_commands_pass() -> None:
         [sys.executable, "scripts/dwm_live_proof.py", "--self-test"],
         [sys.executable, "scripts/dwm_live_proof.py", "--manifest", "fixtures/v102/manifest.json", "--out", "out/v102/final"],
         [sys.executable, "scripts/dwm_live_proof.py", "--manifest", "fixtures/v103/manifest.json", "--out", "out/v103/final"],
+        [sys.executable, "scripts/v105_verify_wedge.py", "--self-test"],
+        [sys.executable, "scripts/v106_multi_wave.py", "--self-test"],
         [sys.executable, "scripts/run_workflow.py", "--self-test"],
         [sys.executable, "scripts/run_workflow.py", "--manifest", "fixtures/v3/manifest.json", "--out", "out/v3/final"],
         [sys.executable, "scripts/orchestrate_workflow.py", "--self-test"],
@@ -2245,6 +2246,27 @@ def require_smoke_commands_pass() -> None:
 
 def require_changed_surface_commands_pass() -> None:
     commands = [
+        [sys.executable, "scripts/dwm_readme_graph_visibility.py", "--self-test"],
+        [sys.executable, "scripts/dwm_readme_graph_visibility.py", "--manifest", "fixtures/v79/manifest.json", "--out", "out/readme-graph-visibility/v79-final"],
+        [sys.executable, "scripts/dwm_readme_graph_visibility.py", "audit", "--readme", "README.md", "--timing", "out/graph-timing/v78-canonical/graph-timing.json", "--out", "out/readme-graph-visibility/v79-canonical"],
+        [sys.executable, "scripts/dwm_continuation_boundary.py", "--self-test"],
+        [sys.executable, "scripts/dwm_continuation_boundary.py", "--manifest", "fixtures/v80/manifest.json", "--out", "out/continuation-boundaries/v80-final"],
+        [sys.executable, "scripts/dwm_continuation_boundary.py", "assess", "--preflight", "out/large-workflow-queue-preflight/v77-canonical/queue-preflight.json", "--timing", "out/graph-timing/v78-canonical/graph-timing.json", "--visibility", "out/readme-graph-visibility/v79-canonical/readme-graph-visibility.json", "--out", "out/continuation-boundaries/v80-canonical"],
+        [sys.executable, "scripts/dwm_multi_slice_batch.py", "--self-test"],
+        [sys.executable, "scripts/dwm_multi_slice_batch.py", "--manifest", "fixtures/v81/manifest.json", "--out", "out/multi-slice-batches/v81-final"],
+        [sys.executable, "scripts/dwm_multi_slice_batch.py", "plan", "--boundary", "out/continuation-boundaries/v80-canonical/continuation-boundary.json", "--out", "out/multi-slice-batches/v81-canonical"],
+        [sys.executable, "scripts/dwm_execution_receipt_schema.py", "--self-test"],
+        [sys.executable, "scripts/dwm_execution_receipt_schema.py", "--manifest", "fixtures/v82/manifest.json", "--out", "out/execution-receipt-schemas/v82-final"],
+        [sys.executable, "scripts/dwm_execution_receipt_schema.py", "preflight", "--batch", "out/multi-slice-batches/v81-canonical/multi-slice-batch.json", "--out", "out/execution-receipt-schemas/v82-canonical"],
+        [sys.executable, "scripts/dwm_runner_receipt_dry_run.py", "--self-test"],
+        [sys.executable, "scripts/dwm_runner_receipt_dry_run.py", "--manifest", "fixtures/v83/manifest.json", "--out", "out/runner-receipt-dry-runs/v83-final"],
+        [sys.executable, "scripts/dwm_runner_receipt_dry_run.py", "dry-run", "--schema", "out/execution-receipt-schemas/v82-canonical/execution-receipt-schema.json", "--batch", "out/multi-slice-batches/v81-canonical/multi-slice-batch.json", "--out", "out/runner-receipt-dry-runs/v83-canonical"],
+        [sys.executable, "scripts/dwm_installed_surface_audit.py", "--self-test"],
+        [sys.executable, "scripts/dwm_installed_surface_audit.py", "--manifest", "fixtures/v84/manifest.json", "--out", "out/installed-surface-audits/v84-final"],
+        [sys.executable, "scripts/dwm_installed_surface_audit.py", "audit", "--active-skill", "SKILL.md", "--out", "out/installed-surface-audits/v84-canonical"],
+        [sys.executable, "scripts/dwm_brand_boundary_audit.py", "--self-test"],
+        [sys.executable, "scripts/dwm_brand_boundary_audit.py", "--manifest", "fixtures/v87/manifest.json", "--out", "out/brand-boundary-audits/v87-final"],
+        [sys.executable, "scripts/dwm_brand_boundary_audit.py", "audit", "--out", "out/brand-boundary-audits/v87-canonical"],
         [sys.executable, "scripts/dwm_roadmap_reconciliation.py", "--self-test"],
         [sys.executable, "scripts/dwm_roadmap_reconciliation.py", "--manifest", "fixtures/v88/manifest.json", "--out", "out/roadmap-reconciliations/v88-final"],
         [sys.executable, "scripts/dwm_roadmap_reconciliation.py", "audit", "--out", "out/roadmap-reconciliations/v88-canonical"],
@@ -2398,6 +2420,8 @@ def require_changed_surface_commands_pass() -> None:
         [sys.executable, "scripts/dwm_live_proof.py", "--self-test"],
         [sys.executable, "scripts/dwm_live_proof.py", "--manifest", "fixtures/v102/manifest.json", "--out", "out/v102/final"],
         [sys.executable, "scripts/dwm_live_proof.py", "--manifest", "fixtures/v103/manifest.json", "--out", "out/v103/final"],
+        [sys.executable, "scripts/v105_verify_wedge.py", "--self-test"],
+        [sys.executable, "scripts/v106_multi_wave.py", "--self-test"],
         [sys.executable, "scripts/dwm.py", "doctor", "--json"],
         [sys.executable, "scripts/check_release_text.py", "."],
     ]
@@ -4010,7 +4034,7 @@ def main() -> None:
             "`roadmap-reconciliation.md`",
             "public product brand: `keelplane`",
             "internal engine name: `dwm core`",
-            "latest reconciled version: `v103`",
+            "latest reconciled version: `v106`",
             "does not claim autonomous execution",
         ],
     )
@@ -4024,7 +4048,7 @@ def main() -> None:
             "`required_passed`: 4",
             "`decision`: `keep`",
             "`decision`: `roadmap_reconciled`",
-            "`latest_version`: `v103`",
+            "`latest_version`: `v106`",
             "does not execute queued commands",
         ],
     )
@@ -4076,7 +4100,7 @@ def main() -> None:
             "`fixture_count`: 4",
             "`required_passed`: 4",
             "`decision`: `keep`",
-            "`roadmap_latest_version`: `v103`",
+            "`roadmap_latest_version`: `v106`",
             "`command_safety_decision`: `keep`",
         ],
     )
@@ -6003,7 +6027,7 @@ def main() -> None:
             "python scripts/dwm.py commands --kind release --json",
             "`status`: `workflow-complete`",
             "`doctor_ok`: `true`",
-            "`release_command_count`: `224`",
+            "`release_command_count`: `226`",
             "does not claim workflow execution",
         ],
     )

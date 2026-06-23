@@ -6,12 +6,12 @@
           "blocked_by": [],
           "decision": "ready_for_next_workflow_design",
           "inputs": {
-            "roadmap_latest_version": "V103"
+            "roadmap_latest_version": "V106"
           },
           "next_safe_action": "design_next_workflow",
           "source_hashes": {
             "command_safety": "698cd9875689fe329db21b71c23026165b03632f0be9727b25c440f298d93bd6",
-            "roadmap_reconciliation": "4d7d275e67413d907cc7102a77570b8e89ea449976e5f9326e57484e841e6668"
+            "roadmap_reconciliation": "e2e98d70982b30065fa9c742cace6e3db66429aed7ce3a68c0c9e20f68b4c5e9"
           }
         },
         "command_safety": {
@@ -33,7 +33,7 @@
           "blocked_by": [],
           "decision": "roadmap_reconciled",
           "policy": {
-            "latest_version": "V103"
+            "latest_version": "V106"
           }
         }
       },
@@ -91,12 +91,12 @@
           "blocked_by": [],
           "decision": "ready_for_next_workflow_design",
           "inputs": {
-            "roadmap_latest_version": "V103"
+            "roadmap_latest_version": "V106"
           },
           "next_safe_action": "design_next_workflow",
           "source_hashes": {
             "command_safety": "not-current-command-safety-hash",
-            "roadmap_reconciliation": "4d7d275e67413d907cc7102a77570b8e89ea449976e5f9326e57484e841e6668"
+            "roadmap_reconciliation": "e2e98d70982b30065fa9c742cace6e3db66429aed7ce3a68c0c9e20f68b4c5e9"
           }
         },
         "command_safety": {
@@ -116,7 +116,7 @@
           "blocked_by": [],
           "decision": "roadmap_reconciled",
           "policy": {
-            "latest_version": "V103"
+            "latest_version": "V106"
           }
         }
       },
@@ -133,12 +133,12 @@
           "blocked_by": [],
           "decision": "ready_for_next_workflow_design",
           "inputs": {
-            "roadmap_latest_version": "V103"
+            "roadmap_latest_version": "V106"
           },
           "next_safe_action": "design_next_workflow",
           "source_hashes": {
             "command_safety": "698cd9875689fe329db21b71c23026165b03632f0be9727b25c440f298d93bd6",
-            "roadmap_reconciliation": "4d7d275e67413d907cc7102a77570b8e89ea449976e5f9326e57484e841e6668"
+            "roadmap_reconciliation": "e2e98d70982b30065fa9c742cace6e3db66429aed7ce3a68c0c9e20f68b4c5e9"
           }
         },
         "command_safety": {
@@ -162,7 +162,7 @@
           "blocked_by": [],
           "decision": "roadmap_reconciled",
           "policy": {
-            "latest_version": "V103"
+            "latest_version": "V106"
           }
         }
       },

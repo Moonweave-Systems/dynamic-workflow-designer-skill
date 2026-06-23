@@ -220,6 +220,8 @@ RELEASE_COMMANDS = [
     "python scripts/dwm_live_proof.py --self-test",
     "python scripts/dwm_live_proof.py --manifest fixtures/v102/manifest.json --out out/v102/final",
     "python scripts/dwm_live_proof.py --manifest fixtures/v103/manifest.json --out out/v103/final",
+    "python scripts/v105_verify_wedge.py --self-test",
+    "python scripts/v106_multi_wave.py --self-test",
     "python scripts/dwm_daily_operator.py --self-test",
     "python scripts/dwm_daily_operator.py --manifest fixtures/v48/manifest.json --out out/daily-operator/v48-final",
     "python scripts/dwm_release_candidate.py --self-test",
@@ -687,6 +689,15 @@ BASE_REQUIRED_PATHS = [
     "fixtures/v103/manifest.json",
     "docs/v103-decision.md",
     "docs/v103-live-proof-2-spec.md",
+    "scripts/v105_verify_wedge.py",
+    "fixtures/v105-verify-wedge/cases.json",
+    "fixtures/v105-verify-wedge/plan.json",
+    "docs/v105-decision.md",
+    "docs/v105-verify-wedge-spec.md",
+    "scripts/v106_multi_wave.py",
+    "fixtures/v106-multi-wave/manifest.json",
+    "docs/v106-decision.md",
+    "docs/v106-multi-wave-spec.md",
 ]
 
 

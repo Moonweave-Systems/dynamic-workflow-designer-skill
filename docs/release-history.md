@@ -183,6 +183,14 @@ promotion requires real release history.
   comparison schema for direct-codex versus dwm-controlled evidence richness.
   The live comparison remains opt-in and makes no pass-rate, speed, cost, or
   direct-agent superiority claim.
+- V104: `docs/v104-product-direction-spec.md` repositioned Keelplane as a
+  workflow designer plus cross-platform evidence verifier above existing agent
+  execution engines.
+- V105: `docs/v105-verify-wedge-spec.md` added deterministic evidence-contract
+  wedge fixtures for missing logs, forbidden touches, test weakening, missing
+  root contracts, nested control-file shadows, and a clean verified case.
+- V106: `docs/v106-multi-wave-spec.md` added optional `first_wave` and `waves`
+  validation while preserving legacy `first_slice` compatibility.
 
 ## Current Public Boundaries
 
@@ -220,3 +228,6 @@ promotion requires real release history.
   evidence.
 - The V94-V101 meta layer is frozen; V102 records one bounded live proof
   without adding new score, route, or benchmark layers.
+- V105 evidence contracts are root-controlled harness evidence, not model claims.
+- V106 multi-wave execution paths remain plan contracts only; they do not execute
+  agents or relax existing human gates.
