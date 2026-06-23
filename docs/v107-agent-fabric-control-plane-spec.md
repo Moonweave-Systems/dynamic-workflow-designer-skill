@@ -1,4 +1,4 @@
-# V107: Keelplane Agent Fabric Control Plane Spec
+# V107: Depone Agent Fabric Control Plane Spec
 
 Status: proposed direction spec, no implementation  
 Date: 2026-06-23
@@ -6,9 +6,9 @@ Date: 2026-06-23
 ## Purpose
 
 V107 defines the intended end state for a world-class agent system that runs
-with Keelplane without collapsing Keelplane into an agent runtime.
+with Depone without collapsing Depone into an agent runtime.
 
-Keelplane remains the deterministic control plane:
+Depone remains the deterministic control plane:
 
 - plan and policy contracts;
 - evidence normalization;
@@ -24,7 +24,7 @@ The new Agent Fabric is a separate execution-plane layer:
 - context loading;
 - harness-specific compilation;
 - native agent invocation;
-- capture handoff back to Keelplane.
+- capture handoff back to Depone.
 
 This spec is intentionally non-implementing. It records the complete product
 direction, failure analysis, prior-art scan, architecture, and downstream
@@ -33,7 +33,7 @@ the design intent.
 
 ## Executive Position
 
-> Keelplane makes agent work governable. Agent Fabric makes agent teams
+> Depone makes agent work governable. Agent Fabric makes agent teams
 > effective. They run together, but they do not own the same responsibilities.
 
 The final system should not be another prompt pack and should not be an OMO
@@ -44,7 +44,7 @@ obligations required for its role.
 The main product claim is not "better agents by vibes." The claim is:
 
 > Given the same task and harnesses, Agent Fabric can produce a narrower,
-> safer, more inspectable agent run plan, and Keelplane can determine whether
+> safer, more inspectable agent run plan, and Depone can determine whether
 > the run satisfied that plan from evidence rather than final-message claims.
 
 ## Current State
@@ -54,12 +54,12 @@ The repository already contains useful ingredients:
 - `packaging/dwm-roles.json` defines coarse roles, allowed tool categories,
   output schemas, evidence obligations, and trust boundaries.
 - `docs/v22-role-pack-spec.md` validates the first role pack contract.
-- `keelplane-v105-final/docs/agent-team-spec-v1.md` defines strong profile
+- `depone-v105-final/docs/agent-team-spec-v1.md` defines strong profile
   rules, role independence, ownership, review independence, and retirement.
-- `keelplane-v105-final/profiles/*.json` define reference profiles:
+- `depone-v105-final/profiles/*.json` define reference profiles:
   `direct-small-fix`, `feature-pipeline`, `parallel-audit`,
   `cross-harness-review`, and `migration-team`.
-- `docs/adoption/v105-final-adoption-plan.md` correctly says Keelplane should
+- `docs/adoption/v105-final-adoption-plan.md` correctly says Depone should
   become a policy and evidence control plane, not a general model runtime.
 
 The current agent-pack material is not yet the desired end state:
@@ -78,7 +78,7 @@ The current agent-pack material is not yet the desired end state:
 ## Prior Art Scan
 
 The intended direction is aligned with current multi-agent practice, but the
-Keelplane boundary should stay stricter than most frameworks.
+Depone boundary should stay stricter than most frameworks.
 
 OpenAI Agents SDK:
 
@@ -139,9 +139,9 @@ Sources checked for this direction:
 
 ## Product Boundary
 
-### Keelplane Core
+### Depone Core
 
-Keelplane Core is deterministic.
+Depone Core is deterministic.
 
 It owns:
 
@@ -176,11 +176,11 @@ It owns:
 - harness adapter selection;
 - invocation packet generation;
 - self-report schema enforcement;
-- capture handoff to Keelplane.
+- capture handoff to Depone.
 
 It must not:
 
-- write final Keelplane verdicts;
+- write final Depone verdicts;
 - write authoritative ledgers, seals, approvals, or final decisions;
 - bypass harness-native permissions;
 - hide unsupported controls;
@@ -197,7 +197,7 @@ permission surfaces:
 - shell and fixture backends;
 - later LangGraph, Conductor, or other orchestrators.
 
-Agent Fabric lowers into these harnesses. Keelplane verifies the evidence
+Agent Fabric lowers into these harnesses. Depone verifies the evidence
 returned from them.
 
 ## System Architecture
@@ -206,7 +206,7 @@ returned from them.
 User goal
   |
   v
-Keelplane activation gate
+Depone activation gate
   - direct vs governed vs team vs cross-harness vs long-run
   |
   v
@@ -236,14 +236,14 @@ Native execution
   - logs, diffs, test output, touched files
   |
   v
-Keelplane Capture
+Depone Capture
   - manifest
   - receipts
   - ledger
   - seal
   |
   v
-Keelplane Verifier
+Depone Verifier
   - pass | fail | inconclusive
   - assurance
   - repair/rerun/approve route
@@ -779,7 +779,7 @@ Responsibilities:
 
 - compile OMO-compatible role prompts and model categories;
 - map MCP availability to role toolbelts;
-- disable or avoid broad hooks where they conflict with Keelplane evidence
+- disable or avoid broad hooks where they conflict with Depone evidence
   policy;
 - preserve OMO's useful planner/explorer/reviewer patterns without importing
   uncontrolled autonomous loops.
@@ -839,7 +839,7 @@ messaging, or reviewer write access.
 
 ## Evidence Bridge
 
-Agent Fabric outputs are self-reports until Keelplane Capture observes or
+Agent Fabric outputs are self-reports until Depone Capture observes or
 imports evidence.
 
 Minimum artifacts per invocation:
@@ -854,13 +854,13 @@ Minimum artifacts per invocation:
 - `review-report.md` for reviewers;
 - `qa-artifacts/` for visible surface checks.
 
-Keelplane must decide:
+Depone must decide:
 
 - `pass`;
 - `fail`;
 - `inconclusive`.
 
-Keelplane must also label assurance:
+Depone must also label assurance:
 
 - `A0-claims-only`;
 - `A1-local-observed`;
@@ -998,10 +998,10 @@ Agent Fabric must prove value by task class, not globally.
 Evaluation arms:
 
 - direct Codex;
-- Codex through Agent Fabric + Keelplane;
+- Codex through Agent Fabric + Depone;
 - direct Claude Code;
-- Claude Code through Agent Fabric + Keelplane;
-- OpenCode/OMO through Agent Fabric + Keelplane when isolated.
+- Claude Code through Agent Fabric + Depone;
+- OpenCode/OMO through Agent Fabric + Depone when isolated.
 
 Task classes:
 
@@ -1096,9 +1096,9 @@ Exit:
 - OMO global-MCP approximation is explicit;
 - unsupported critical controls block.
 
-### Phase 5: Keelplane capture bridge
+### Phase 5: Depone capture bridge
 
-Connect adapter outputs to Keelplane evidence manifests and assurance labels.
+Connect adapter outputs to Depone evidence manifests and assurance labels.
 
 Exit:
 
@@ -1122,14 +1122,14 @@ Exit:
 Use this prompt to start the implementation in a separate working context:
 
 ```text
-You are implementing Keelplane Agent Fabric V107.
+You are implementing Depone Agent Fabric V107.
 
 Goal:
 Build the first deterministic contract layer for a world-class agent system
-that runs with Keelplane. Do not turn Keelplane Core into an agent runtime.
-Keelplane owns contracts, evidence, decision, and assurance. Agent Fabric owns
+that runs with Depone. Do not turn Depone Core into an agent runtime.
+Depone owns contracts, evidence, decision, and assurance. Agent Fabric owns
 profile routing, role/toolbelt compilation, harness adapter lowering, and
-handoff of captured artifacts back to Keelplane.
+handoff of captured artifacts back to Depone.
 
 Non-goals:
 - Do not call live models in the first implementation slice.
@@ -1182,7 +1182,7 @@ adapter slice.
 
 ### Resolved gaps
 
-- Separates Keelplane Core from Agent Fabric.
+- Separates Depone Core from Agent Fabric.
 - Keeps direct execution as the default.
 - Defines role-specific tool/MCP allocation.
 - Requires concrete toolbelts instead of broad abstract tool labels.

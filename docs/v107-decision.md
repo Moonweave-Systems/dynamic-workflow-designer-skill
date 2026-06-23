@@ -8,10 +8,10 @@ Command used to verify this documentation-only PR:
 python scripts/check_contract.py --tier changed
 ```
 
-V107 records the final direction for a Keelplane-compatible agent system without
+V107 records the final direction for a Depone-compatible agent system without
 implementing that system. The accepted boundary is:
 
-- Keelplane Core remains deterministic and owns contracts, evidence, decisions,
+- Depone Core remains deterministic and owns contracts, evidence, decisions,
   and assurance.
 - Agent Fabric is a separate execution-plane layer for profile routing,
   role/toolbelt compilation, context policy, harness adapter lowering, and
@@ -40,5 +40,5 @@ The next implementation slice should be contract-only:
 The current `agents/openai.yaml`, `packaging/dwm-roles.json`, V22 role pack
 contract, V105 final profiles, and V105 agent-team spec are useful inputs, but
 they are not yet the world-class Agent Fabric. V107 keeps the distinction
-explicit so later work can build the Agent Fabric without weakening Keelplane's
+explicit so later work can build the Agent Fabric without weakening Depone's
 evidence boundary.
