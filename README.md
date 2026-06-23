@@ -173,6 +173,7 @@ about what has actually been executed.
 
 ## Documentation
 
+- [`docs/v107-agent-fabric-control-plane-spec.md`](docs/v107-agent-fabric-control-plane-spec.md): Agent Fabric control-plane direction spec.
 - [`docs/v104-product-direction-spec.md`](docs/v104-product-direction-spec.md): V104 product direction and CLI spec.
 - [`docs/spec.md`](docs/spec.md): product spec and release criteria.
 - [`docs/command-reference.md`](docs/command-reference.md): full command and artifact reference.
