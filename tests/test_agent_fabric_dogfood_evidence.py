@@ -87,6 +87,18 @@ class AgentFabricDogfoodEvidenceTests(unittest.TestCase):
         self.assertEqual(report["blockers"][0]["code"], "ERR_CAPTURE_MANIFEST_INVALID")
 
 
+    def test_docs_source_only_capture_individually_produces_dogfood_evidence(self) -> None:
+        from depone.agent_fabric.dogfood_evidence import build_dogfood_evidence_report
+
+        docs_capture = json.loads(CONTROLLED_CAPTURE_PATH.read_text())
+
+        report = build_dogfood_evidence_report(docs_capture)
+
+        self.assertEqual(report["decision"], "dogfood-evidence-ready-source-only")
+        self.assertEqual(report["capture_assurance"], "A1-local-observed")
+        self.assertEqual(report["capture_decision"], "observed-local-capture")
+        self.assertEqual(report["test_status"], "passed")
+
     def test_controlled_capture_corpus_requires_multiple_source_only_manifests(self) -> None:
         from depone.agent_fabric.dogfood_evidence import (
             build_controlled_capture_corpus_report,
@@ -109,10 +121,59 @@ class AgentFabricDogfoodEvidenceTests(unittest.TestCase):
             report["source_hashes"]["capture_manifests"],
             [canonical_hash(shell_capture), canonical_hash(docs_capture)],
         )
+        self.assertEqual(report["entries"][0]["index"], 0)
+        self.assertEqual(report["entries"][0]["decision"], "dogfood-evidence-ready-source-only")
+        self.assertEqual(report["entries"][0]["capture_assurance"], "A1-local-observed")
+        self.assertEqual(report["entries"][0]["capture_decision"], "observed-local-capture")
+        self.assertEqual(report["entries"][0]["test_status"], "passed")
+        self.assertEqual(report["entries"][0]["source_hash"], canonical_hash(shell_capture))
+        self.assertEqual(report["entries"][1]["index"], 1)
+        self.assertEqual(report["entries"][1]["source_hash"], canonical_hash(docs_capture))
         self.assertFalse(report["boundary"]["executes_commands"])
         self.assertFalse(report["boundary"]["calls_live_models"])
         self.assertFalse(report["boundary"]["approves_public_claim"])
         self.assertFalse(report["boundary"]["trust_upgrade"])
+
+    def test_controlled_capture_corpus_blocks_duplicate_manifests(self) -> None:
+        from depone.agent_fabric.dogfood_evidence import (
+            build_controlled_capture_corpus_report,
+        )
+
+        capture = observed_capture_manifest()
+
+        report = build_controlled_capture_corpus_report([capture, capture])
+
+        self.assertEqual(report["decision"], "blocked-insufficient-capture-corpus")
+        self.assertEqual(
+            report["blockers"][-1]["code"],
+            "ERR_CONTROLLED_CAPTURE_CORPUS_DUPLICATE",
+        )
+
+    def test_controlled_capture_corpus_preserves_nested_blockers(self) -> None:
+        from depone.agent_fabric.dogfood_evidence import (
+            build_controlled_capture_corpus_report,
+        )
+        from depone.agent_fabric.capture_bridge import _sha256_json
+
+        shell_capture = observed_capture_manifest()
+        docs_capture = json.loads(CONTROLLED_CAPTURE_PATH.read_text())
+        docs_capture["observer_capture"]["test_output"]["status"] = "failed"
+        docs_capture["observer_capture_hash"] = _sha256_json(
+            docs_capture["observer_capture"]
+        )
+
+        report = build_controlled_capture_corpus_report([shell_capture, docs_capture])
+
+        self.assertEqual(report["decision"], "blocked-insufficient-capture-corpus")
+        self.assertEqual(report["ready_count"], 1)
+        self.assertEqual(report["blocked_count"], 1)
+        self.assertEqual(
+            report["blockers"][0]["code"], "ERR_CONTROLLED_CAPTURE_NOT_READY"
+        )
+        self.assertEqual(
+            report["blockers"][0]["blockers"][0]["code"],
+            "ERR_DOGFOOD_TESTS_NOT_PASSED",
+        )
 
     def test_controlled_capture_corpus_blocks_single_manifest(self) -> None:
         from depone.agent_fabric.dogfood_evidence import (
