@@ -208,8 +208,8 @@ promotion requires real release history.
   manifest checks in verification reports with separate `verdict`, `decision`,
   and `assurance` fields.
 - V111: `docs/v111-agent-fabric-operator-view-spec.md` documents the
-  presentation-only operator-view/exporter contract for V110 report fields and
-  records integration risks before release readiness.
+  presentation-only operator-view/exporter for V110 report fields, including
+  the `depone verify --operator-view-out` Markdown export path.
 
 ## Current Public Boundaries
 

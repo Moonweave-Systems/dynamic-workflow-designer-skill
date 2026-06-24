@@ -1,7 +1,7 @@
 # V111 Decision
 
-Decision: document the V111 Agent Fabric operator-view/exporter contract before
-integrating the implementation slice.
+Decision: keep the V111 Agent Fabric operator-view/exporter as a
+presentation-only layer over verification reports.
 
 V111 should make the V110 report fields easier for an operator to read without
 changing the trust model. The view/exporter is a presentation layer over Depone
@@ -9,7 +9,7 @@ verification reports: it can summarize `verdict`, `decision`, `assurance`, and
 Agent Fabric capture entries, but it cannot create new evidence or upgrade an
 assurance label.
 
-Accepted direction:
+Accepted implementation:
 
 - consume existing verification report JSON as the source of truth;
 - preserve `A0-claims-only` and `A1-local-observed` exactly as V109/V110 define
@@ -17,17 +17,18 @@ Accepted direction:
 - keep invalid capture manifests visible and fail-closed through the underlying
   report;
 - expose evidence paths in any exported summary for traceability;
-- keep the implementation stdlib-only and deterministic.
+- keep the implementation stdlib-only and deterministic;
+- expose the Markdown exporter through
+  `python3 -m depone verify --operator-view-out <path>`.
 
-Integration risks to resolve after code integration:
+Resolved integration choices:
 
-- confirm the final exporter command name and output files;
-- align tests with the actual implementation rather than this provisional docs
-  contract;
-- avoid duplicating report validation in the view layer;
-- ensure missing V110 fields are displayed as compatibility risks, not as a
-  stronger pass state;
-- keep public docs on the Depone brand and avoid reintroducing old product
+- the exporter command is `--operator-view-out` on `depone verify`;
+- tests exercise the CLI write path, empty capture reports, invalid capture
+  rendering, and evidence-contract dominance over Agent Fabric capture state;
+- the view layer renders report fields without revalidating capture manifests;
+- missing V110 fields render as `unknown`, not as a stronger pass state;
+- public docs stay on the Depone brand and do not reintroduce old product
   naming.
 
 This decision intentionally does not claim:
@@ -36,5 +37,4 @@ This decision intentionally does not claim:
 - external attestation;
 - new assurance levels beyond V109/V110;
 - improved productivity, speed, cost, quality, or direct-agent superiority;
-- release readiness before the implementation, tests, and contract gates are
-  integrated.
+- release readiness beyond the focused V111 operator-view slice.

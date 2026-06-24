@@ -1,7 +1,7 @@
 # V111 Agent Fabric Operator View Spec
 
-V111 adds the documentation contract for a small operator-facing view/exporter
-on top of the V110 verification report fields.
+V111 adds a small operator-facing Markdown view/exporter on top of the V110
+verification report fields.
 
 ## Boundary
 
@@ -38,35 +38,34 @@ The operator view should make the following distinctions explicit:
   `A1-local-observed` material;
 - evidence-contract failures versus Agent Fabric capture failures.
 
-A markdown or JSON export may be added as long as it is deterministic,
-stdlib-only, and derived from report fields. The export must preserve source
-paths so an operator can trace each displayed capture back to the underlying
-evidence artifact.
+A Markdown export is available through:
 
-## Integration risks
+```bash
+python3 -m depone verify --out report.json --operator-view-out operator-view.md
+```
 
-This docs slice was written before the V111 implementation slice was integrated
-into this worker worktree. The known integration risks are:
+The export is deterministic, stdlib-only, and derived from report fields. It
+preserves source paths so an operator can trace each displayed capture back to
+the underlying evidence artifact. The view layer does not duplicate V110
+validation logic; it renders the report state it is given.
 
-- the final exporter name, command shape, and output path may differ from this
-  contract and must be reconciled before release;
-- the exporter must not duplicate V110 validation logic in a divergent way;
-- reports without `agent_fabric_captures` must remain compatible and should show
-  `A0-claims-only` rather than inventing a stronger assurance;
-- invalid capture manifests must stay fail-closed in the report and visible in
-  the view;
-- Depone branding must remain public-facing, with DWM Core used only for the
-  internal engine where needed.
+Compatibility behavior:
+
+- reports without `agent_fabric_captures` render an explicit no-captures
+  message and keep `A0-claims-only` as the default assurance;
+- missing V110 fields render as `unknown` rather than a stronger pass state;
+- invalid capture manifests stay fail-closed in the report and remain visible
+  in the view;
+- Depone remains the public brand, with DWM Core used only for the internal
+  engine where needed.
 
 ## Verification
 
-The implementation slice should provide focused tests for:
+The V111 implementation is covered by:
 
 ```bash
+python3 -m py_compile depone/__main__.py depone/verify/__init__.py depone/verify/operator_view.py
 python3 tests/test_agent_fabric_report_assurance.py
 python3 -m depone verify --self-test
 python3 -m depone validate-contracts --self-test
 ```
-
-If a dedicated exporter command is added, its self-test or targeted unit test
-must be listed here before V111 is considered release-ready.
