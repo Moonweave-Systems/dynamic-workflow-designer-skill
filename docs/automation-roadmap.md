@@ -941,6 +941,10 @@ Implemented continuation:
   now separate existing `verdict`, operator-facing `decision`, and capture
   `assurance`, and invalid capture manifests refute the report without hiding
   validation errors.
+- V111 documents the Agent Fabric operator-view/exporter contract. The view is
+  presentation-only over V110 report fields, keeps invalid captures visible,
+  preserves Depone branding, and records integration risks until the code slice
+  is merged.
 
 Next roadmap direction:
 
@@ -952,8 +956,8 @@ Next roadmap direction:
    migration gate proves compatibility.
 4. Expand read-only or pre-isolated live execution only where V84/V85 and queue
    preflight evidence permit it.
-5. Add a small fixture/report exporter or operator view over the V110 report
-   fields without adding new trust levels or bypassing evidence-contract
+5. Integrate and verify the V111 operator-view/exporter code against the V110
+   report fields without adding new trust levels or bypassing evidence-contract
    failures.
 
 ## Strategic Decisions
