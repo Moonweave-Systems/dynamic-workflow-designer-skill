@@ -13,6 +13,9 @@ from depone.agent_fabric.claim_gate import canonical_hash
 
 
 CAPTURE_MANIFEST_PATH = Path("depone/fixtures/agent_fabric/capture_manifest_shell.json")
+CONTROLLED_CAPTURE_PATH = Path(
+    "depone/fixtures/agent_fabric/capture_manifest_docs_source_only.json"
+)
 
 
 def observed_capture_manifest() -> dict:
@@ -84,50 +87,77 @@ class AgentFabricDogfoodEvidenceTests(unittest.TestCase):
         self.assertEqual(report["blockers"][0]["code"], "ERR_CAPTURE_MANIFEST_INVALID")
 
 
-    def test_corpus_summarizes_multiple_source_only_capture_manifests(self) -> None:
-        from depone.agent_fabric.capture_bridge import _sha256_json
+    def test_controlled_capture_corpus_requires_multiple_source_only_manifests(self) -> None:
         from depone.agent_fabric.dogfood_evidence import (
-            build_dogfood_evidence_corpus_report,
+            build_controlled_capture_corpus_report,
         )
 
         shell_capture = observed_capture_manifest()
-        second_shell_capture = json.loads(json.dumps(shell_capture))
-        second_shell_capture["fixture"]["adapter"]["name"] = "shell-reference-fixture-second"
-        second_shell_capture["fixture"]["invocation"]["profile"] = "second-source-only"
-        second_shell_capture["fixture"]["capture"]["self_report"]["profile"] = (
-            "second-source-only"
-        )
-        second_shell_capture["source_fixture_hash"] = _sha256_json(
-            second_shell_capture["fixture"]
-        )
-        second_shell_capture["observer_capture"]["source_fixture_hash"] = (
-            second_shell_capture["source_fixture_hash"]
-        )
-        second_shell_capture["observer_capture_hash"] = _sha256_json(
-            second_shell_capture["observer_capture"]
+        docs_capture = json.loads(CONTROLLED_CAPTURE_PATH.read_text())
+
+        report = build_controlled_capture_corpus_report(
+            [shell_capture, docs_capture],
         )
 
-        corpus = build_dogfood_evidence_corpus_report(
-            [
-                ("shell", shell_capture),
-                ("second-shell", second_shell_capture),
-            ]
-        )
-
-        self.assertEqual(corpus["kind"], "agent-fabric-dogfood-evidence-corpus")
-        self.assertEqual(corpus["decision"], "dogfood-corpus-ready-source-only")
-        self.assertEqual(corpus["summary"]["total_manifests"], 2)
-        self.assertEqual(corpus["summary"]["ready_manifests"], 2)
-        self.assertEqual(corpus["summary"]["blocked_manifests"], 0)
-        self.assertEqual([entry["id"] for entry in corpus["entries"]], ["shell", "second-shell"])
+        self.assertEqual(report["kind"], "agent-fabric-controlled-capture-corpus")
+        self.assertEqual(report["decision"], "controlled-capture-corpus-ready")
+        self.assertEqual(report["capture_count"], 2)
+        self.assertEqual(report["ready_count"], 2)
+        self.assertEqual(report["blocked_count"], 0)
+        self.assertEqual(report["blockers"], [])
         self.assertEqual(
-            [entry["decision"] for entry in corpus["entries"]],
-            ["dogfood-evidence-ready-source-only", "dogfood-evidence-ready-source-only"],
+            report["source_hashes"]["capture_manifests"],
+            [canonical_hash(shell_capture), canonical_hash(docs_capture)],
         )
-        self.assertFalse(corpus["boundary"]["executes_commands"])
-        self.assertFalse(corpus["boundary"]["calls_live_models"])
-        self.assertFalse(corpus["boundary"]["approves_public_claim"])
-        self.assertFalse(corpus["boundary"]["trust_upgrade"])
+        self.assertFalse(report["boundary"]["executes_commands"])
+        self.assertFalse(report["boundary"]["calls_live_models"])
+        self.assertFalse(report["boundary"]["approves_public_claim"])
+        self.assertFalse(report["boundary"]["trust_upgrade"])
+
+    def test_controlled_capture_corpus_blocks_single_manifest(self) -> None:
+        from depone.agent_fabric.dogfood_evidence import (
+            build_controlled_capture_corpus_report,
+        )
+
+        report = build_controlled_capture_corpus_report([observed_capture_manifest()])
+
+        self.assertEqual(report["decision"], "blocked-insufficient-capture-corpus")
+        self.assertEqual(
+            report["blockers"][0]["code"],
+            "ERR_CONTROLLED_CAPTURE_CORPUS_TOO_SMALL",
+        )
+
+    def test_cli_writes_controlled_capture_corpus_when_multiple_manifests_given(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            shell_path = root / "shell-capture.json"
+            docs_path = root / "docs-capture.json"
+            out_path = root / "controlled-capture-corpus.json"
+            shell_path.write_text(json.dumps(observed_capture_manifest()))
+            docs_path.write_text(CONTROLLED_CAPTURE_PATH.read_text())
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "depone",
+                    "agent-fabric-dogfood-evidence",
+                    "--capture-manifest",
+                    str(shell_path),
+                    "--capture-manifest",
+                    str(docs_path),
+                    "--out",
+                    str(out_path),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+
+            self.assertEqual(result.returncode, 0, result.stderr)
+            report = json.loads(out_path.read_text())
+            self.assertEqual(report["decision"], "controlled-capture-corpus-ready")
+            self.assertIn("Controlled capture corpus written", result.stdout)
 
     def test_cli_writes_dogfood_evidence_report(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
