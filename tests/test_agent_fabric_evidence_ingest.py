@@ -5,22 +5,41 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from depone.agent_fabric.evidence_substrate import ingest_external_evidence
+from depone.agent_fabric.evidence_substrate import (
+    build_evidence_bundle,
+    ingest_external_evidence,
+)
 
 
 class AgentFabricEvidenceIngestTests(unittest.TestCase):
-    def _bundle(self) -> dict[str, object]:
-        return json.loads(
-            Path("out/v128-real-dogfood/evidence-substrate-bundle.json").read_text(
-                encoding="utf-8"
-            )
+    # Hermetic: build the bundle from a committed fixture and materialize the
+    # manifest/observer subjects in a temp dir, so these tests never depend on
+    # gitignored out/ artifacts and stay reproducible on a fresh clone.
+    def setUp(self) -> None:
+        self._capture = json.loads(
+            Path(
+                "depone/fixtures/agent_fabric/capture_manifest_v126_governed_utf8.json"
+            ).read_text(encoding="utf-8")
         )
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        tmp = Path(self._tmp.name)
+        (tmp / "capture-manifest.json").write_text(
+            json.dumps(self._capture), encoding="utf-8"
+        )
+        (tmp / "observer-capture.json").write_text(
+            json.dumps(self._capture["observer_capture"]), encoding="utf-8"
+        )
+        self._tmp_dir = tmp
+
+    def _bundle(self) -> dict[str, object]:
+        return build_evidence_bundle(self._capture)
 
     def _artifact_paths(self) -> dict[str, str]:
         return {
             "source_fixture": "depone/fixtures/agent_fabric/reference_adapter_shell.json",
-            "depone-capture-manifest": "out/v128-real-dogfood/capture-manifest.json",
-            "observer_capture": "out/v128-real-dogfood/observer-capture.json",
+            "depone-capture-manifest": str(self._tmp_dir / "capture-manifest.json"),
+            "observer_capture": str(self._tmp_dir / "observer-capture.json"),
         }
 
     def test_pass_when_all_real_bundle_subjects_match_disk(self) -> None:

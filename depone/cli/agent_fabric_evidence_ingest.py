@@ -7,7 +7,10 @@ import tempfile
 from pathlib import Path
 from typing import Any
 
-from depone.agent_fabric.evidence_substrate import ingest_external_evidence
+from depone.agent_fabric.evidence_substrate import (
+    build_evidence_bundle,
+    ingest_external_evidence,
+)
 
 
 def run(args: argparse.Namespace) -> None:
@@ -101,53 +104,72 @@ def _parse_artifacts(items: list[str]) -> dict[str, str]:
 
 
 def _self_test() -> None:
-    bundle_path = Path("out/v128-real-dogfood/evidence-substrate-bundle.json")
-    artifact_paths = {
-        "source_fixture": "depone/fixtures/agent_fabric/reference_adapter_shell.json",
-        "depone-capture-manifest": "out/v128-real-dogfood/capture-manifest.json",
-        "observer_capture": "out/v128-real-dogfood/observer-capture.json",
-    }
-    bundle = json.loads(bundle_path.read_text(encoding="utf-8"))
-    pass_verdict = ingest_external_evidence(
-        bundle["dsse_envelope"],
-        artifact_paths,
-        otel_spans=bundle["otel_spans"],
+    # Hermetic: build a bundle from a committed fixture and re-hash its subjects
+    # from artifacts written to a temp dir, so the self-test never depends on
+    # gitignored out/ artifacts and stays reproducible on a fresh clone.
+    capture = json.loads(
+        Path(
+            "depone/fixtures/agent_fabric/capture_manifest_v126_governed_utf8.json"
+        ).read_text(encoding="utf-8")
     )
-    if pass_verdict["decision"] != "pass":
-        raise AssertionError("real V128 bundle should pass with present artifacts")
-
-    missing = ingest_external_evidence(
-        bundle["dsse_envelope"],
-        {"source_fixture": artifact_paths["source_fixture"]},
-    )
-    if missing["decision"] != "inconclusive":
-        raise AssertionError("missing subjects should be inconclusive")
+    bundle = build_evidence_bundle(capture)
 
     with tempfile.TemporaryDirectory() as temp_dir:
-        tampered_path = Path(temp_dir) / "source.json"
+        manifest_path = Path(temp_dir) / "capture-manifest.json"
+        observer_path = Path(temp_dir) / "observer-capture.json"
+        manifest_path.write_text(json.dumps(capture), encoding="utf-8")
+        observer_path.write_text(
+            json.dumps(capture["observer_capture"]), encoding="utf-8"
+        )
+        artifact_paths = {
+            "source_fixture": "depone/fixtures/agent_fabric/reference_adapter_shell.json",
+            "depone-capture-manifest": str(manifest_path),
+            "observer_capture": str(observer_path),
+        }
+
+        pass_verdict = ingest_external_evidence(
+            bundle["dsse_envelope"],
+            artifact_paths,
+            otel_spans=bundle["otel_spans"],
+        )
+        if pass_verdict["decision"] != "pass":
+            raise AssertionError("V128 bundle should pass with present artifacts")
+
+        missing = ingest_external_evidence(
+            bundle["dsse_envelope"],
+            {"source_fixture": artifact_paths["source_fixture"]},
+        )
+        if missing["decision"] != "inconclusive":
+            raise AssertionError("missing subjects should be inconclusive")
+
+        tampered_path = Path(temp_dir) / "tampered.json"
         tampered_path.write_text('{"tampered": true}\n', encoding="utf-8")
         tampered_paths = dict(artifact_paths)
         tampered_paths["source_fixture"] = str(tampered_path)
         tampered = ingest_external_evidence(bundle["dsse_envelope"], tampered_paths)
-    if tampered["decision"] != "blocked":
-        raise AssertionError("present digest mismatch should be blocked")
+        if tampered["decision"] != "blocked":
+            raise AssertionError("present digest mismatch should be blocked")
 
-    signed = dict(bundle["dsse_envelope"])
-    signed["signatures"] = [{"keyid": "unverified", "sig": "claim"}]
-    signed_verdict = ingest_external_evidence(signed, artifact_paths)
-    if signed_verdict["decision"] != "blocked":
-        raise AssertionError("unverifiable signatures should be blocked")
+        signed = dict(bundle["dsse_envelope"])
+        signed["signatures"] = [{"keyid": "unverified", "sig": "claim"}]
+        signed_verdict = ingest_external_evidence(signed, artifact_paths)
+        if signed_verdict["decision"] != "blocked":
+            raise AssertionError("unverifiable signatures should be blocked")
 
-    malformed = {"payloadType": "application/vnd.in-toto+json", "payload": "!!", "signatures": []}
-    malformed_verdict = ingest_external_evidence(malformed, artifact_paths)
-    if malformed_verdict["decision"] != "blocked":
-        raise AssertionError("malformed DSSE should be blocked")
+        malformed = {
+            "payloadType": "application/vnd.in-toto+json",
+            "payload": "!!",
+            "signatures": [],
+        }
+        malformed_verdict = ingest_external_evidence(malformed, artifact_paths)
+        if malformed_verdict["decision"] != "blocked":
+            raise AssertionError("malformed DSSE should be blocked")
 
-    bad_spans = ingest_external_evidence(
-        bundle["dsse_envelope"],
-        artifact_paths,
-        otel_spans=[{"trace_id": "trace"}],
-    )
-    if bad_spans["decision"] == "pass":
-        raise AssertionError("OTel structural errors must not pass")
+        bad_spans = ingest_external_evidence(
+            bundle["dsse_envelope"],
+            artifact_paths,
+            otel_spans=[{"trace_id": "trace"}],
+        )
+        if bad_spans["decision"] == "pass":
+            raise AssertionError("OTel structural errors must not pass")
     print("depone agent-fabric-evidence-ingest --self-test: pass")
