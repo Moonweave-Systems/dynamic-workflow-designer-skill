@@ -22,6 +22,7 @@ from depone.cli import (
     validate_contracts,
 )
 from depone import compile as compile_mod
+from depone.mcp import server as mcp_server
 from depone import verify as verify_mod
 
 
@@ -127,6 +128,15 @@ def main() -> None:
         "--all", action="store_true", help="Validate all contracts under contracts/"
     )
     vc_parser.add_argument(
+        "--self-test", action="store_true", help="Run self-test and exit"
+    )
+
+    # mcp
+    mcp_parser = sub.add_parser(
+        "mcp",
+        help="Run the stdlib-only MCP stdio server for Depone evidence tools",
+    )
+    mcp_parser.add_argument(
         "--self-test", action="store_true", help="Run self-test and exit"
     )
 
@@ -491,6 +501,8 @@ def main() -> None:
         verify_mod.run(args)
     elif args.command == "validate-contracts":
         validate_contracts.run(args)
+    elif args.command == "mcp":
+        mcp_server.run(args)
     elif args.command == "agent-fabric-smoke":
         agent_fabric_smoke.run(args)
     elif args.command == "agent-fabric-harness-snapshot":

@@ -28,6 +28,8 @@ depone design "audit all API routes for authentication" --surface . --out plan.j
 depone validate plan.json
 depone compile plan.json --target conductor --out workflow.yaml
 depone verify plan.json --evidence ./evidence/ --out report.json --operator-view-out operator-view.md
+
+# MCP stdio server for MCP-capable agents: python3 -m depone mcp
 ```
 
 ## Installation
@@ -36,11 +38,8 @@ depone verify plan.json --evidence ./evidence/ --out report.json --operator-view
 python3 -m pip install .
 ```
 
-No external dependencies required — the core uses Python stdlib only.
-> **Note:** `pip install depone` is not yet available on PyPI.
-> Clone from GitHub and install from the checkout for now. The installed
-> `depone` command resolves shipped fixtures from the package and can run from
-> any working directory.
+No external dependencies required — the core uses Python stdlib only. PyPI
+publishing is not active yet; install from the checkout for now.
 
 ## What Exists Today
 Depone ships the stdlib-only CLI, a strict plan validator, a Conductor YAML
@@ -58,6 +57,7 @@ evidence gates.
 | `depone compile` | Translate a plan into a target framework format (Conductor YAML) |
 | `depone verify` | Verify execution evidence against a plan |
 | `depone validate-contracts` | Validate Agent Fabric contracts and fixtures |
+| `depone mcp` | Serve the same evidence/verify capabilities over MCP stdio |
 | `depone agent-fabric-smoke` | Export the source-only Agent Fabric lifecycle smoke summary |
 | `depone agent-fabric-harness-snapshot` | Export source-only harness capability snapshots |
 | `depone agent-fabric-adapter-smoke` | Export source-only adapter smoke reports |
