@@ -1,0 +1,1 @@
+{"approval_markdown_path":"human-approval.md","approval_path":"fixtures/v9/approvals/dogfood-human-approval.json","created_at":"2026-06-24T13:42:24Z","human_gate_version":"0.1.0","journal_paths":["journal/0000.json"],"run_id":"v32-semantic-dogfood","schema_version":"1.0","source_v8_run_path":"out/v8/v32-semantic-dogfood","state_path":"state.json"}

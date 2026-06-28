@@ -2259,6 +2259,8 @@ def require_smoke_commands_pass() -> None:
 
 def require_changed_surface_commands_pass() -> None:
     commands = [
+        [sys.executable, "scripts/seed_contract_workspace.py", "--self-test"],
+        [sys.executable, "scripts/seed_contract_workspace.py"],
         [sys.executable, "scripts/run_tests.py", "--self-test"],
         [sys.executable, "scripts/run_tests.py"],
         [sys.executable, "scripts/dwm_readme_graph_visibility.py", "--self-test"],

@@ -8,7 +8,7 @@
         "label": "active",
         "path": "SKILL.md",
         "exists": true,
-        "content_hash": "7f57468ea2f151527322b69f167a5107b6c1c44487ea53ff6c8fb1820aae1770",
+        "content_hash": "2781790c2ab14efcbf86b1bc142be17067aa088fa71c19728ce7db964bfdc097",
         "is_repo_skill": true
       },
       "installed_surfaces": [],
@@ -21,7 +21,7 @@
         "label": "active",
         "path": "SKILL.md",
         "exists": true,
-        "content_hash": "7f57468ea2f151527322b69f167a5107b6c1c44487ea53ff6c8fb1820aae1770",
+        "content_hash": "2781790c2ab14efcbf86b1bc142be17067aa088fa71c19728ce7db964bfdc097",
         "is_repo_skill": true
       },
       "installed_surfaces": [
@@ -29,7 +29,7 @@
           "label": "installed-copy",
           "path": "~/.codex/skills/depone/SKILL.md",
           "exists": true,
-          "content_hash": "7f57468ea2f151527322b69f167a5107b6c1c44487ea53ff6c8fb1820aae1770",
+          "content_hash": "2781790c2ab14efcbf86b1bc142be17067aa088fa71c19728ce7db964bfdc097",
           "is_repo_skill": false
         }
       ],
@@ -42,7 +42,7 @@
         "label": "active",
         "path": "SKILL.md",
         "exists": true,
-        "content_hash": "7f57468ea2f151527322b69f167a5107b6c1c44487ea53ff6c8fb1820aae1770",
+        "content_hash": "2781790c2ab14efcbf86b1bc142be17067aa088fa71c19728ce7db964bfdc097",
         "is_repo_skill": true
       },
       "installed_surfaces": [
