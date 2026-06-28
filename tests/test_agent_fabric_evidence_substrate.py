@@ -10,6 +10,7 @@ from depone.agent_fabric.claim_gate import canonical_hash
 from depone.agent_fabric.evidence_substrate import (
     build_evidence_bundle,
     decode_dsse_payload,
+    DIGEST_MODE_CANONICAL_JSON,
     evaluate_external_statement_subjects,
     ingest_external_evidence,
     validate_statement_for_capture,
@@ -81,6 +82,11 @@ class AgentFabricEvidenceSubstrateTests(unittest.TestCase):
                     "source_fixture": "depone/fixtures/agent_fabric/reference_adapter_shell.json",
                     "depone-capture-manifest": str(manifest_path),
                     "observer_capture": str(observer_path),
+                },
+                artifact_digest_modes={
+                    "source_fixture": DIGEST_MODE_CANONICAL_JSON,
+                    "depone-capture-manifest": DIGEST_MODE_CANONICAL_JSON,
+                    "observer_capture": DIGEST_MODE_CANONICAL_JSON,
                 },
                 otel_spans=bundle["otel_spans"],
             )

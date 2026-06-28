@@ -427,7 +427,10 @@ def main() -> None:
         "--artifact",
         action="append",
         default=[],
-        help="Subject artifact locator as name=path; repeat for each artifact",
+        help=(
+            "Subject artifact locator as name=path[:raw|:json]; repeat for "
+            "each artifact. Default digest mode is raw bytes."
+        ),
     )
     evidence_ingest_parser.add_argument(
         "--out",

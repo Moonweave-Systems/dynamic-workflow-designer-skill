@@ -7,6 +7,7 @@ from pathlib import Path
 
 from depone.agent_fabric.evidence_substrate import (
     build_evidence_bundle,
+    DIGEST_MODE_CANONICAL_JSON,
     ingest_external_evidence,
 )
 
@@ -42,12 +43,23 @@ class AgentFabricEvidenceIngestTests(unittest.TestCase):
             "observer_capture": str(self._tmp_dir / "observer-capture.json"),
         }
 
+    def _artifact_digest_modes(self) -> dict[str, str]:
+        return {
+            "source_fixture": DIGEST_MODE_CANONICAL_JSON,
+            "depone-capture-manifest": DIGEST_MODE_CANONICAL_JSON,
+            "observer_capture": DIGEST_MODE_CANONICAL_JSON,
+        }
+
+    def _external_dir(self) -> Path:
+        return Path("depone/fixtures/agent_fabric/external")
+
     def test_pass_when_all_real_bundle_subjects_match_disk(self) -> None:
         bundle = self._bundle()
 
         verdict = ingest_external_evidence(
             bundle["dsse_envelope"],
             self._artifact_paths(),
+            artifact_digest_modes=self._artifact_digest_modes(),
             otel_spans=bundle["otel_spans"],
         )
 
@@ -62,6 +74,7 @@ class AgentFabricEvidenceIngestTests(unittest.TestCase):
         verdict = ingest_external_evidence(
             bundle["dsse_envelope"],
             {"source_fixture": self._artifact_paths()["source_fixture"]},
+            artifact_digest_modes={"source_fixture": DIGEST_MODE_CANONICAL_JSON},
         )
 
         self.assertEqual(verdict["decision"], "inconclusive")
@@ -78,7 +91,11 @@ class AgentFabricEvidenceIngestTests(unittest.TestCase):
             tampered_path = Path(temp_dir) / "reference_adapter_shell.json"
             tampered_path.write_text('{"tampered": true}\n', encoding="utf-8")
             artifact_paths["source_fixture"] = str(tampered_path)
-            verdict = ingest_external_evidence(bundle["dsse_envelope"], artifact_paths)
+            verdict = ingest_external_evidence(
+                bundle["dsse_envelope"],
+                artifact_paths,
+                artifact_digest_modes=self._artifact_digest_modes(),
+            )
 
         self.assertEqual(verdict["decision"], "blocked")
         self.assertIn(
@@ -91,7 +108,11 @@ class AgentFabricEvidenceIngestTests(unittest.TestCase):
         envelope = dict(bundle["dsse_envelope"])
         envelope["signatures"] = [{"keyid": "unknown", "sig": "claimed"}]
 
-        verdict = ingest_external_evidence(envelope, self._artifact_paths())
+        verdict = ingest_external_evidence(
+            envelope,
+            self._artifact_paths(),
+            artifact_digest_modes=self._artifact_digest_modes(),
+        )
 
         self.assertEqual(verdict["decision"], "blocked")
         self.assertEqual(verdict["signing_status"], "unverifiable-signature")
@@ -104,6 +125,7 @@ class AgentFabricEvidenceIngestTests(unittest.TestCase):
                 "signatures": [],
             },
             self._artifact_paths(),
+            artifact_digest_modes=self._artifact_digest_modes(),
         )
 
         self.assertEqual(verdict["decision"], "blocked")
@@ -114,11 +136,72 @@ class AgentFabricEvidenceIngestTests(unittest.TestCase):
         verdict = ingest_external_evidence(
             bundle["dsse_envelope"],
             self._artifact_paths(),
+            artifact_digest_modes=self._artifact_digest_modes(),
             otel_spans=[{"trace_id": "trace"}],
         )
 
         self.assertEqual(verdict["decision"], "blocked")
         self.assertTrue(verdict["otel_errors"])
+
+    def test_foreign_real_statement_with_absent_artifact_is_inconclusive(self) -> None:
+        statement = json.loads(
+            (self._external_dir() / "external_intoto_statement_real.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        verdict = ingest_external_evidence(statement, {})
+
+        self.assertEqual(verdict["decision"], "inconclusive")
+        self.assertFalse(verdict["predicate_recognized"])
+        self.assertEqual(verdict["predicate_type"], "https://slsa.dev/provenance/v1.0")
+
+    def test_foreign_slsa_shaped_statement_passes_with_raw_subject_digest(self) -> None:
+        external_dir = self._external_dir()
+        statement = json.loads(
+            (external_dir / "external_slsa_statement_bound.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        verdict = ingest_external_evidence(
+            statement,
+            {"external_artifact.bin": str(external_dir / "external_artifact.bin")},
+        )
+
+        self.assertEqual(verdict["decision"], "pass")
+        self.assertFalse(verdict["predicate_recognized"])
+        self.assertEqual(verdict["subject_results"][0]["status"], "verified")
+
+    def test_foreign_slsa_shaped_statement_blocks_on_tampered_raw_bytes(self) -> None:
+        external_dir = self._external_dir()
+        statement = json.loads(
+            (external_dir / "external_slsa_statement_bound.json").read_text(
+                encoding="utf-8"
+            )
+        )
+        with tempfile.TemporaryDirectory() as temp_dir:
+            tampered_path = Path(temp_dir) / "external_artifact.bin"
+            tampered_path.write_bytes(b"tampered\n")
+            verdict = ingest_external_evidence(
+                statement,
+                {"external_artifact.bin": str(tampered_path)},
+            )
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertEqual(verdict["subject_results"][0]["status"], "mismatch")
+
+    def test_foreign_signed_dsse_is_blocked_before_signature_trust(self) -> None:
+        envelope = json.loads(
+            (self._external_dir() / "external_signed_dsse_nonempty.json").read_text(
+                encoding="utf-8"
+            )
+        )
+
+        verdict = ingest_external_evidence(envelope, {})
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertEqual(verdict["signing_status"], "unverifiable-signature")
 
 
 if __name__ == "__main__":

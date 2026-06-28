@@ -1,0 +1,24 @@
+{
+  "_type": "https://in-toto.io/Statement/v1",
+  "subject": [
+    {
+      "name": "external_artifact.bin",
+      "digest": {
+        "sha256": "f971cd3caff6d49287b56c8168db0f6a174f79a621b87fc1d26d6f65ee12574b"
+      }
+    }
+  ],
+  "predicateType": "https://slsa.dev/provenance/v1",
+  "predicate": {
+    "buildDefinition": {
+      "buildType": "https://slsa.dev/test-fixture/raw-subject-binding/v1",
+      "externalParameters": {},
+      "resolvedDependencies": []
+    },
+    "runDetails": {
+      "builder": {
+        "id": "depone-local-fixture"
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "payloadType": "application/vnd.in-toto+json",
+  "payload": "e30=",
+  "signatures": [
+    {
+      "keyid": "unverified-fixture-key",
+      "sig": "unverified-fixture-signature"
+    }
+  ]
+}

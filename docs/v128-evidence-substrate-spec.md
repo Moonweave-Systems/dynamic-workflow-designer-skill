@@ -96,7 +96,9 @@ capture manifest (A1, hash-bound)            paired/dogfood evidence report
    captured by any harness, not only its own capture step. Ingest re-hashes
    present subject artifacts from disk and treats a present digest mismatch as
    `blocked`, an absent subject artifact as `inconclusive`, and full digest
-   agreement across at least one verified subject as `pass`.
+   agreement across at least one verified subject as `pass`. External in-toto
+   subjects use raw file-byte SHA-256 by default; Depone-native JSON subjects can
+   opt into canonical JSON hashing through `--artifact name=path:json`.
 
 ## 5. Safety and verification gates
 
@@ -113,6 +115,9 @@ capture manifest (A1, hash-bound)            paired/dogfood evidence report
 - Claimed DSSE signatures are not trusted in V128. A non-empty `signatures`
   array is `blocked` as `unverifiable-signature`; an empty array remains
   `unsigned-content-addressed`.
+- Foreign `predicateType` values are accepted for subject-binding verification
+  and reported with `predicate_recognized: false`. Depone does not interpret or
+  validate the foreign predicate semantics in V128.
 
 ## 6. Evaluation fixtures
 
@@ -129,6 +134,10 @@ capture manifest (A1, hash-bound)            paired/dogfood evidence report
   disk yields `inconclusive`;
 - a malformed DSSE envelope or one that claims unverifiable signatures yields
   `blocked` without raising out of the ingest wrapper.
+- a real, third-party SLSA in-toto Statement fixture with absent subject bytes
+  yields `inconclusive` rather than predicate-based blocking;
+- a SLSA-shaped fixture whose subject digest is derived from committed artifact
+  raw bytes yields `pass` while keeping the foreign predicate opaque.
 
 ## 7. Implementation plan
 

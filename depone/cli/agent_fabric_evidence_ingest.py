@@ -9,6 +9,8 @@ from typing import Any
 
 from depone.agent_fabric.evidence_substrate import (
     build_evidence_bundle,
+    DIGEST_MODE_CANONICAL_JSON,
+    DIGEST_MODE_RAW,
     ingest_external_evidence,
 )
 
@@ -30,7 +32,9 @@ def run(args: argparse.Namespace) -> None:
             if statement_arg
             else _load_json_selector(str(dsse_arg), "dsse_envelope")
         )
-        artifact_paths = _parse_artifacts(getattr(args, "artifact", []) or [])
+        artifact_paths, artifact_digest_modes = _parse_artifacts(
+            getattr(args, "artifact", []) or []
+        )
         otel_spans = None
         if getattr(args, "otel_spans", None):
             otel_spans = _load_json_selector(str(args.otel_spans), "otel_spans")
@@ -41,6 +45,7 @@ def run(args: argparse.Namespace) -> None:
     verdict = ingest_external_evidence(
         payload,
         artifact_paths,
+        artifact_digest_modes=artifact_digest_modes,
         otel_spans=otel_spans,
     )
     out_path = Path(str(getattr(args, "out", "evidence-ingest-verdict.json")))
@@ -91,16 +96,25 @@ def _split_selector(spec: str) -> tuple[str, str | None]:
     return spec, None
 
 
-def _parse_artifacts(items: list[str]) -> dict[str, str]:
+def _parse_artifacts(items: list[str]) -> tuple[dict[str, str], dict[str, str]]:
     artifacts: dict[str, str] = {}
+    digest_modes: dict[str, str] = {}
     for item in items:
         if "=" not in item:
             raise ValueError(f"--artifact must be name=path: {item}")
         name, path_text = item.split("=", 1)
         if not name or not path_text:
             raise ValueError(f"--artifact must be name=path: {item}")
+        mode = DIGEST_MODE_RAW
+        if path_text.endswith(":raw"):
+            path_text = path_text[:-4]
+            mode = DIGEST_MODE_RAW
+        elif path_text.endswith(":json"):
+            path_text = path_text[:-5]
+            mode = DIGEST_MODE_CANONICAL_JSON
         artifacts[name] = path_text
-    return artifacts
+        digest_modes[name] = mode
+    return artifacts, digest_modes
 
 
 def _self_test() -> None:
@@ -126,10 +140,16 @@ def _self_test() -> None:
             "depone-capture-manifest": str(manifest_path),
             "observer_capture": str(observer_path),
         }
+        artifact_digest_modes = {
+            "source_fixture": DIGEST_MODE_CANONICAL_JSON,
+            "depone-capture-manifest": DIGEST_MODE_CANONICAL_JSON,
+            "observer_capture": DIGEST_MODE_CANONICAL_JSON,
+        }
 
         pass_verdict = ingest_external_evidence(
             bundle["dsse_envelope"],
             artifact_paths,
+            artifact_digest_modes=artifact_digest_modes,
             otel_spans=bundle["otel_spans"],
         )
         if pass_verdict["decision"] != "pass":
@@ -138,6 +158,7 @@ def _self_test() -> None:
         missing = ingest_external_evidence(
             bundle["dsse_envelope"],
             {"source_fixture": artifact_paths["source_fixture"]},
+            artifact_digest_modes={"source_fixture": DIGEST_MODE_CANONICAL_JSON},
         )
         if missing["decision"] != "inconclusive":
             raise AssertionError("missing subjects should be inconclusive")
@@ -146,13 +167,21 @@ def _self_test() -> None:
         tampered_path.write_text('{"tampered": true}\n', encoding="utf-8")
         tampered_paths = dict(artifact_paths)
         tampered_paths["source_fixture"] = str(tampered_path)
-        tampered = ingest_external_evidence(bundle["dsse_envelope"], tampered_paths)
+        tampered = ingest_external_evidence(
+            bundle["dsse_envelope"],
+            tampered_paths,
+            artifact_digest_modes=artifact_digest_modes,
+        )
         if tampered["decision"] != "blocked":
             raise AssertionError("present digest mismatch should be blocked")
 
         signed = dict(bundle["dsse_envelope"])
         signed["signatures"] = [{"keyid": "unverified", "sig": "claim"}]
-        signed_verdict = ingest_external_evidence(signed, artifact_paths)
+        signed_verdict = ingest_external_evidence(
+            signed,
+            artifact_paths,
+            artifact_digest_modes=artifact_digest_modes,
+        )
         if signed_verdict["decision"] != "blocked":
             raise AssertionError("unverifiable signatures should be blocked")
 
@@ -161,15 +190,53 @@ def _self_test() -> None:
             "payload": "!!",
             "signatures": [],
         }
-        malformed_verdict = ingest_external_evidence(malformed, artifact_paths)
+        malformed_verdict = ingest_external_evidence(
+            malformed,
+            artifact_paths,
+            artifact_digest_modes=artifact_digest_modes,
+        )
         if malformed_verdict["decision"] != "blocked":
             raise AssertionError("malformed DSSE should be blocked")
 
         bad_spans = ingest_external_evidence(
             bundle["dsse_envelope"],
             artifact_paths,
+            artifact_digest_modes=artifact_digest_modes,
             otel_spans=[{"trace_id": "trace"}],
         )
         if bad_spans["decision"] == "pass":
             raise AssertionError("OTel structural errors must not pass")
+
+    external_dir = Path("depone/fixtures/agent_fabric/external")
+    foreign_statement = json.loads(
+        (external_dir / "external_intoto_statement_real.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    foreign_missing = ingest_external_evidence(foreign_statement, {})
+    if foreign_missing["decision"] != "inconclusive":
+        raise AssertionError("foreign statement with absent artifact is inconclusive")
+    if foreign_missing.get("predicate_recognized") is not False:
+        raise AssertionError("foreign predicate must remain unrecognized")
+
+    bound_statement = json.loads(
+        (external_dir / "external_slsa_statement_bound.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    bound_pass = ingest_external_evidence(
+        bound_statement,
+        {"external_artifact.bin": str(external_dir / "external_artifact.bin")},
+    )
+    if bound_pass["decision"] != "pass":
+        raise AssertionError("foreign raw-byte subject should pass")
+
+    signed_fixture = json.loads(
+        (external_dir / "external_signed_dsse_nonempty.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    signed_external = ingest_external_evidence(signed_fixture, {})
+    if signed_external.get("signing_status") != "unverifiable-signature":
+        raise AssertionError("non-empty external signatures are unverifiable")
     print("depone agent-fabric-evidence-ingest --self-test: pass")

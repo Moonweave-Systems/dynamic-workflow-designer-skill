@@ -7,6 +7,7 @@ upgrade assurance and it does not claim signatures when ``signatures`` is empty.
 from __future__ import annotations
 
 import base64
+import hashlib
 import json
 from pathlib import Path
 from typing import Any
@@ -15,9 +16,12 @@ from depone.agent_fabric.capture_bridge import validate_capture_manifest
 from depone.agent_fabric.claim_gate import canonical_hash
 
 INTOTO_STATEMENT_TYPE = "https://in-toto.io/Statement/v1"
+INTOTO_STATEMENT_TYPE_V01 = "https://in-toto.io/Statement/v0.1"
 DEPONE_PREDICATE_TYPE = "https://depone.dev/attestations/evidence/v1"
 DSSE_PAYLOAD_TYPE = "application/vnd.in-toto+json"
 SPAN_SCHEMA_VERSION = "1.0"
+DIGEST_MODE_RAW = "raw"
+DIGEST_MODE_CANONICAL_JSON = "canonical-json"
 
 
 def _canonical_json(value: Any) -> str:
@@ -129,8 +133,9 @@ def _subject_names(statement: dict[str, Any]) -> list[str]:
 def resolve_present_artifact_digests(
     subject_names: list[str],
     artifact_paths: dict[str, str],
+    artifact_digest_modes: dict[str, str] | None = None,
 ) -> dict[str, str]:
-    """Recompute subject digests from present on-disk JSON artifacts."""
+    """Recompute subject digests from present on-disk artifacts."""
 
     digests: dict[str, str] = {}
     for name in subject_names:
@@ -140,11 +145,15 @@ def resolve_present_artifact_digests(
         path = Path(path_text)
         if not path.exists() or not path.is_file():
             continue
+        mode = (artifact_digest_modes or {}).get(name, DIGEST_MODE_RAW)
         try:
-            value = json.loads(path.read_text(encoding="utf-8"))
+            if mode == DIGEST_MODE_RAW:
+                digests[name] = hashlib.sha256(path.read_bytes()).hexdigest()
+            elif mode == DIGEST_MODE_CANONICAL_JSON:
+                value = json.loads(path.read_text(encoding="utf-8"))
+                digests[name] = canonical_hash(value)
         except (OSError, UnicodeDecodeError, json.JSONDecodeError):
             continue
-        digests[name] = canonical_hash(value)
     return digests
 
 
@@ -169,12 +178,18 @@ def ingest_external_statement(
     subject_results: list[dict[str, Any]] = []
     blocked = False
 
-    if statement.get("_type") != INTOTO_STATEMENT_TYPE:
-        reasons.append("statement._type is not in-toto Statement v1")
+    statement_type = statement.get("_type")
+    predicate_type = statement.get("predicateType")
+    predicate_recognized = predicate_type == DEPONE_PREDICATE_TYPE
+
+    if statement_type not in (INTOTO_STATEMENT_TYPE, INTOTO_STATEMENT_TYPE_V01):
+        reasons.append("statement._type is not a supported in-toto Statement type")
         blocked = True
-    if statement.get("predicateType") != DEPONE_PREDICATE_TYPE:
-        reasons.append("statement.predicateType is not Depone evidence v1")
+    if not isinstance(predicate_type, str) or not predicate_type:
+        reasons.append("statement.predicateType must be a non-empty string")
         blocked = True
+    elif not predicate_recognized:
+        reasons.append("foreign predicate not interpreted")
 
     subjects = statement.get("subject")
     if not isinstance(subjects, list):
@@ -183,6 +198,8 @@ def ingest_external_statement(
             "decision": "blocked",
             "subject_results": subject_results,
             "reasons": reasons,
+            "predicate_type": predicate_type,
+            "predicate_recognized": predicate_recognized,
         }
     if not subjects:
         reasons.append("statement has no subjects to verify")
@@ -254,6 +271,8 @@ def ingest_external_statement(
         "subject_results": subject_results,
         "reasons": reasons,
         "verified_subject_count": verified_count,
+        "predicate_type": predicate_type,
+        "predicate_recognized": predicate_recognized,
     }
 
 
@@ -349,6 +368,7 @@ def ingest_external_evidence(
     payload: dict[str, Any],
     artifact_paths: dict[str, str],
     *,
+    artifact_digest_modes: dict[str, str] | None = None,
     otel_spans: Any = None,
 ) -> dict[str, Any]:
     """Ingest external evidence as untrusted input and fail closed."""
@@ -356,17 +376,22 @@ def ingest_external_evidence(
     if not isinstance(payload, dict):
         verdict = _blocked_verdict("external evidence payload must be an object")
     else:
-        statement = payload if payload.get("_type") == INTOTO_STATEMENT_TYPE else None
+        statement = (
+            payload
+            if payload.get("_type") in (INTOTO_STATEMENT_TYPE, INTOTO_STATEMENT_TYPE_V01)
+            else None
+        )
         if statement is None and "payloadType" in payload:
             statement = _safe_decoded_dsse_statement(payload)
         subject_names = _subject_names(statement) if isinstance(statement, dict) else []
         present_digests = resolve_present_artifact_digests(
             subject_names,
             artifact_paths,
+            artifact_digest_modes,
         )
         if "payloadType" in payload:
             verdict = ingest_dsse_envelope(payload, present_digests)
-        elif payload.get("_type") == INTOTO_STATEMENT_TYPE:
+        elif payload.get("_type") in (INTOTO_STATEMENT_TYPE, INTOTO_STATEMENT_TYPE_V01):
             verdict = ingest_external_statement(payload, present_digests)
         else:
             verdict = _blocked_verdict(

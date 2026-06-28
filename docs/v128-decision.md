@@ -25,6 +25,8 @@ Implemented substrate:
   - `depone agent-fabric-evidence-ingest`
   - accepts a bare in-toto Statement or DSSE envelope plus optional OTel spans
   - re-hashes present subject artifacts from disk via `--artifact name=path`
+  - defaults to raw file-byte SHA-256 for vendor-neutral in-toto subjects
+  - supports `--artifact name=path:json` for Depone-native canonical JSON hashes
   - returns `pass`, `inconclusive`, or `blocked`
 
 Boundary:
@@ -38,6 +40,9 @@ Boundary:
   DSSE, wrong statement types, or unverifiable claimed signatures.
 - External statement ingest is `inconclusive` when a subject artifact is absent
   from disk or there are no subjects to verify.
+- Foreign predicates are accepted for subject-binding checks and reported as
+  `predicate_recognized: false`; Depone does not interpret SLSA predicate
+  semantics or raise assurance from them in V128.
 
 Evidence:
 
@@ -45,8 +50,8 @@ Evidence:
   digest round-trip, unsigned DSSE decoding, OTel span shape, tamper rejection,
   and external statement mismatch handling.
 - `depone agent-fabric-evidence-ingest --self-test` validates the real
-  `out/v128-real-dogfood/evidence-substrate-bundle.json` against re-hashed
-  on-disk subject artifacts, missing artifacts, tamper, malformed DSSE,
+  non-Depone SLSA fixture, raw-byte subject verification, Depone-native JSON
+  subject verification, missing artifacts, tamper, malformed DSSE,
   unverifiable signatures, and OTel structural errors.
 - A V126 governed capture can be exported to
   `out/v128-evidence-substrate/bundle.json`.
