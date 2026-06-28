@@ -2259,6 +2259,8 @@ def require_smoke_commands_pass() -> None:
 
 def require_changed_surface_commands_pass() -> None:
     commands = [
+        [sys.executable, "scripts/run_tests.py", "--self-test"],
+        [sys.executable, "scripts/run_tests.py"],
         [sys.executable, "scripts/dwm_readme_graph_visibility.py", "--self-test"],
         [sys.executable, "scripts/dwm_readme_graph_visibility.py", "--manifest", "fixtures/v79/manifest.json", "--out", "out/readme-graph-visibility/v79-final"],
         [sys.executable, "scripts/dwm_readme_graph_visibility.py", "audit", "--readme", "README.md", "--timing", "out/graph-timing/v78-canonical/graph-timing.json", "--out", "out/readme-graph-visibility/v79-canonical"],
