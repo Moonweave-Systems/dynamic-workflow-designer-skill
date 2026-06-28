@@ -17,8 +17,10 @@ from depone.cli import (
     agent_fabric_paired_evidence,
     agent_fabric_paired_run,
     agent_fabric_seal,
+    agent_fabric_sign,
     agent_fabric_smoke,
     agent_fabric_verify_seal,
+    agent_fabric_verify_signature,
     demo,
     design,
     validate,
@@ -478,6 +480,42 @@ def main() -> None:
         "--self-test", action="store_true", help="Run self-test and exit"
     )
 
+    # agent-fabric-sign
+    sign_parser = sub.add_parser(
+        "agent-fabric-sign",
+        help="Sign a DSSE evidence bundle with an operator Ed25519 key via openssl",
+    )
+    sign_parser.add_argument("--bundle", default="", help="Evidence bundle JSON")
+    sign_parser.add_argument("--private-key", default="", help="Ed25519 private key PEM")
+    sign_parser.add_argument(
+        "--key-id",
+        default="",
+        help="Non-secret key label to embed in the DSSE signature",
+    )
+    sign_parser.add_argument("--out", default="", help="Output signed bundle JSON")
+    sign_parser.add_argument(
+        "--self-test", action="store_true", help="Run self-test and exit"
+    )
+
+    # agent-fabric-verify-signature
+    verify_signature_parser = sub.add_parser(
+        "agent-fabric-verify-signature",
+        help="Verify a DSSE evidence bundle signature with an Ed25519 public key",
+    )
+    verify_signature_parser.add_argument(
+        "--bundle",
+        default="",
+        help="Signed evidence bundle JSON",
+    )
+    verify_signature_parser.add_argument(
+        "--public-key",
+        default="",
+        help="Ed25519 public key PEM",
+    )
+    verify_signature_parser.add_argument(
+        "--self-test", action="store_true", help="Run self-test and exit"
+    )
+
     # agent-fabric-evidence-substrate
     evidence_substrate_parser = sub.add_parser(
         "agent-fabric-evidence-substrate",
@@ -611,6 +649,10 @@ def main() -> None:
         agent_fabric_seal.run(args)
     elif args.command == "agent-fabric-verify-seal":
         agent_fabric_verify_seal.run(args)
+    elif args.command == "agent-fabric-sign":
+        agent_fabric_sign.run(args)
+    elif args.command == "agent-fabric-verify-signature":
+        agent_fabric_verify_signature.run(args)
     elif args.command == "agent-fabric-evidence-substrate":
         agent_fabric_evidence_substrate.run(args)
     elif args.command == "agent-fabric-evidence-ingest":

@@ -58,6 +58,7 @@ evidence gates.
 | `depone validate-contracts` | Validate Agent Fabric contracts and fixtures |
 | `depone mcp` | Serve the same evidence/verify capabilities over MCP stdio |
 | `depone agent-fabric-observe` | Capture and optionally HMAC-seal observer evidence; still A1 |
+| `depone agent-fabric-sign` | Ed25519-sign DSSE bundles via openssl operator keys |
 | `depone agent-fabric-smoke` | Export the source-only Agent Fabric lifecycle smoke summary |
 | `depone agent-fabric-harness-snapshot` | Export source-only harness capability snapshots |
 | `depone agent-fabric-adapter-smoke` | Export source-only adapter smoke reports |
@@ -112,7 +113,6 @@ database migration, production deployment, and history rewrite require explicit
 gates with a safe default.
 
 ## What Is Still Honest
-
 Depone claims **no direct-agent superiority** — it is a design + verification layer, not an agent runtime.
 
 It does not claim upward performance.

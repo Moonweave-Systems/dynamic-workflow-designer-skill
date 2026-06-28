@@ -2297,6 +2297,7 @@ def require_changed_surface_commands_pass() -> None:
         [sys.executable, "-m", "depone", "mcp", "--self-test"],
         [sys.executable, "-m", "depone", "agent-fabric-observe", "--self-test"],
         [sys.executable, "-m", "depone", "agent-fabric-verify-seal", "--self-test"],
+        [sys.executable, "-m", "depone", "agent-fabric-verify-signature", "--self-test"],
         [sys.executable, "scripts/dwm_workflow_activation.py", "--self-test"],
         [sys.executable, "scripts/dwm_workflow_activation.py", "--manifest", "fixtures/v90/manifest.json", "--out", "out/workflow-activations/v90-final"],
         [
