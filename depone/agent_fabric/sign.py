@@ -167,6 +167,33 @@ def verify_dsse_envelope(envelope: dict[str, Any], public_key_path: str) -> bool
     return False
 
 
+def verify_signed_bundle(bundle: dict[str, Any], public_key_path: str) -> bool:
+    """Verify a signed evidence bundle, returning False on any failure.
+
+    The DSSE signature must verify AND, if the bundle carries a plaintext
+    ``statement``, it must equal the signed payload — otherwise a consumer
+    reading ``bundle['statement']`` could be fooled by an unsigned duplicate the
+    signature does not cover.
+    """
+
+    if not isinstance(bundle, dict):
+        return False
+    envelope = bundle.get("dsse_envelope")
+    if not isinstance(envelope, dict):
+        return False
+    if not verify_dsse_envelope(envelope, public_key_path):
+        return False
+    if "statement" in bundle:
+        try:
+            _payload_type, payload = _decode_envelope_payload(envelope)
+            signed_statement = json.loads(payload)
+        except Exception:
+            return False
+        if bundle["statement"] != signed_statement:
+            return False
+    return True
+
+
 def _decode_envelope_payload(envelope: dict[str, Any]) -> tuple[str, bytes]:
     if not isinstance(envelope, dict):
         raise DsseSigningError(ERR_DSSE_SIGN_FAILED, "DSSE envelope must be an object")

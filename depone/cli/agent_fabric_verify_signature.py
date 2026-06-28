@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from depone.agent_fabric.sign import _self_test as sign_self_test
-from depone.agent_fabric.sign import verify_dsse_envelope
+from depone.agent_fabric.sign import verify_signed_bundle
 
 
 def run(args: argparse.Namespace) -> None:
@@ -29,9 +29,7 @@ def run(args: argparse.Namespace) -> None:
     verified = False
     try:
         bundle = _read_json(Path(bundle_path))
-        envelope = bundle.get("dsse_envelope")
-        if isinstance(envelope, dict):
-            verified = verify_dsse_envelope(envelope, public_key_path)
+        verified = verify_signed_bundle(bundle, public_key_path)
     except Exception:
         verified = False
 

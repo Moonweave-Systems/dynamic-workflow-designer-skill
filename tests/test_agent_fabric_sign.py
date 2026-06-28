@@ -20,6 +20,7 @@ from depone.agent_fabric.sign import (
     openssl_path,
     sign_dsse_envelope,
     verify_dsse_envelope,
+    verify_signed_bundle,
 )
 
 
@@ -56,6 +57,27 @@ class AgentFabricSignTest(unittest.TestCase):
             )
             self.assertTrue(verify_dsse_envelope(signed, str(public_key)))
             self.assertEqual(len(signed["signatures"]), 1)
+
+    def test_verify_signed_bundle_rejects_tampered_plaintext_statement(self) -> None:
+        self._require_openssl()
+        bundle = self._bundle()
+        with tempfile.TemporaryDirectory() as temp_text:
+            temp_dir = Path(temp_text)
+            private_key, public_key = _generate_ed25519_keypair(temp_dir)
+            signed_bundle = dict(bundle)
+            signed_bundle["dsse_envelope"] = sign_dsse_envelope(
+                bundle["dsse_envelope"], str(private_key), key_id="operator-test-key"
+            )
+            self.assertTrue(verify_signed_bundle(signed_bundle, str(public_key)))
+
+            # Tampering the UNSIGNED plaintext statement must fail the bundle even
+            # though the DSSE signature over the payload still verifies on its own.
+            tampered = json.loads(json.dumps(signed_bundle))
+            tampered["statement"]["predicateType"] = "https://evil.example/v1"
+            self.assertTrue(
+                verify_dsse_envelope(tampered["dsse_envelope"], str(public_key))
+            )
+            self.assertFalse(verify_signed_bundle(tampered, str(public_key)))
 
     def test_tamper_wrong_key_and_malformed_signatures_fail_closed(self) -> None:
         self._require_openssl()
