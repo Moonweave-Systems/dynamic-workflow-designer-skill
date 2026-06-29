@@ -50,8 +50,8 @@ A2 privilege isolation and A3 signing).
   Sigstore signing remain deferred for environment reasons.
 - No fixtures were edited; the field is optional and absence is treated as
   genesis, so all pre-V129 captures stay valid.
-- `verify_capture_chain` is a library + self-test surface in V129; it is not yet
-  wired into the `evidence-run` product loop.
+- `verify_capture_chain` is exposed as the `evidence-chain` CLI command; wiring
+  it into the `evidence-run` product loop remains a separate follow-on.
 
 ## Evidence
 

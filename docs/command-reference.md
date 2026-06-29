@@ -21,6 +21,7 @@ python -m depone verify plan.json --evidence ./evidence --out report.json --oper
 python -m depone observe --runner-sandbox ./runner-worktree --source-fixture-hash <sha256> --out ../observer/observer-capture.json --log ../observer/verify-log.json -- python -m unittest
 python -m depone evidence-substrate --capture-manifest capture-manifest.json --out evidence-bundle.json --json
 python -m depone evidence-ingest --dsse evidence-bundle.json:dsse_envelope --artifact depone-capture-manifest=capture-manifest.json:json --out ingest-verdict.json --json
+python -m depone evidence-chain --capture capture-0.json --capture capture-1.json --out evidence-chain-verdict.json --json
 python -m depone mcp
 python -m depone demo --out out/depone-quickstart --json
 ```

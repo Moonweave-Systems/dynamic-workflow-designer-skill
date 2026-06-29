@@ -10,6 +10,7 @@ from depone.cli import (
     agent_fabric_claim_gate,
     agent_fabric_controlled_capture,
     agent_fabric_dogfood_evidence,
+    agent_fabric_evidence_chain,
     agent_fabric_evidence_ingest,
     agent_fabric_evidence_substrate,
     agent_fabric_harness_snapshot,
@@ -159,6 +160,24 @@ def _add_evidence_ingest_args(parser: argparse.ArgumentParser) -> None:
         "--out",
         default="evidence-ingest-verdict.json",
         help="Output evidence ingest verdict JSON",
+    )
+    parser.add_argument(
+        "--self-test", action="store_true", help="Run self-test and exit"
+    )
+    _add_json_arg(parser)
+
+
+def _add_evidence_chain_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--capture",
+        action="append",
+        default=[],
+        help="Capture manifest JSON path; repeat in append-only chain order",
+    )
+    parser.add_argument(
+        "--out",
+        default="evidence-chain-verdict.json",
+        help="Output evidence chain verdict JSON",
     )
     parser.add_argument(
         "--self-test", action="store_true", help="Run self-test and exit"
@@ -718,6 +737,20 @@ def main() -> None:
     )
     _add_evidence_ingest_args(evidence_ingest_alias_parser)
 
+    # agent-fabric-evidence-chain
+    evidence_chain_parser = sub.add_parser(
+        "agent-fabric-evidence-chain",
+        help="Verify an ordered append-only capture manifest chain",
+    )
+    _add_evidence_chain_args(evidence_chain_parser)
+
+    # evidence-chain (agent-facing alias)
+    evidence_chain_alias_parser = sub.add_parser(
+        "evidence-chain",
+        help="Verify an ordered append-only capture manifest chain",
+    )
+    _add_evidence_chain_args(evidence_chain_alias_parser)
+
     # evidence-run
     evidence_run_parser = sub.add_parser(
         "evidence-run",
@@ -809,6 +842,8 @@ def main() -> None:
             agent_fabric_evidence_substrate.run(args)
         elif args.command in ("agent-fabric-evidence-ingest", "evidence-ingest"):
             agent_fabric_evidence_ingest.run(args)
+        elif args.command in ("agent-fabric-evidence-chain", "evidence-chain"):
+            agent_fabric_evidence_chain.run(args)
         elif args.command == "evidence-run":
             evidence_run.run(args)
         elif args.command == "agent-fabric-claim-gate":

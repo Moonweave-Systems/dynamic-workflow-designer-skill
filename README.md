@@ -79,6 +79,7 @@ flowchart LR
 | `depone observe` | Capture observer-owned evidence for a runner sandbox |
 | `depone evidence-substrate` | Emit in-toto/DSSE and OTel GenAI-shaped evidence |
 | `depone evidence-ingest` | Verify external evidence subject digests as untrusted input |
+| `depone evidence-chain` | Verify an ordered append-only capture manifest chain |
 | `depone evidence-run` | Run the common observe -> substrate -> ingest -> verify loop |
 | `depone mcp` | Serve the same evidence/verify capabilities over MCP stdio |
 | `depone demo` | Run a complete design -> compile -> verify cycle |
