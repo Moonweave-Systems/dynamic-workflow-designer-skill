@@ -39,6 +39,8 @@ Fail-closed cases:
 - The signed bundle does not verify with the supplied public key.
 - A consumer tampers with the unsigned top-level statement or assurance fields
   that mirror the signed statement payload.
+- A consumer tampers with the top-level operator-key signing metadata into a
+  keyless or transparency-logged claim.
 
 ## Implementation Boundary
 

@@ -114,6 +114,20 @@ def sign_dsse_envelope(
     return signed
 
 
+def operator_key_signature_boundary() -> dict[str, Any]:
+    return {
+        "scheme": "DSSE-Ed25519-openssl-cli",
+        "operator_key": True,
+        "public_verifiable": True,
+        "keyless_identity": False,
+        "transparency_logged": False,
+        "note": (
+            "Trust is rooted in the operator-held key and distributed public "
+            "key; this is not Fulcio keyless identity or Rekor logging."
+        ),
+    }
+
+
 def sign_evidence_bundle(
     bundle: dict[str, Any],
     private_key_path: str,
@@ -130,17 +144,7 @@ def sign_evidence_bundle(
         key_id=key_id,
     )
     signed_bundle["signing_status"] = SIGNING_STATUS_OPERATOR_KEY
-    signed_bundle["signature_boundary"] = {
-        "scheme": "DSSE-Ed25519-openssl-cli",
-        "operator_key": True,
-        "public_verifiable": True,
-        "keyless_identity": False,
-        "transparency_logged": False,
-        "note": (
-            "Trust is rooted in the operator-held key and distributed public "
-            "key; this is not Fulcio keyless identity or Rekor logging."
-        ),
-    }
+    signed_bundle["signature_boundary"] = operator_key_signature_boundary()
     return signed_bundle
 
 
@@ -209,13 +213,11 @@ def verify_signed_bundle(bundle: dict[str, Any], public_key_path: str) -> bool:
     ``boundary`` (for example ``signed`` and ``raises_assurance``) against the
     signed statement predicate.
 
-    Residual, by design of a statement-only signature: fields that describe the
-    signing act itself (``signing_status``, ``signature_boundary``) are written
-    after — and therefore cannot live inside — the signed payload, and
-    ``otel_spans`` plus any ``boundary`` key with no counterpart in the signed
-    predicate (such as ``approves_public_claim``) are likewise not covered.
-    Consumers must not treat those as signed; closing that needs them moved into
-    the signed predicate or the whole bundle signed (a later milestone).
+    The signature metadata is top-level by design, so the verifier also checks it
+    against the exact operator-key profile emitted by ``sign_evidence_bundle``.
+    Without this check, a valid operator-key signature could be repackaged with
+    unsigned keyless or transparency-log claims and still print ``verified:
+    true``.
     """
 
     if not isinstance(bundle, dict):
@@ -232,6 +234,10 @@ def verify_signed_bundle(bundle: dict[str, Any], public_key_path: str) -> bool:
     except Exception:
         return False
     if not isinstance(signed_statement, dict):
+        return False
+    if bundle.get("signing_status") != SIGNING_STATUS_OPERATOR_KEY:
+        return False
+    if bundle.get("signature_boundary") != operator_key_signature_boundary():
         return False
 
     if "statement" in bundle and bundle["statement"] != signed_statement:
@@ -318,12 +324,19 @@ def _self_test() -> None:
         _ = wrong_private
         if verify_dsse_envelope(signed, str(wrong_public)):
             raise AssertionError("wrong public key should not verify")
-        signed_bundle = dict(bundle)
-        signed_bundle["dsse_envelope"] = signed
+        signed_bundle = sign_evidence_bundle(
+            bundle,
+            str(private_key),
+            key_id="operator-test-key",
+        )
         if not verify_signed_bundle(signed_bundle, str(public_key)):
             raise AssertionError("honest signed bundle should verify")
         upgraded = json.loads(json.dumps(signed_bundle))
         upgraded["assurance"] = "A3-keyless-signed"
         if verify_signed_bundle(upgraded, str(public_key)):
             raise AssertionError("an upgraded top-level assurance must not verify")
+        upgraded_boundary = json.loads(json.dumps(signed_bundle))
+        upgraded_boundary["signature_boundary"]["keyless_identity"] = True
+        if verify_signed_bundle(upgraded_boundary, str(public_key)):
+            raise AssertionError("upgraded signature boundary must not verify")
     print("depone agent-fabric-sign --self-test: pass")

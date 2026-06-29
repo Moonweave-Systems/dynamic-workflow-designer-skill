@@ -19,6 +19,7 @@ from depone.agent_fabric.sign import (
     openssl_error_record,
     openssl_path,
     sign_dsse_envelope,
+    sign_evidence_bundle,
     verify_dsse_envelope,
     verify_signed_bundle,
 )
@@ -64,9 +65,8 @@ class AgentFabricSignTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_text:
             temp_dir = Path(temp_text)
             private_key, public_key = _generate_ed25519_keypair(temp_dir)
-            signed_bundle = dict(bundle)
-            signed_bundle["dsse_envelope"] = sign_dsse_envelope(
-                bundle["dsse_envelope"], str(private_key), key_id="operator-test-key"
+            signed_bundle = sign_evidence_bundle(
+                bundle, str(private_key), key_id="operator-test-key"
             )
             self.assertTrue(verify_signed_bundle(signed_bundle, str(public_key)))
 
@@ -89,9 +89,8 @@ class AgentFabricSignTest(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp_text:
             temp_dir = Path(temp_text)
             private_key, public_key = _generate_ed25519_keypair(temp_dir)
-            signed_bundle = dict(bundle)
-            signed_bundle["dsse_envelope"] = sign_dsse_envelope(
-                bundle["dsse_envelope"], str(private_key), key_id="operator-test-key"
+            signed_bundle = sign_evidence_bundle(
+                bundle, str(private_key), key_id="operator-test-key"
             )
             self.assertTrue(verify_signed_bundle(signed_bundle, str(public_key)))
 
@@ -102,6 +101,26 @@ class AgentFabricSignTest(unittest.TestCase):
             flipped = json.loads(json.dumps(signed_bundle))
             flipped["boundary"]["signed"] = True
             self.assertFalse(verify_signed_bundle(flipped, str(public_key)))
+
+    def test_verify_signed_bundle_rejects_tampered_signature_metadata(self) -> None:
+        self._require_openssl()
+        bundle = self._bundle()
+        with tempfile.TemporaryDirectory() as temp_text:
+            temp_dir = Path(temp_text)
+            private_key, public_key = _generate_ed25519_keypair(temp_dir)
+            signed_bundle = sign_evidence_bundle(
+                bundle, str(private_key), key_id="operator-test-key"
+            )
+            self.assertTrue(verify_signed_bundle(signed_bundle, str(public_key)))
+
+            upgraded_status = json.loads(json.dumps(signed_bundle))
+            upgraded_status["signing_status"] = "keyless-fulcio-rekor"
+            self.assertFalse(verify_signed_bundle(upgraded_status, str(public_key)))
+
+            upgraded_boundary = json.loads(json.dumps(signed_bundle))
+            upgraded_boundary["signature_boundary"]["keyless_identity"] = True
+            upgraded_boundary["signature_boundary"]["transparency_logged"] = True
+            self.assertFalse(verify_signed_bundle(upgraded_boundary, str(public_key)))
 
     def test_tamper_wrong_key_and_malformed_signatures_fail_closed(self) -> None:
         self._require_openssl()

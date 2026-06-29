@@ -471,13 +471,13 @@ def _maybe_write_signed_bundle(
         )
     except DsseSigningError as exc:
         raise ValueError(exc.message) from exc
-    signed_path = out_dir / "signed-evidence-bundle.json"
-    _write_json(signed_path, signed_bundle)
     verified = None
     if public_key_path:
         verified = verify_signed_bundle(signed_bundle, public_key_path)
         if verified is not True:
             raise ValueError("signed evidence bundle did not verify with --sign-public-key")
+    signed_path = out_dir / "signed-evidence-bundle.json"
+    _write_json(signed_path, signed_bundle)
     return {
         "decision": "pass",
         "out": str(signed_path),

@@ -9,12 +9,13 @@ import unittest
 from pathlib import Path
 
 from depone._resources import resource_text
+from depone.agent_fabric.evidence_substrate import build_evidence_bundle
 from depone.agent_fabric.sign import (
     _generate_ed25519_keypair,
     openssl_path,
     verify_signed_bundle,
 )
-from depone.cli.evidence_run import run_evidence_loop
+from depone.cli.evidence_run import _maybe_write_signed_bundle, run_evidence_loop
 
 
 def _run_git(repo: Path, args: list[str]) -> None:
@@ -90,6 +91,34 @@ class EvidenceRunSigningTests(unittest.TestCase):
                 "signed-ed25519-operator-key",
             )
             self.assertIs(payload["signed_evidence_bundle"]["verified"], True)
+
+    def test_signed_bundle_is_not_written_when_public_key_verify_fails(self) -> None:
+        if openssl_path() is None:
+            self.skipTest("openssl executable is not on PATH")
+
+        with tempfile.TemporaryDirectory(prefix="depone-evidence-run-signing-") as temp_text:
+            root = Path(temp_text)
+            private_key, _public_key = _generate_ed25519_keypair(root)
+            wrong_dir = root / "wrong"
+            wrong_dir.mkdir()
+            _wrong_private, wrong_public = _generate_ed25519_keypair(wrong_dir)
+            capture = json.loads(
+                resource_text(
+                    "fixtures/agent_fabric/capture_manifest_v126_governed_utf8.json"
+                )
+            )
+            bundle = build_evidence_bundle(capture)
+
+            with self.assertRaises(ValueError):
+                _maybe_write_signed_bundle(
+                    root,
+                    bundle,
+                    private_key_path=str(private_key),
+                    key_id="operator-test-key",
+                    public_key_path=str(wrong_public),
+                )
+
+            self.assertFalse((root / "signed-evidence-bundle.json").exists())
 
 
 if __name__ == "__main__":
