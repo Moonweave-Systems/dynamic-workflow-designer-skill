@@ -8,10 +8,12 @@ Date: 2026-06-29
 
 ## Summary
 
-Depone produced an `A2-isolated-observed` capture from host-side observer facts
-about a Docker runner container. The runner container wrote the sandbox change
-through `/srv/depone/sandbox:/work`; the observer output directory was not mounted
-into the container.
+Depone produced an `A2-isolated-observed` capture from an observer-launched
+Docker runner container. The runner container wrote the sandbox change through
+`/srv/depone/sandbox:/work`; the observer output directory was not mounted into
+the container. The committed manifest records both the Docker launch receipt in
+`observer_capture.runner_container_launch` and the Docker-inspected isolation
+facts in `isolation.container`.
 
 The machine artifacts are committed under `docs/container-isolated-a2/`:
 
@@ -35,11 +37,13 @@ print("validate errors  :", errs)
 print("isolation_hash OK:", m.get("isolation_hash") == _sha256_json(iso))
 print("boundary reverify:", verify_isolation_boundary(iso).get("boundary"))
 print("model            :", iso.get("model"))
+print("observer launched:", iso.get("container", {}).get("observer_launched"))
 print("MERGE_OK:", (
     m.get("assurance") == "A2-isolated-observed"
     and errs == []
     and verify_isolation_boundary(iso).get("boundary") is True
     and iso.get("model") == "container-boundary-unwritable-observer-dir"
+    and iso.get("container", {}).get("observer_launched") is True
 ))
 PY
 ```
@@ -48,5 +52,6 @@ PY
 
 This is still A2, not A3. It is unsigned content-addressed evidence and does not
 prove keyless identity, transparency-log inclusion, remote attestation, or that
-Depone launched every future runner itself. It records Docker-inspected container
-facts and validates them against the existing A2 manifest rules.
+Depone will launch every future runner itself. It records an observer-launched,
+Docker-inspected container fact set and validates it against the existing A2
+manifest rules.

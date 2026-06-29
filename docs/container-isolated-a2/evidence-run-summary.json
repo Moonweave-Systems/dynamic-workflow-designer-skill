@@ -3,7 +3,7 @@
     "isolation": {
       "boundary": true,
       "container": {
-        "container_id": "c0fbe8af13e0ebd9cbea75a0c3f6caf538e5dbd82729c0e5a6df474a171b0d7a",
+        "container_id": "6919e068d2cb937651fdfec9cb8a03ce947de486701f8ab5da7e981254ba34ed",
         "image": "alpine:3.20",
         "mounts": [
           {
@@ -13,6 +13,7 @@
           }
         ],
         "observer_dir_mounted_rw": false,
+        "observer_launched": true,
         "running": true,
         "runtime": "docker"
       },
@@ -22,7 +23,7 @@
       "reasons": [],
       "runner_uid": 0
     },
-    "note": "A2 isolated observed: runner ran under a different uid and could not write the observer output.",
+    "note": "A2 isolated observed: observer-launched Docker runner was inspected and could not write the observer output.",
     "observer_assurance": "A2-isolated-observed",
     "privilege_isolated": true
   },
@@ -55,7 +56,7 @@
   "observe": {
     "decision": "pass",
     "log": "/home/ubuntu/observer-owned/container-evidence-run/observer-owned/verify-log.json",
-    "observer_capture_hash": "2cec7c429956a291e7775205d22f6422a002cf55e4169ece4c9f9603d597add8",
+    "observer_capture_hash": "d030b9f8d439699ffd558c3cb72fe2bdae949a1815e1c2172f66ebe40ee9276c",
     "out": "/home/ubuntu/observer-owned/container-evidence-run/observer-owned/observer-capture.json",
     "status": "passed"
   },

@@ -212,10 +212,36 @@ def _add_evidence_run_args(parser: argparse.ArgumentParser) -> None:
         "--runner-container-id",
         default="",
         help=(
-            "Docker container id the runner work executed in. Enables container "
-            "A2 only when the observer can inspect the container and its output "
-            "dir is not mounted writable into it. Mutually exclusive with "
-            "--runner-uid."
+            "Docker container id to inspect as externally launched runner context. "
+            "This records container facts but does not by itself raise assurance "
+            "to A2. Mutually exclusive with --runner-uid and observer-launched "
+            "container options."
+        ),
+    )
+    parser.add_argument(
+        "--runner-container-image",
+        default="",
+        help=(
+            "Docker image for an observer-launched runner container. Provide with "
+            "--runner-container-command to bind the inspected container id to the "
+            "runner launch."
+        ),
+    )
+    parser.add_argument(
+        "--runner-container-command",
+        default="",
+        help=(
+            "Shell command to run inside the observer-launched runner container "
+            "with --runner-sandbox mounted at /work."
+        ),
+    )
+    parser.add_argument(
+        "--runner-container-hold-seconds",
+        type=int,
+        default=600,
+        help=(
+            "Seconds to keep the observer-launched runner container alive after "
+            "its command succeeds so the observer can inspect it."
         ),
     )
     parser.add_argument(

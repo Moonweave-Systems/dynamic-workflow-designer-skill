@@ -1,8 +1,11 @@
 from __future__ import annotations
 
 import argparse
+import atexit
 import json
 import os
+import shutil
+import subprocess
 import sys
 import tempfile
 from dataclasses import asdict
@@ -116,6 +119,39 @@ def run_evidence_loop(args: argparse.Namespace) -> dict[str, Any]:
     observer_dir.mkdir(parents=True, exist_ok=True)
     _restrict_observer_dir(observer_dir)
 
+    # Isolation facts are observer-attested. The uid path records the uid the
+    # operator launched. A free-form container id records host-side Docker inspect
+    # facts but cannot raise A2; container A2 requires the observer to launch the
+    # container so the inspected id is bound to the runner command.
+    runner_uid_arg = getattr(args, "runner_uid", None)
+    runner_container_id = str(getattr(args, "runner_container_id", "") or "")
+    runner_container_image = str(getattr(args, "runner_container_image", "") or "")
+    runner_container_command = str(getattr(args, "runner_container_command", "") or "")
+    launched_container: dict[str, Any] | None = None
+    cleanup_registered = False
+    if bool(runner_container_image) != bool(runner_container_command):
+        raise ValueError(
+            "--runner-container-image and --runner-container-command must be provided together"
+        )
+    if runner_uid_arg is not None and (
+        runner_container_id or runner_container_image
+    ):
+        raise ValueError("--runner-uid is mutually exclusive with container isolation options")
+    if runner_container_id and runner_container_image:
+        raise ValueError(
+            "--runner-container-id is mutually exclusive with observer-launched container options"
+        )
+    if runner_container_image:
+        launched_container = _launch_runner_container(
+            runner_sandbox,
+            image=runner_container_image,
+            shell_command=runner_container_command,
+            hold_seconds=int(getattr(args, "runner_container_hold_seconds", 600)),
+        )
+        runner_container_id = str(launched_container["container_id"])
+        atexit.register(_cleanup_runner_container, runner_container_id)
+        cleanup_registered = True
+
     source_fixture = _read_json(source_fixture_path)
     source_fixture_hash = canonical_hash(source_fixture)
     observer_path = observer_dir / "observer-capture.json"
@@ -128,20 +164,17 @@ def run_evidence_loop(args: argparse.Namespace) -> dict[str, Any]:
         log_path=log_path,
         timeout_seconds=int(getattr(args, "timeout_seconds", 120)),
     )
+    if launched_container is not None:
+        capture["runner_container_launch"] = launched_container
     observer_capture_hash = write_observer_capture(observer_path, capture)
 
     allowed_touched_files = list(getattr(args, "allow_touched_file", []) or [])
-    # Isolation facts are observer-attested. The uid path records the uid the
-    # operator launched. The container path records host-side Docker inspect facts.
-    # Missing or unverifiable facts keep the manifest at A1.
-    runner_uid_arg = getattr(args, "runner_uid", None)
-    runner_container_id = str(getattr(args, "runner_container_id", "") or "")
-    if runner_uid_arg is not None and runner_container_id:
-        raise ValueError("--runner-uid and --runner-container-id are mutually exclusive")
     isolation_facts = None
     if runner_container_id:
         isolation_facts = probe_container_isolation_facts(
-            observer_dir, container_id=runner_container_id
+            observer_dir,
+            container_id=runner_container_id,
+            observer_launched=launched_container is not None,
         )
     elif runner_uid_arg is not None:
         isolation_facts = probe_isolation_facts(
@@ -242,15 +275,14 @@ def run_evidence_loop(args: argparse.Namespace) -> dict[str, Any]:
             "observer_assurance": capture_manifest.get("assurance"),
             "privilege_isolated": capture_manifest.get("assurance") == ASSURANCE_A2,
             "isolation": capture_manifest.get("isolation"),
-            "note": (
-                "A2 isolated observed: runner ran under a different uid and could "
-                "not write the observer output."
-                if capture_manifest.get("assurance") == ASSURANCE_A2
-                else "A1 local observed evidence; not A2 privilege isolation."
-            ),
+            "note": _boundary_note(capture_manifest),
         },
     }
     _write_json(out_dir / "evidence-run-summary.json", payload)
+    if launched_container is not None:
+        _cleanup_runner_container(str(launched_container["container_id"]))
+        if cleanup_registered:
+            atexit.unregister(_cleanup_runner_container)
     return payload
 
 
@@ -306,6 +338,23 @@ def _observer_status(capture: dict[str, Any]) -> str:
     return "unknown"
 
 
+def _boundary_note(capture_manifest: dict[str, Any]) -> str:
+    if capture_manifest.get("assurance") != ASSURANCE_A2:
+        return "A1 local observed evidence; not A2 privilege isolation."
+    isolation = capture_manifest.get("isolation")
+    if isinstance(isolation, dict) and (
+        isolation.get("model") == "container-boundary-unwritable-observer-dir"
+    ):
+        return (
+            "A2 isolated observed: observer-launched Docker runner was inspected "
+            "and could not write the observer output."
+        )
+    return (
+        "A2 isolated observed: runner ran under a different uid and could "
+        "not write the observer output."
+    )
+
+
 def _read_json(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text(encoding="utf-8"))
     if not isinstance(value, dict):
@@ -326,6 +375,71 @@ def _restrict_observer_dir(observer_dir: Path) -> None:
         os.chmod(observer_dir, 0o700)
     except (OSError, NotImplementedError):
         pass
+
+
+def _launch_runner_container(
+    runner_sandbox: Path,
+    *,
+    image: str,
+    shell_command: str,
+    hold_seconds: int,
+) -> dict[str, Any]:
+    if hold_seconds < 1:
+        raise ValueError("--runner-container-hold-seconds must be positive")
+    docker = shutil.which("docker")
+    if docker is None:
+        raise ValueError("docker is required for observer-launched container runner")
+    sandbox = runner_sandbox.expanduser().resolve(strict=False)
+    command = [
+        docker,
+        "run",
+        "-d",
+        "-v",
+        f"{sandbox}:/work",
+        "-w",
+        "/work",
+        image,
+        "sh",
+        "-lc",
+        f"set -eu\n{shell_command}\nsleep {hold_seconds}",
+    ]
+    result = subprocess.run(
+        command,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise ValueError(result.stderr.strip() or result.stdout.strip())
+    container_id = result.stdout.strip()
+    if not container_id:
+        raise ValueError("docker run did not return a container id")
+    return {
+        "runtime": "docker",
+        "container_id": container_id,
+        "image": image,
+        "command": shell_command,
+        "mount": f"{sandbox}:/work",
+        "hold_seconds": hold_seconds,
+        "invocation": command,
+    }
+
+
+def _cleanup_runner_container(container_id: str) -> None:
+    docker = shutil.which("docker")
+    if docker is None:
+        return
+    subprocess.run(
+        [docker, "rm", "-f", container_id],
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        check=False,
+    )
 
 
 def _write_json(path: Path, value: dict[str, Any]) -> None:
@@ -381,6 +495,9 @@ def _self_test() -> None:
             timeout_seconds=120,
             runner_uid=None,
             runner_container_id="",
+            runner_container_image="",
+            runner_container_command="",
+            runner_container_hold_seconds=600,
             verification_command=[
                 sys.executable,
                 "-c",

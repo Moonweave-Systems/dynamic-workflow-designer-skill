@@ -43,18 +43,23 @@ Container-isolated A2 is an A2 variant, not a new assurance label. It still emit
 Required facts:
 
 - The observer process runs on the host.
-- The runner work is performed inside a container.
+- The observer launches the runner container and records the launch receipt in
+  the observer capture.
 - The observer-owned output directory is outside the runner container's writable
   mounts.
 - The observer records container facts from `docker inspect`, not from runner
   self-report.
+- The inspected container id is the id returned by the observer-launched Docker
+  run, not a free-form operator-supplied id.
 - The capture manifest validates with `validate_capture_manifest(...) == []`.
 
 Fail-closed cases:
 
 - Docker is unavailable or the container facts are missing.
 - The observer output directory is mounted writable into the runner container.
+- The container id is externally supplied rather than observer-launched.
 - The supplied container id cannot be inspected by the observer.
+- The runner uid inside the container cannot be recorded as a numeric uid.
 - The recorded runner and observer boundary cannot be verified from the manifest.
 - The capture is only prose and lacks committed machine artifacts.
 
@@ -74,6 +79,7 @@ facts without breaking old manifests:
     "runtime": "docker",
     "container_id": "...",
     "image": "alpine:3.20",
+    "observer_launched": true,
     "running": true,
     "observer_dir_mounted_rw": false,
     "mounts": []
@@ -84,8 +90,8 @@ facts without breaking old manifests:
 
 The container subobject is evidence metadata. It must not raise assurance by
 itself. The A2 raise still depends on `boundary: true`, an unwritable observer
-dir, a Docker-inspected container fact set, and validation of the committed
-manifest.
+dir, an observer-launched and Docker-inspected container fact set, and validation
+of the committed manifest.
 
 ## Implementation Boundary
 
@@ -93,12 +99,14 @@ The first implementation PR should stay small:
 
 - Extend `depone/agent_fabric/isolation.py` with a pure verifier for container
   isolation facts and self-tests for pass/fail cases.
-- Add an observer-side Docker probe that accepts a container id, runs
-  `docker inspect`, records image/running/mount facts, and fails closed if Docker
-  is unavailable or the container cannot be inspected.
-- Extend `depone/cli/evidence_run.py` only enough to accept a retained runner
-  container id, call the Docker probe, and pass the resulting isolation facts to
-  the existing manifest builder.
+- Add an observer-side Docker probe that runs `docker inspect`, records
+  image/running/mount facts, and fails closed if Docker is unavailable or the
+  container cannot be inspected.
+- Extend `depone/cli/evidence_run.py` only enough to launch a runner container,
+  record the launch receipt in the observer capture, call the Docker probe on the
+  returned container id, and pass the resulting isolation facts to the existing
+  manifest builder. A free-form retained container id may record facts but must
+  not raise assurance to A2.
 - Preserve the existing uid A2 behavior and manifest compatibility.
 - Add a real Docker-backed capture under `docs/container-isolated-a2/` with:
   - `capture-manifest.json`
@@ -127,11 +135,13 @@ print("validate errors  :", errs)
 print("isolation_hash OK:", m.get("isolation_hash") == _sha256_json(iso))
 print("boundary reverify:", verify_isolation_boundary(iso).get("boundary"))
 print("model            :", iso.get("model"))
+print("observer launched:", iso.get("container", {}).get("observer_launched"))
 print("MERGE_OK:", (
     m.get("assurance") == "A2-isolated-observed"
     and errs == []
     and verify_isolation_boundary(iso).get("boundary") is True
     and iso.get("model") == "container-boundary-unwritable-observer-dir"
+    and iso.get("container", {}).get("observer_launched") is True
 ))
 PY
 ```
@@ -144,6 +154,7 @@ validate errors  : []
 isolation_hash OK: True
 boundary reverify: True
 model            : container-boundary-unwritable-observer-dir
+observer launched: True
 MERGE_OK: True
 ```
 
@@ -152,5 +163,5 @@ MERGE_OK: True
 This slice records and re-validates a Docker-inspected container boundary from
 observer-produced facts and committed artifacts. It does not prove keyless
 identity, transparency-log inclusion, remote attestation, or that every future
-agent task was launched by Depone itself. Closing the `--runner-uid` trust
-residual and wiring an observer-launched runner remain separate follow-ons.
+agent task will be launched by Depone. Closing the uid-based `--runner-uid`
+trust residual for the non-container path remains a separate follow-on.

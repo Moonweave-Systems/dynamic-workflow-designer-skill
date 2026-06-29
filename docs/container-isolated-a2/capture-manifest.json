@@ -73,7 +73,7 @@
   "isolation": {
     "boundary": true,
     "container": {
-      "container_id": "c0fbe8af13e0ebd9cbea75a0c3f6caf538e5dbd82729c0e5a6df474a171b0d7a",
+      "container_id": "6919e068d2cb937651fdfec9cb8a03ce947de486701f8ab5da7e981254ba34ed",
       "image": "alpine:3.20",
       "mounts": [
         {
@@ -83,6 +83,7 @@
         }
       ],
       "observer_dir_mounted_rw": false,
+      "observer_launched": true,
       "running": true,
       "runtime": "docker"
     },
@@ -92,7 +93,7 @@
     "reasons": [],
     "runner_uid": 0
   },
-  "isolation_hash": "e292f3bd35825df09c226bc07d7181214ba9ed3dce94deb57c830bcc42689951",
+  "isolation_hash": "e1744e244365321dce59ec22d9a402f8c27a44336643143ccff225556733907f",
   "kind": "agent-fabric-capture-manifest",
   "observer_capture": {
     "command_receipts": [
@@ -100,13 +101,13 @@
         "command": [
           "python3",
           "-c",
-          "from pathlib import Path; assert Path('sample.txt').exists()"
+          "from pathlib import Path; import time; p=Path('sample.txt'); expected='container-after-observer-launched\\n';\nfor _ in range(50):\n    if p.exists() and p.read_text() == expected:\n        break\n    time.sleep(0.1)\nelse:\n    raise AssertionError('sample.txt did not contain observer-launched container output')"
         ],
         "cwd": "/srv/depone/sandbox",
-        "ended_at": "2026-06-29T11:31:27Z",
+        "ended_at": "2026-06-29T11:57:26Z",
         "exit_code": 0,
         "log_path": "/home/ubuntu/observer-owned/container-evidence-run/observer-owned/verify-log.json",
-        "started_at": "2026-06-29T11:31:27Z",
+        "started_at": "2026-06-29T11:57:26Z",
         "status": "passed"
       }
     ],
@@ -122,18 +123,39 @@
       "model": "separate-process-observer-owned-dir",
       "note": "Process- and directory-separated capture. Not privilege-isolated (same uid); full A2 requires a uid or container boundary, deferred.",
       "observer_dir": "/home/ubuntu/observer-owned/container-evidence-run/observer-owned",
-      "observer_pid": 660828,
+      "observer_pid": 726075,
       "out_is_outside_sandbox": true,
       "privilege_boundary": false,
       "runner_sandbox": "/srv/depone/sandbox",
       "tamper_resistant_same_uid": false
+    },
+    "runner_container_launch": {
+      "command": "printf \"container-after-observer-launched\\n\" > sample.txt",
+      "container_id": "6919e068d2cb937651fdfec9cb8a03ce947de486701f8ab5da7e981254ba34ed",
+      "hold_seconds": 120,
+      "image": "alpine:3.20",
+      "invocation": [
+        "/usr/bin/docker",
+        "run",
+        "-d",
+        "-v",
+        "/srv/depone/sandbox:/work",
+        "-w",
+        "/work",
+        "alpine:3.20",
+        "sh",
+        "-lc",
+        "set -eu\nprintf \"container-after-observer-launched\\n\" > sample.txt\nsleep 120"
+      ],
+      "mount": "/srv/depone/sandbox:/work",
+      "runtime": "docker"
     },
     "source_fixture_hash": "009327cf064732c631c6a3144fb4b79d71e48ca0ccd37e1c9099bfc18af95c29",
     "test_output": {
       "command": [
         "python3",
         "-c",
-        "from pathlib import Path; assert Path('sample.txt').exists()"
+        "from pathlib import Path; import time; p=Path('sample.txt'); expected='container-after-observer-launched\\n';\nfor _ in range(50):\n    if p.exists() and p.read_text() == expected:\n        break\n    time.sleep(0.1)\nelse:\n    raise AssertionError('sample.txt did not contain observer-launched container output')"
       ],
       "pre_verification_changed_files": [
         "sample.txt"
@@ -145,7 +167,7 @@
       "sample.txt"
     ]
   },
-  "observer_capture_hash": "2cec7c429956a291e7775205d22f6422a002cf55e4169ece4c9f9603d597add8",
+  "observer_capture_hash": "d030b9f8d439699ffd558c3cb72fe2bdae949a1815e1c2172f66ebe40ee9276c",
   "prev_capture_hash": null,
   "required_observer_fields": [
     "command_receipts",

@@ -2,8 +2,15 @@
 
 from __future__ import annotations
 
+import json
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
+from depone.agent_fabric.isolation import (
+    probe_container_isolation_facts,
+    verify_isolation_boundary,
+)
 from depone.agent_fabric.capture_bridge import (
     build_capture_manifest,
     validate_capture_manifest,
@@ -149,6 +156,7 @@ class CaptureBridgeTests(unittest.TestCase):
                     "runtime": "docker",
                     "container_id": "abc123",
                     "image": "alpine:3.20",
+                    "observer_launched": True,
                     "running": True,
                     "observer_dir_mounted_rw": False,
                     "mounts": [],
@@ -158,6 +166,55 @@ class CaptureBridgeTests(unittest.TestCase):
 
         self.assertEqual(manifest["assurance"], "A2-isolated-observed")
         self.assertEqual(manifest["decision"], "isolated-observed")
+        self.assertEqual(validate_capture_manifest(manifest), [])
+
+    def test_external_container_id_does_not_upgrade_past_a1(self) -> None:
+        manifest = build_capture_manifest(
+            _fixture(),
+            observer_capture=_observer_capture(),
+            allowed_touched_files=["depone/example.py"],
+            isolation={
+                "model": "container-boundary-unwritable-observer-dir",
+                "runner_uid": 0,
+                "observer_uid": 1001,
+                "observer_dir_writable_by_runner": False,
+                "container": {
+                    "runtime": "docker",
+                    "container_id": "abc123",
+                    "image": "alpine:3.20",
+                    "running": True,
+                    "observer_dir_mounted_rw": False,
+                    "mounts": [],
+                },
+            },
+        )
+
+        self.assertEqual(manifest["assurance"], "A1-local-observed")
+        self.assertEqual(validate_capture_manifest(manifest), [])
+
+    def test_container_without_known_runner_uid_does_not_upgrade_past_a1(self) -> None:
+        manifest = build_capture_manifest(
+            _fixture(),
+            observer_capture=_observer_capture(),
+            allowed_touched_files=["depone/example.py"],
+            isolation={
+                "model": "container-boundary-unwritable-observer-dir",
+                "runner_uid": None,
+                "observer_uid": 1001,
+                "observer_dir_writable_by_runner": False,
+                "container": {
+                    "runtime": "docker",
+                    "container_id": "abc123",
+                    "image": "alpine:3.20",
+                    "observer_launched": True,
+                    "running": True,
+                    "observer_dir_mounted_rw": False,
+                    "mounts": [],
+                },
+            },
+        )
+
+        self.assertEqual(manifest["assurance"], "A1-local-observed")
         self.assertEqual(validate_capture_manifest(manifest), [])
 
     def test_container_observer_rw_mount_does_not_upgrade_past_a1(self) -> None:
@@ -174,6 +231,7 @@ class CaptureBridgeTests(unittest.TestCase):
                     "runtime": "docker",
                     "container_id": "abc123",
                     "image": "alpine:3.20",
+                    "observer_launched": True,
                     "running": True,
                     "observer_dir_mounted_rw": True,
                     "mounts": [{"destination": "/observer", "rw": True}],
@@ -183,6 +241,77 @@ class CaptureBridgeTests(unittest.TestCase):
 
         self.assertEqual(manifest["assurance"], "A1-local-observed")
         self.assertEqual(validate_capture_manifest(manifest), [])
+
+    def test_container_probe_marks_free_form_container_as_not_observer_launched(
+        self,
+    ) -> None:
+        inspect = [
+            {
+                "Id": "abc123",
+                "Config": {"Image": "alpine:3.20", "User": ""},
+                "State": {"Running": True},
+                "Mounts": [
+                    {
+                        "Source": "/srv/depone/sandbox",
+                        "Destination": "/work",
+                        "RW": True,
+                    }
+                ],
+            }
+        ]
+        completed = type(
+            "Completed",
+            (),
+            {"returncode": 0, "stdout": json.dumps(inspect), "stderr": ""},
+        )()
+
+        with patch("depone.agent_fabric.isolation.shutil.which", return_value="docker"):
+            with patch(
+                "depone.agent_fabric.isolation.subprocess.run",
+                return_value=completed,
+            ):
+                facts = probe_container_isolation_facts(
+                    Path("/home/ubuntu/observer-owned"),
+                    container_id="abc123",
+                )
+
+        self.assertIs(facts["container"]["observer_launched"], False)
+        self.assertIs(verify_isolation_boundary(facts)["boundary"], False)
+
+    def test_container_probe_allows_observer_launched_container(self) -> None:
+        inspect = [
+            {
+                "Id": "abc123",
+                "Config": {"Image": "alpine:3.20", "User": ""},
+                "State": {"Running": True},
+                "Mounts": [
+                    {
+                        "Source": "/srv/depone/sandbox",
+                        "Destination": "/work",
+                        "RW": True,
+                    }
+                ],
+            }
+        ]
+        completed = type(
+            "Completed",
+            (),
+            {"returncode": 0, "stdout": json.dumps(inspect), "stderr": ""},
+        )()
+
+        with patch("depone.agent_fabric.isolation.shutil.which", return_value="docker"):
+            with patch(
+                "depone.agent_fabric.isolation.subprocess.run",
+                return_value=completed,
+            ):
+                facts = probe_container_isolation_facts(
+                    Path("/home/ubuntu/observer-owned"),
+                    container_id="abc123",
+                    observer_launched=True,
+                )
+
+        self.assertIs(facts["container"]["observer_launched"], True)
+        self.assertIs(verify_isolation_boundary(facts)["boundary"], True)
 
     def test_rejects_live_source_fixture_even_with_observer_capture(self) -> None:
         fixture = _fixture()

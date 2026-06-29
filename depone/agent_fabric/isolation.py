@@ -98,15 +98,18 @@ def _verify_container_isolation_boundary(facts: dict[str, Any]) -> dict[str, Any
     if not isinstance(observer_uid, int):
         boundary = False
         reasons.append("observer_uid must be a known integer")
-    if runner_uid is not None and not isinstance(runner_uid, int):
+    if not isinstance(runner_uid, int):
         boundary = False
-        reasons.append("runner_uid must be an integer when present")
+        reasons.append("runner_uid must be a known integer")
     if writable is not False:
         boundary = False
         reasons.append("observer dir must be proven not writable by the runner")
     if container.get("runtime") != "docker":
         boundary = False
         reasons.append("container runtime must be docker")
+    if container.get("observer_launched") is not True:
+        boundary = False
+        reasons.append("container must be observer-launched")
     if not isinstance(container.get("container_id"), str) or not container.get(
         "container_id"
     ):
@@ -137,6 +140,11 @@ def _verify_container_isolation_boundary(facts: dict[str, Any]) -> dict[str, Any
                 else None
             ),
             "image": container.get("image") if isinstance(container.get("image"), str) else None,
+            "observer_launched": (
+                container.get("observer_launched")
+                if isinstance(container.get("observer_launched"), bool)
+                else None
+            ),
             "running": (
                 container.get("running") if isinstance(container.get("running"), bool) else None
             ),
@@ -186,7 +194,7 @@ def probe_isolation_facts(
 
 
 def probe_container_isolation_facts(
-    observer_dir: Path, *, container_id: str
+    observer_dir: Path, *, container_id: str, observer_launched: bool = False
 ) -> dict[str, Any]:
     """Gather Docker container isolation facts from the host observer."""
 
@@ -197,6 +205,7 @@ def probe_container_isolation_facts(
             "runtime": "docker",
             "container_id": container_id,
             "image": None,
+            "observer_launched": observer_launched,
             "running": None,
             "observer_dir_mounted_rw": None,
             "mounts": None,
@@ -229,6 +238,7 @@ def probe_container_isolation_facts(
 
     record = inspected[0]
     container = _container_facts_from_docker_inspect(record, observer_dir)
+    container["observer_launched"] = observer_launched
     facts["runner_uid"] = _runner_uid_from_docker_user(record)
     facts["container"] = container
     facts["observer_dir_writable_by_runner"] = container["observer_dir_mounted_rw"]
@@ -256,6 +266,7 @@ def _container_facts_from_docker_inspect(
             if isinstance(record.get("Image"), str)
             else None
         ),
+        "observer_launched": False,
         "running": state.get("Running") if isinstance(state, dict) else None,
         "observer_dir_mounted_rw": mounted_rw,
         "mounts": mounts,
@@ -377,6 +388,7 @@ def _self_test() -> None:
                 "runtime": "docker",
                 "container_id": "abc123",
                 "image": "alpine:3.20",
+                "observer_launched": True,
                 "running": True,
                 "observer_dir_mounted_rw": False,
                 "mounts": [],
@@ -397,6 +409,7 @@ def _self_test() -> None:
                 "runtime": "docker",
                 "container_id": "abc123",
                 "image": "alpine:3.20",
+                "observer_launched": True,
                 "running": True,
                 "observer_dir_mounted_rw": True,
                 "mounts": [{"destination": "/observer", "rw": True}],
