@@ -1,7 +1,8 @@
 # V125 Direction Check And Forward Roadmap
 
-Status: direction checkpoint refreshed after V126-V128 execution evidence.
-Original date: 2026-06-24. Refreshed: 2026-06-28.
+Status: direction checkpoint refreshed after V126-V129 execution evidence,
+including the first A2 isolated-observer capture.
+Original date: 2026-06-24. Refreshed: 2026-06-29.
 
 > Read this first. This document is the current product-direction source of
 > truth for Depone / DWM Core. It records an external evaluation of where the
@@ -68,7 +69,7 @@ the single gap to close first.
 | Design / planner half | Keyword/template scaffold | C- | Commoditized by free MIT tooling; no real planner. |
 | Agent Fabric (team system) | Contracts + compiler only, no live run | C | Toolbelt least-privilege is the bright spot; profile taxonomy unearned. |
 | Standards / interop alignment | Prose-only in docs | C | Right substrate chosen (in-toto/DSSE/OTel/Sigstore); schemas are bespoke. |
-| Evidence trust chain (Runner / assurance) | Runner is fixture/dry-run only | C- | Code emits only A0/A1; capture layer is the unmet load-bearing piece. |
+| Evidence trust chain (Runner / assurance) | A2 isolated capture achieved | B- | First real A2-isolated-observed capture (uid boundary) merged 2026-06-29 (PR #29), independently re-validated; n=1, container isolation + A3 signing still pending. |
 | Value validation / proof | Real plumbing pointed at synthetic seeds | D | n=1 trivial live proof, no external users, no real paired delta. |
 | Regulatory / market thesis currency | Partly stale | C | Real demand, but the Aug-2026 forcing function is gone (see 6.2). |
 | Engineering surface / auditability | 104 scripts, SemVer 104.0.0 vs V124 | C- | A trust product that is itself hard to audit. |
@@ -224,6 +225,17 @@ the first V128 slice are now implemented and recorded in `docs/v126-decision.md`
   in-toto Statement, unsigned DSSE envelope, and static OTel GenAI-shaped span
   set. The envelope is explicitly `unsigned-content-addressed`; this does not
   raise assurance or approve public claims.
+- **V129 — Append-only chain + first A2 isolated capture.** Each capture manifest
+  can carry a content-addressed `prev_capture_hash`, making a dropped, reordered,
+  or tampered intermediate step detectable (`verify_capture_chain`, exposed as the
+  `evidence-chain` CLI). A new fail-closed isolation verifier
+  (`depone/agent_fabric/isolation.py`) gates an `A2-isolated-observed` rung in the
+  capture bridge, wired into `evidence-run --runner-uid` with observer-dir 0700
+  self-hardening. On an isolated Ubuntu server (runner uid != observer uid,
+  observer dir not writable by the runner) Depone produced and merged its first
+  real A2 capture (`docs/a2-first-isolated-evidence/`, PR #29), independently
+  re-validated (`validate_capture_manifest` -> `[]`). Same-uid hosts stay honestly
+  at A1; the truth of the recorded host facts rests on the observer's attestation.
 
 ### 6.2 Now
 
@@ -249,8 +261,10 @@ The next actual product work is:
 
 ### 6.3 Later
 
-- Promote the runner/observer separation so every report states which component
-  produced each observation and whether the agent could have modified it.
+- Strengthen isolation beyond the uid boundary (A2 reached 2026-06-29) to
+  container/VM custody (SLSA-L3 shape), and have every report state which
+  component produced each observation and whether the agent could have modified
+  it. Close the residual that the tool trusts the operator-supplied `--runner-uid`.
 - Define A3 as a DSSE-wrapped in-toto attestation signed via Sigstore (Fulcio
   keyless + Rekor transparency log).
 - Build the static multi-hop / recursive delegation-chain invariant checker
