@@ -414,22 +414,29 @@ def ingest_external_evidence(
     if not isinstance(payload, dict):
         verdict = _blocked_verdict("external evidence payload must be an object")
     else:
-        statement = (
-            payload
-            if payload.get("_type") in (INTOTO_STATEMENT_TYPE, INTOTO_STATEMENT_TYPE_V01)
-            else None
-        )
-        if statement is None and "payloadType" in payload:
-            statement = _safe_decoded_dsse_statement(payload)
-        subject_names = _subject_names(statement) if isinstance(statement, dict) else []
-        present_digests, unreadable = resolve_present_artifact_digests(
-            subject_names,
-            artifact_paths,
-            artifact_digest_modes,
-        )
+        # The subjects we hash from disk must come from the SAME content we go on
+        # to verify. A DSSE envelope (payloadType present) is verified through its
+        # decoded payload, so its subject names must come from there too — never
+        # from any top-level _type/subject the envelope also happens to carry. A
+        # decoy top-level subject list would otherwise steer hashing away from the
+        # real artifacts and silently downgrade a mismatch (blocked) to a missing
+        # subject (inconclusive). DSSE therefore takes precedence over _type.
         if "payloadType" in payload:
+            decoded = _safe_decoded_dsse_statement(payload)
+            subject_names = _subject_names(decoded) if isinstance(decoded, dict) else []
+            present_digests, unreadable = resolve_present_artifact_digests(
+                subject_names,
+                artifact_paths,
+                artifact_digest_modes,
+            )
             verdict = ingest_dsse_envelope(payload, present_digests, unreadable)
         elif payload.get("_type") in (INTOTO_STATEMENT_TYPE, INTOTO_STATEMENT_TYPE_V01):
+            subject_names = _subject_names(payload)
+            present_digests, unreadable = resolve_present_artifact_digests(
+                subject_names,
+                artifact_paths,
+                artifact_digest_modes,
+            )
             verdict = ingest_external_statement(payload, present_digests, unreadable)
         else:
             verdict = _blocked_verdict(

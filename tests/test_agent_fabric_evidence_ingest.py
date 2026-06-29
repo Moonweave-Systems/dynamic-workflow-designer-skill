@@ -132,6 +132,35 @@ class AgentFabricEvidenceIngestTests(unittest.TestCase):
             )
         )
 
+    def test_decoy_top_level_subject_cannot_downgrade_dsse_mismatch(self) -> None:
+        # A DSSE envelope is verified through its decoded payload. A decoy
+        # top-level _type/subject must not steer subject hashing away from the
+        # real artifacts and downgrade a digest mismatch (blocked) into a
+        # missing subject (inconclusive).
+        bundle = self._bundle()
+        artifact_paths = self._artifact_paths()
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            tampered_path = Path(temp_dir) / "reference_adapter_shell.json"
+            tampered_path.write_text('{"tampered": true}\n', encoding="utf-8")
+            artifact_paths["source_fixture"] = str(tampered_path)
+
+            envelope = dict(bundle["dsse_envelope"])
+            envelope["_type"] = "https://in-toto.io/Statement/v1"
+            envelope["subject"] = []
+
+            verdict = ingest_external_evidence(
+                envelope,
+                artifact_paths,
+                artifact_digest_modes=self._artifact_digest_modes(),
+            )
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertIn(
+            "mismatch",
+            {result["status"] for result in verdict["subject_results"]},
+        )
+
     def test_blocked_when_dsse_claims_unverifiable_signatures(self) -> None:
         bundle = self._bundle()
         envelope = dict(bundle["dsse_envelope"])

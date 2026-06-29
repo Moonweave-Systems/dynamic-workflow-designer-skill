@@ -211,6 +211,23 @@ def _self_test() -> None:
                     "present but unhashable subject should report unreadable"
                 )
 
+            # A DSSE envelope that also carries a decoy top-level _type/subject
+            # must not steer subject hashing away from the real artifacts:
+            # subjects come from the decoded payload, so a tampered subject stays
+            # blocked rather than being downgraded to a missing/inconclusive one.
+            decoy = dict(bundle["dsse_envelope"])
+            decoy["_type"] = "https://in-toto.io/Statement/v1"
+            decoy["subject"] = []
+            decoy_verdict = ingest_external_evidence(
+                decoy,
+                tampered_paths,
+                artifact_digest_modes=artifact_digest_modes,
+            )
+            if decoy_verdict["decision"] != "blocked":
+                raise AssertionError(
+                    "decoy top-level subject must not downgrade a mismatch"
+                )
+
             malformed = {
                 "payloadType": "application/vnd.in-toto+json",
                 "payload": "!!",
