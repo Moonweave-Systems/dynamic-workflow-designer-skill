@@ -297,6 +297,10 @@ def ensure_worktree(session_id: str, source_head: str) -> Path:
         if probe.returncode != 0:
             raise RunnerError("ERR_SESSION_WORKTREE_INVALID", "existing worktree path is not a git worktree", path=path)
         return path
+    # Drop registrations whose working directory was removed (e.g. the gitignored
+    # out/ tree was cleaned) so a re-run does not hit "missing but already
+    # registered worktree". prune only removes entries whose dir is gone.
+    subprocess.run(["git", "worktree", "prune"], cwd=ROOT, check=False, text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     result = subprocess.run(
         ["git", "worktree", "add", "--detach", str(path), source_head],
         cwd=ROOT,
