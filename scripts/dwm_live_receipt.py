@@ -222,7 +222,7 @@ def ingest_receipt(
     return status
 
 
-def make_preflight_dir(base_name: str, *, adapter_command: str = "python", task_id: str = "failing-test-fix") -> Path:
+def make_preflight_dir(base_name: str, *, adapter_command: str = "python3", task_id: str = "failing-test-fix") -> Path:
     plan_dir = resolve_plan_out(ATTEMPT_PLAN_ROOT / f"{base_name}-plan")
     plan_live_attempt(plan_dir, plan_id=plan_dir.name, adapter_command=adapter_command, task_id=task_id)
     preflight_dir = resolve_preflight_out(RUNNER_PREFLIGHT_ROOT / f"{base_name}-preflight")

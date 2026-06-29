@@ -234,7 +234,7 @@ def blocked_fixture_status(kind: str, fixture: dict[str, Any]) -> dict[str, Any]
             plan_live_attempt(
                 PLAN_ROOT / "fixture-stale-smoke",
                 plan_id="fixture-stale-smoke",
-                adapter_command="python",
+                adapter_command="python3",
                 task_id=str(fixture["task_id"]),
                 expected_template_hash=str(fixture["expected_template_hash"]),
             )
@@ -242,7 +242,7 @@ def blocked_fixture_status(kind: str, fixture: dict[str, Any]) -> dict[str, Any]
             plan_live_attempt(
                 PLAN_ROOT / "fixture-unknown-task",
                 plan_id="fixture-unknown-task",
-                adapter_command="python",
+                adapter_command="python3",
                 task_id=str(fixture["task_id"]),
             )
         elif kind == "unsafe-command":

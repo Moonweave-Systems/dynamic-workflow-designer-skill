@@ -1,7 +1,7 @@
 {
   "fixtures": [
     {
-      "adapter_command": "python",
+      "adapter_command": "python3",
       "expected_status": "planned",
       "id": "live-attempt-plan-local-ready",
       "kind": "plan",

@@ -190,7 +190,7 @@ def preflight_plan(
     return status
 
 
-def make_plan_dir(base_dir: Path, *, adapter_command: str = "python", task_id: str = "failing-test-fix") -> Path:
+def make_plan_dir(base_dir: Path, *, adapter_command: str = "python3", task_id: str = "failing-test-fix") -> Path:
     plan_dir = resolve_plan_out(base_dir)
     plan_live_attempt(plan_dir, plan_id=plan_dir.name, adapter_command=adapter_command, task_id=task_id)
     return plan_dir
@@ -235,7 +235,7 @@ def run_fixture(fixture: dict[str, Any], suite_dir: Path) -> dict[str, Any]:
         if kind in {"preflight-ready", "preflight-skipped"}:
             plan_dir = make_plan_dir(
                 ATTEMPT_PLAN_ROOT / f"{suite_dir.name}-fixture-{fixture_id}",
-                adapter_command=str(fixture.get("adapter_command", "python")),
+                adapter_command=str(fixture.get("adapter_command", "python3")),
                 task_id=str(fixture.get("task_id", "failing-test-fix")),
             )
             status = preflight_plan(plan_dir, suite_dir / fixture_id, preflight_id=fixture_id)
