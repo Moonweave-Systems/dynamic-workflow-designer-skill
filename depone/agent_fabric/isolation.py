@@ -24,6 +24,9 @@ from pathlib import Path
 from typing import Any
 
 ISOLATION_MODEL = "uid-boundary-unwritable-observer-dir"
+UID_OBSERVER_LAUNCHED_ISOLATION_MODEL = (
+    "uid-boundary-observer-launched-unwritable-observer-dir"
+)
 CONTAINER_ISOLATION_MODEL = "container-boundary-unwritable-observer-dir"
 
 
@@ -50,6 +53,12 @@ def verify_isolation_boundary(facts: Any) -> dict[str, Any]:
     model = facts.get("model", ISOLATION_MODEL)
     if model == CONTAINER_ISOLATION_MODEL:
         return _verify_container_isolation_boundary(facts)
+    if model == UID_OBSERVER_LAUNCHED_ISOLATION_MODEL:
+        return _verify_uid_isolation_boundary(
+            facts,
+            model=UID_OBSERVER_LAUNCHED_ISOLATION_MODEL,
+            observer_launch_required=True,
+        )
     if model != ISOLATION_MODEL:
         return {
             "model": model if isinstance(model, str) else None,
@@ -60,10 +69,22 @@ def verify_isolation_boundary(facts: Any) -> dict[str, Any]:
             "reasons": ["unknown isolation model"],
         }
 
+    return _verify_uid_isolation_boundary(
+        facts, model=ISOLATION_MODEL, observer_launch_required=False
+    )
+
+
+def _verify_uid_isolation_boundary(
+    facts: dict[str, Any], *, model: str, observer_launch_required: bool
+) -> dict[str, Any]:
     runner_uid = facts.get("runner_uid")
     observer_uid = facts.get("observer_uid")
     writable = facts.get("observer_dir_writable_by_runner")
+    observer_launched = facts.get("observer_launched")
+    if not isinstance(observer_launched, bool):
+        observer_launched = None
     boundary = True
+    reasons: list[str] = []
 
     if not isinstance(runner_uid, int) or not isinstance(observer_uid, int):
         boundary = False
@@ -76,14 +97,21 @@ def verify_isolation_boundary(facts: Any) -> dict[str, Any]:
         boundary = False
         reasons.append("observer dir must be proven not writable by the runner")
 
-    return {
-        "model": ISOLATION_MODEL,
+    if observer_launch_required and observer_launched is not True:
+        boundary = False
+        reasons.append("runner must be observer-launched")
+
+    verified = {
+        "model": model,
         "boundary": boundary,
         "runner_uid": runner_uid if isinstance(runner_uid, int) else None,
         "observer_uid": observer_uid if isinstance(observer_uid, int) else None,
         "observer_dir_writable_by_runner": writable if isinstance(writable, bool) else None,
         "reasons": reasons,
     }
+    if model == UID_OBSERVER_LAUNCHED_ISOLATION_MODEL:
+        verified["observer_launched"] = observer_launched
+    return verified
 
 
 def _verify_container_isolation_boundary(facts: dict[str, Any]) -> dict[str, Any]:
@@ -160,7 +188,11 @@ def _verify_container_isolation_boundary(facts: dict[str, Any]) -> dict[str, Any
 
 
 def probe_isolation_facts(
-    observer_dir: Path, *, runner_uid: int | None
+    observer_dir: Path,
+    *,
+    runner_uid: int | None,
+    model: str = ISOLATION_MODEL,
+    observer_launched: bool = False,
 ) -> dict[str, Any]:
     """Gather isolation facts on a real host (server-side).
 
@@ -171,6 +203,10 @@ def probe_isolation_facts(
     """
 
     facts: dict[str, Any] = {"runner_uid": runner_uid}
+    if model != ISOLATION_MODEL:
+        facts["model"] = model
+    if model == UID_OBSERVER_LAUNCHED_ISOLATION_MODEL:
+        facts["observer_launched"] = observer_launched
     getuid = getattr(os, "getuid", None)
     if getuid is None:
         facts["observer_uid"] = None
@@ -361,6 +397,33 @@ def _self_test() -> None:
     if missing["boundary"] is not False:
         raise AssertionError("missing facts must fail closed")
     print("  [PASS] missing/unknown facts -> fail closed")
+
+    uid_observer_launched = verify_isolation_boundary(
+        {
+            "model": UID_OBSERVER_LAUNCHED_ISOLATION_MODEL,
+            "runner_uid": 1001,
+            "observer_uid": 1002,
+            "observer_dir_writable_by_runner": False,
+            "observer_launched": True,
+        }
+    )
+    if uid_observer_launched["boundary"] is not True:
+        raise AssertionError(
+            f"observer-launched uid facts must establish A2: {uid_observer_launched}"
+        )
+    print("  [PASS] observer-launched uid + unwritable observer dir -> boundary")
+
+    uid_not_observer_launched = verify_isolation_boundary(
+        {
+            "model": UID_OBSERVER_LAUNCHED_ISOLATION_MODEL,
+            "runner_uid": 1001,
+            "observer_uid": 1002,
+            "observer_dir_writable_by_runner": False,
+        }
+    )
+    if uid_not_observer_launched["boundary"] is not False:
+        raise AssertionError("observer-launched uid model must require launch receipt")
+    print("  [PASS] missing uid launch receipt -> no boundary")
 
     if verify_isolation_boundary(None)["boundary"] is not False:
         raise AssertionError("non-object facts must fail closed")

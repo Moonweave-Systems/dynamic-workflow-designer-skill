@@ -9,7 +9,9 @@ from unittest.mock import patch
 
 from depone.agent_fabric.isolation import (
     probe_container_isolation_facts,
+    probe_isolation_facts,
     verify_isolation_boundary,
+    UID_OBSERVER_LAUNCHED_ISOLATION_MODEL,
 )
 from depone.agent_fabric.capture_bridge import (
     build_capture_manifest,
@@ -126,6 +128,57 @@ class CaptureBridgeTests(unittest.TestCase):
         self.assertEqual(manifest["assurance"], "A2-isolated-observed")
         self.assertEqual(manifest["decision"], "isolated-observed")
         self.assertEqual(validate_capture_manifest(manifest), [])
+
+    def test_observer_launched_uid_capture_reaches_a2(self) -> None:
+        manifest = build_capture_manifest(
+            _fixture(),
+            observer_capture=_observer_capture(),
+            allowed_touched_files=["depone/example.py"],
+            isolation={
+                "model": UID_OBSERVER_LAUNCHED_ISOLATION_MODEL,
+                "runner_uid": 1001,
+                "observer_uid": 1002,
+                "observer_dir_writable_by_runner": False,
+                "observer_launched": True,
+            },
+        )
+
+        self.assertEqual(manifest["assurance"], "A2-isolated-observed")
+        self.assertEqual(manifest["decision"], "isolated-observed")
+        self.assertEqual(validate_capture_manifest(manifest), [])
+
+    def test_uid_observer_launched_model_requires_observer_launch(self) -> None:
+        manifest = build_capture_manifest(
+            _fixture(),
+            observer_capture=_observer_capture(),
+            allowed_touched_files=["depone/example.py"],
+            isolation={
+                "model": UID_OBSERVER_LAUNCHED_ISOLATION_MODEL,
+                "runner_uid": 1001,
+                "observer_uid": 1002,
+                "observer_dir_writable_by_runner": False,
+            },
+        )
+
+        self.assertEqual(manifest["assurance"], "A1-local-observed")
+        self.assertEqual(validate_capture_manifest(manifest), [])
+
+    def test_uid_probe_can_record_observer_launched_model(self) -> None:
+        with patch("depone.agent_fabric.isolation.os.getuid", return_value=1002):
+            with patch("depone.agent_fabric.isolation.os.stat") as stat_mock:
+                stat_mock.return_value.st_uid = 1002
+                stat_mock.return_value.st_mode = 0o700
+
+                facts = probe_isolation_facts(
+                    Path("/home/ubuntu/observer-owned"),
+                    runner_uid=1001,
+                    model=UID_OBSERVER_LAUNCHED_ISOLATION_MODEL,
+                    observer_launched=True,
+                )
+
+        self.assertEqual(facts["model"], UID_OBSERVER_LAUNCHED_ISOLATION_MODEL)
+        self.assertIs(facts["observer_launched"], True)
+        self.assertIs(verify_isolation_boundary(facts)["boundary"], True)
 
     def test_same_uid_isolation_does_not_upgrade_past_a1(self) -> None:
         manifest = build_capture_manifest(

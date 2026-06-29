@@ -1,0 +1,56 @@
+{
+  "boundary": {
+    "isolation": {
+      "boundary": true,
+      "model": "uid-boundary-observer-launched-unwritable-observer-dir",
+      "observer_dir_writable_by_runner": false,
+      "observer_launched": true,
+      "observer_uid": 1001,
+      "reasons": [],
+      "runner_uid": 1002
+    },
+    "note": "A2 isolated observed: observer-launched uid runner ran under a different uid and could not write the observer output.",
+    "observer_assurance": "A2-isolated-observed",
+    "privilege_isolated": true
+  },
+  "capture_manifest": {
+    "assurance": "A2-isolated-observed",
+    "decision": "isolated-observed",
+    "error_count": 0,
+    "errors": [],
+    "path": "/home/ubuntu/observer-owned/uid-observer-launched-evidence-run/capture-manifest.json"
+  },
+  "command": "evidence-run",
+  "decision": "inconclusive",
+  "evidence_ingest": {
+    "decision": "pass",
+    "out": "/home/ubuntu/observer-owned/uid-observer-launched-evidence-run/ingest-verdict.json",
+    "signing_status": "unsigned-content-addressed",
+    "subject_count": 3,
+    "verified_subject_count": 3
+  },
+  "evidence_substrate": {
+    "assurance": "A2-isolated-observed",
+    "decision": "pass",
+    "error_count": 0,
+    "errors": [],
+    "otel_span_count": 2,
+    "out": "/home/ubuntu/observer-owned/uid-observer-launched-evidence-run/evidence-bundle.json",
+    "signing_status": "unsigned-content-addressed",
+    "subject_count": 3
+  },
+  "observe": {
+    "decision": "pass",
+    "log": "/home/ubuntu/observer-owned/uid-observer-launched-evidence-run/observer-owned/verify-log.json",
+    "observer_capture_hash": "4e98c9d1c10812559bdb258c814ccedd8440360697c362c4586c9768a547becc",
+    "out": "/home/ubuntu/observer-owned/uid-observer-launched-evidence-run/observer-owned/observer-capture.json",
+    "status": "passed"
+  },
+  "out": "/home/ubuntu/observer-owned/uid-observer-launched-evidence-run",
+  "verify": {
+    "decision": "skipped",
+    "operator_view_out": null,
+    "out": null,
+    "verdict": "skipped"
+  }
+}

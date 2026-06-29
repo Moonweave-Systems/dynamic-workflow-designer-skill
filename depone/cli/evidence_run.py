@@ -19,6 +19,8 @@ from depone.agent_fabric.capture_bridge import (
     validate_capture_manifest,
 )
 from depone.agent_fabric.isolation import (
+    CONTAINER_ISOLATION_MODEL,
+    UID_OBSERVER_LAUNCHED_ISOLATION_MODEL,
     probe_container_isolation_facts,
     probe_isolation_facts,
 )
@@ -131,19 +133,32 @@ def run_evidence_loop(args: argparse.Namespace) -> dict[str, Any]:
     observer_dir.mkdir(parents=True, exist_ok=True)
     _restrict_observer_dir(observer_dir)
 
-    # Isolation facts are observer-attested. The uid path records the uid the
-    # operator launched. A free-form container id records host-side Docker inspect
-    # facts but cannot raise A2; container A2 requires the observer to launch the
-    # container so the inspected id is bound to the runner command.
+    # Isolation facts are observer-attested. A free-form --runner-uid preserves
+    # the legacy uid path for existing artifacts. The stronger uid and container
+    # paths launch the runner from the observer process and bind the observed
+    # boundary facts to that launch receipt.
     runner_uid_arg = getattr(args, "runner_uid", None)
+    runner_user = str(getattr(args, "runner_user", "") or "")
+    runner_command = str(getattr(args, "runner_command", "") or "")
     runner_container_id = str(getattr(args, "runner_container_id", "") or "")
     runner_container_image = str(getattr(args, "runner_container_image", "") or "")
     runner_container_command = str(getattr(args, "runner_container_command", "") or "")
+    launched_uid_runner: dict[str, Any] | None = None
     launched_container: dict[str, Any] | None = None
     cleanup_registered = False
+    if bool(runner_user) != bool(runner_command):
+        raise ValueError("--runner-user and --runner-command must be provided together")
     if bool(runner_container_image) != bool(runner_container_command):
         raise ValueError(
             "--runner-container-image and --runner-container-command must be provided together"
+        )
+    if runner_user and (
+        runner_uid_arg is not None
+        or runner_container_id
+        or runner_container_image
+    ):
+        raise ValueError(
+            "--runner-user is mutually exclusive with --runner-uid and container isolation options"
         )
     if runner_uid_arg is not None and (
         runner_container_id or runner_container_image
@@ -152,6 +167,12 @@ def run_evidence_loop(args: argparse.Namespace) -> dict[str, Any]:
     if runner_container_id and runner_container_image:
         raise ValueError(
             "--runner-container-id is mutually exclusive with observer-launched container options"
+        )
+    if runner_user:
+        launched_uid_runner = _launch_runner_user(
+            runner_sandbox,
+            user=runner_user,
+            shell_command=runner_command,
         )
     if runner_container_image:
         launched_container = _launch_runner_container(
@@ -176,13 +197,22 @@ def run_evidence_loop(args: argparse.Namespace) -> dict[str, Any]:
         log_path=log_path,
         timeout_seconds=int(getattr(args, "timeout_seconds", 120)),
     )
+    if launched_uid_runner is not None:
+        capture["runner_uid_launch"] = launched_uid_runner
     if launched_container is not None:
         capture["runner_container_launch"] = launched_container
     observer_capture_hash = write_observer_capture(observer_path, capture)
 
     allowed_touched_files = list(getattr(args, "allow_touched_file", []) or [])
     isolation_facts = None
-    if runner_container_id:
+    if launched_uid_runner is not None:
+        isolation_facts = probe_isolation_facts(
+            observer_dir,
+            runner_uid=int(launched_uid_runner["observed_uid"]),
+            model=UID_OBSERVER_LAUNCHED_ISOLATION_MODEL,
+            observer_launched=True,
+        )
+    elif runner_container_id:
         isolation_facts = probe_container_isolation_facts(
             observer_dir,
             container_id=runner_container_id,
@@ -362,12 +392,21 @@ def _boundary_note(capture_manifest: dict[str, Any]) -> str:
     if capture_manifest.get("assurance") != ASSURANCE_A2:
         return "A1 local observed evidence; not A2 privilege isolation."
     isolation = capture_manifest.get("isolation")
-    if isinstance(isolation, dict) and (
-        isolation.get("model") == "container-boundary-unwritable-observer-dir"
+    if (
+        isinstance(isolation, dict)
+        and isolation.get("model") == CONTAINER_ISOLATION_MODEL
     ):
         return (
             "A2 isolated observed: observer-launched Docker runner was inspected "
             "and could not write the observer output."
+        )
+    if (
+        isinstance(isolation, dict)
+        and isolation.get("model") == UID_OBSERVER_LAUNCHED_ISOLATION_MODEL
+    ):
+        return (
+            "A2 isolated observed: observer-launched uid runner ran under a "
+            "different uid and could not write the observer output."
         )
     return (
         "A2 isolated observed: runner ran under a different uid and could "
@@ -445,6 +484,87 @@ def _launch_runner_container(
         "hold_seconds": hold_seconds,
         "invocation": command,
     }
+
+
+_RUNNER_UID_MARKER = "__DEPONE_RUNNER_UID="
+
+
+def _launch_runner_user(
+    runner_sandbox: Path,
+    *,
+    user: str,
+    shell_command: str,
+) -> dict[str, Any]:
+    sudo = shutil.which("sudo")
+    if sudo is None:
+        raise ValueError("sudo is required for observer-launched uid runner")
+    sandbox = runner_sandbox.expanduser().resolve(strict=False)
+    id_result = subprocess.run(
+        ["id", "-u", user],
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        capture_output=True,
+        check=False,
+    )
+    if id_result.returncode != 0:
+        raise ValueError(id_result.stderr.strip() or id_result.stdout.strip())
+    uid_text = id_result.stdout.strip()
+    if not uid_text.isdigit():
+        raise ValueError(f"runner user uid is not numeric: {uid_text!r}")
+    expected_uid = int(uid_text)
+    command = [
+        sudo,
+        "-u",
+        user,
+        "bash",
+        "-lc",
+        f'set -eu\nprintf "{_RUNNER_UID_MARKER}%s\\n" "$(id -u)"\n{shell_command}',
+    ]
+    result = subprocess.run(
+        command,
+        cwd=sandbox,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        capture_output=True,
+        check=False,
+    )
+    if result.returncode != 0:
+        raise ValueError(result.stderr.strip() or result.stdout.strip())
+    observed_uid, stdout = _extract_runner_uid_marker(result.stdout)
+    if observed_uid != expected_uid:
+        raise ValueError(
+            "observer-launched runner uid mismatch: "
+            f"expected {expected_uid}, got {observed_uid}"
+        )
+    return {
+        "runtime": "posix-sudo",
+        "user": user,
+        "uid": expected_uid,
+        "observed_uid": observed_uid,
+        "command": shell_command,
+        "cwd": str(sandbox),
+        "exit_code": result.returncode,
+        "stdout": stdout,
+        "stderr": result.stderr,
+        "invocation": command,
+    }
+
+
+def _extract_runner_uid_marker(stdout: str) -> tuple[int, str]:
+    observed_uid: int | None = None
+    output_lines: list[str] = []
+    for line in stdout.splitlines(keepends=True):
+        if line.startswith(_RUNNER_UID_MARKER) and observed_uid is None:
+            uid_text = line[len(_RUNNER_UID_MARKER) :].strip()
+            if uid_text.isdigit():
+                observed_uid = int(uid_text)
+                continue
+        output_lines.append(line)
+    if observed_uid is None:
+        raise ValueError("observer-launched runner did not report its uid")
+    return observed_uid, "".join(output_lines)
 
 
 def _maybe_write_signed_bundle(
@@ -554,6 +674,8 @@ def _self_test() -> None:
             operator_view_out="",
             timeout_seconds=120,
             runner_uid=None,
+            runner_user="",
+            runner_command="",
             runner_container_id="",
             runner_container_image="",
             runner_container_command="",

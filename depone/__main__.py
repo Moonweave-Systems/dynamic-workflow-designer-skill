@@ -209,6 +209,22 @@ def _add_evidence_run_args(parser: argparse.ArgumentParser) -> None:
         ),
     )
     parser.add_argument(
+        "--runner-user",
+        default="",
+        help=(
+            "OS user for an observer-launched uid runner. Provide with "
+            "--runner-command to bind the runner uid to an observer launch receipt."
+        ),
+    )
+    parser.add_argument(
+        "--runner-command",
+        default="",
+        help=(
+            "Shell command to run as --runner-user inside --runner-sandbox before "
+            "observer capture."
+        ),
+    )
+    parser.add_argument(
         "--runner-container-id",
         default="",
         help=(
