@@ -100,3 +100,10 @@ It does not make the bundle cryptographically unforgeable; signing remains an A3
 follow-on. The legacy `--runner-uid` path remains available for existing
 artifacts and externally attested captures, but new host-uid evidence should use
 `--runner-user` and `--runner-command`.
+
+The observer-launched uid path intentionally records the exact invocation. The
+current implementation runs the operator-supplied command through
+`sudo -u <runner-user> bash -lc ...`; therefore the runner user's shell
+environment and shell startup behavior are part of the observed run. This does
+not weaken the uid boundary check, but it means the receipt is host/shell
+specific rather than a hermetic execution transcript.

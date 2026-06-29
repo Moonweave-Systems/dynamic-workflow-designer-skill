@@ -34,3 +34,7 @@ Re-validate the committed artifact with the command in
 This is a stronger uid-based A2 capture than the legacy bare `--runner-uid`
 path, because the observer launched the runner and recorded the launch receipt.
 It is still unsigned A2 evidence, not A3 signing or remote attestation.
+
+The launch receipt is host/shell specific: `evidence-run` currently invokes the
+runner command through `sudo -u <runner-user> bash -lc ...`, so the runner
+user's shell environment is part of the observed execution.
