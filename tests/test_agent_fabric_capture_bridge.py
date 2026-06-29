@@ -88,20 +88,52 @@ class CaptureBridgeTests(unittest.TestCase):
         self.assertEqual(validate_capture_manifest(manifest), [])
 
 
-    def test_rejects_new_assurance_level(self) -> None:
+    def test_rejects_unknown_assurance_level(self) -> None:
         manifest = build_capture_manifest(_fixture())
-        manifest["assurance"] = "A2-live-observed"
-        manifest["decision"] = "trusted-live-capture"
+        manifest["assurance"] = "A3-future-level"
+        manifest["decision"] = "trusted-future-capture"
 
         errors = validate_capture_manifest(manifest)
 
         self.assertTrue(
             any(
-                "assurance must be 'A0-claims-only' or 'A1-local-observed'" in e
+                "assurance must be 'A0-claims-only', 'A1-local-observed', or "
+                "'A2-isolated-observed'" in e
                 for e in errors
             ),
             errors,
         )
+
+    def test_isolated_capture_reaches_a2(self) -> None:
+        manifest = build_capture_manifest(
+            _fixture(),
+            observer_capture=_observer_capture(),
+            allowed_touched_files=["depone/example.py"],
+            isolation={
+                "runner_uid": 1001,
+                "observer_uid": 1002,
+                "observer_dir_writable_by_runner": False,
+            },
+        )
+
+        self.assertEqual(manifest["assurance"], "A2-isolated-observed")
+        self.assertEqual(manifest["decision"], "isolated-observed")
+        self.assertEqual(validate_capture_manifest(manifest), [])
+
+    def test_same_uid_isolation_does_not_upgrade_past_a1(self) -> None:
+        manifest = build_capture_manifest(
+            _fixture(),
+            observer_capture=_observer_capture(),
+            allowed_touched_files=["depone/example.py"],
+            isolation={
+                "runner_uid": 1001,
+                "observer_uid": 1001,
+                "observer_dir_writable_by_runner": False,
+            },
+        )
+
+        self.assertEqual(manifest["assurance"], "A1-local-observed")
+        self.assertEqual(validate_capture_manifest(manifest), [])
 
     def test_rejects_live_source_fixture_even_with_observer_capture(self) -> None:
         fixture = _fixture()

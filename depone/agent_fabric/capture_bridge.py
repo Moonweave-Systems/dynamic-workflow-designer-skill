@@ -13,14 +13,17 @@ import json
 from copy import deepcopy
 from typing import Any
 
+from depone.agent_fabric.isolation import verify_isolation_boundary
 from depone.agent_fabric.reference_adapter import validate_reference_adapter_fixture
 
 CAPTURE_MANIFEST_VERSION = "1.0"
 CAPTURE_MANIFEST_KIND = "agent-fabric-capture-manifest"
 ASSURANCE_A0 = "A0-claims-only"
 ASSURANCE_A1 = "A1-local-observed"
+ASSURANCE_A2 = "A2-isolated-observed"
 DECISION_CLAIMS_ONLY = "claims-only"
 DECISION_OBSERVED = "observed-local-capture"
+DECISION_ISOLATED = "isolated-observed"
 OBSERVER_ID = "depone-observer"
 REQUIRED_OBSERVER_FIELDS = frozenset(
     {
@@ -55,6 +58,7 @@ def build_capture_manifest(
     observer_capture: dict[str, Any] | None = None,
     allowed_touched_files: list[str] | None = None,
     prev_capture_hash: str | None = None,
+    isolation: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     """Build a Depone-facing capture manifest from an adapter fixture.
 
@@ -106,6 +110,21 @@ def build_capture_manifest(
             "observer_capture_hash": observed_hash,
         }
     )
+
+    # A2 is reachable only when supplied isolation facts establish a real
+    # privilege boundary. Same-uid or partial facts leave the manifest at A1;
+    # the verifier never lets an unproven boundary upgrade assurance.
+    if isolation is not None:
+        verified = verify_isolation_boundary(isolation)
+        if verified.get("boundary") is True:
+            manifest.update(
+                {
+                    "assurance": ASSURANCE_A2,
+                    "decision": DECISION_ISOLATED,
+                    "isolation": verified,
+                    "isolation_hash": _sha256_json(verified),
+                }
+            )
     return manifest
 
 
@@ -132,8 +151,13 @@ def validate_capture_manifest(manifest: dict[str, Any]) -> list[str]:
         _check_a0_manifest(manifest, errors)
     elif assurance == ASSURANCE_A1:
         _check_a1_manifest(manifest, errors)
+    elif assurance == ASSURANCE_A2:
+        _check_a2_manifest(manifest, errors)
     elif "assurance" in manifest:
-        errors.append("assurance must be 'A0-claims-only' or 'A1-local-observed'")
+        errors.append(
+            "assurance must be 'A0-claims-only', 'A1-local-observed', or "
+            "'A2-isolated-observed'"
+        )
 
     # Optional append-only chain link. Absent (pre-chain captures) is valid and
     # treated as genesis. Present must be null or a 64-char sha256 hex string.
@@ -196,13 +220,12 @@ def _check_a0_manifest(manifest: dict[str, Any], errors: list[str]) -> None:
         errors.append("A0 manifest must not include observer_capture_hash")
 
 
-def _check_a1_manifest(manifest: dict[str, Any], errors: list[str]) -> None:
-    if manifest.get("decision") != DECISION_OBSERVED:
-        errors.append("A1 manifest decision must be 'observed-local-capture'")
+def _check_observed_block(manifest: dict[str, Any], errors: list[str]) -> None:
+    """Validate the observer-capture block shared by A1 and A2 manifests."""
 
     observer_capture = manifest.get("observer_capture")
     if not isinstance(observer_capture, dict):
-        errors.append("A1 manifest requires observer_capture object")
+        errors.append("observed manifest requires observer_capture object")
         return
 
     _check_observer_capture_shape(observer_capture, errors)
@@ -228,6 +251,29 @@ def _check_a1_manifest(manifest: dict[str, Any], errors: list[str]) -> None:
         extra_diff = sorted(changed - allowed)
         if extra_diff:
             errors.append(f"unexpected diff files: {extra_diff}")
+
+
+def _check_a1_manifest(manifest: dict[str, Any], errors: list[str]) -> None:
+    if manifest.get("decision") != DECISION_OBSERVED:
+        errors.append("A1 manifest decision must be 'observed-local-capture'")
+    _check_observed_block(manifest, errors)
+
+
+def _check_a2_manifest(manifest: dict[str, Any], errors: list[str]) -> None:
+    if manifest.get("decision") != DECISION_ISOLATED:
+        errors.append("A2 manifest decision must be 'isolated-observed'")
+    _check_observed_block(manifest, errors)
+
+    isolation = manifest.get("isolation")
+    if not isinstance(isolation, dict):
+        errors.append("A2 manifest requires isolation object")
+        return
+    if manifest.get("isolation_hash") != _sha256_json(isolation):
+        errors.append("isolation_hash mismatch")
+    # Fail closed: re-verify the boundary from the recorded facts so a manifest
+    # cannot claim A2 by flipping a flag; the facts themselves must establish it.
+    if verify_isolation_boundary(isolation).get("boundary") is not True:
+        errors.append("A2 isolation does not establish a privilege boundary")
 
 
 def _check_observer_capture_shape(
@@ -380,7 +426,51 @@ def _self_test() -> None:
     )
     print("  [PASS] unexpected touched files rejected")
 
-    print("\nSelf-test: 5/5 passed")
+    isolation_facts = {
+        "runner_uid": 1001,
+        "observer_uid": 1002,
+        "observer_dir_writable_by_runner": False,
+    }
+    a2 = build_capture_manifest(
+        fixture,
+        observer_capture=observer_capture,
+        allowed_touched_files=["depone/example.py"],
+        isolation=isolation_facts,
+    )
+    assert a2["assurance"] == ASSURANCE_A2, a2["assurance"]
+    assert not validate_capture_manifest(a2)
+    print("  [PASS] verified isolation reaches A2")
+
+    same_uid = build_capture_manifest(
+        fixture,
+        observer_capture=observer_capture,
+        allowed_touched_files=["depone/example.py"],
+        isolation={
+            "runner_uid": 1001,
+            "observer_uid": 1001,
+            "observer_dir_writable_by_runner": False,
+        },
+    )
+    assert same_uid["assurance"] == ASSURANCE_A1
+    print("  [PASS] same-uid isolation does not upgrade past A1")
+
+    tampered_iso = deepcopy(a2)
+    tampered_iso["isolation"]["runner_uid"] = 4242
+    assert any(
+        "isolation_hash mismatch" in e for e in validate_capture_manifest(tampered_iso)
+    )
+    print("  [PASS] tampered isolation rejected")
+
+    forged_a2 = deepcopy(a2)
+    forged_a2["isolation"]["runner_uid"] = forged_a2["isolation"]["observer_uid"]
+    forged_a2["isolation_hash"] = _sha256_json(forged_a2["isolation"])
+    assert any(
+        "does not establish a privilege boundary" in e
+        for e in validate_capture_manifest(forged_a2)
+    )
+    print("  [PASS] A2 with same-uid facts fails closed")
+
+    print("\nSelf-test: 9/9 passed")
 
 
 if __name__ == "__main__":
