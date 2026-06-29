@@ -1,0 +1,51 @@
+{
+  "command_receipts": [
+    {
+      "command": [
+        "python3",
+        "-c",
+        "from pathlib import Path; assert Path('sample.txt').read_text() == 'signed-evidence-run\\n'"
+      ],
+      "cwd": "/srv/depone/sandbox",
+      "ended_at": "2026-06-29T12:22:58Z",
+      "exit_code": 0,
+      "log_path": "/home/ubuntu/observer-owned/signed-evidence-run/observer-owned/verify-log.json",
+      "started_at": "2026-06-29T12:22:58Z",
+      "status": "passed"
+    }
+  ],
+  "diff_summary": {
+    "changed_file_count": 1,
+    "changed_files": [
+      "sample.txt"
+    ],
+    "stat": " sample.txt | 2 +-\n 1 file changed, 1 insertion(+), 1 deletion(-)"
+  },
+  "observed_by": "depone-observer",
+  "observer_independence": {
+    "model": "separate-process-observer-owned-dir",
+    "note": "Process- and directory-separated capture. Not privilege-isolated (same uid); full A2 requires a uid or container boundary, deferred.",
+    "observer_dir": "/home/ubuntu/observer-owned/signed-evidence-run/observer-owned",
+    "observer_pid": 776525,
+    "out_is_outside_sandbox": true,
+    "privilege_boundary": false,
+    "runner_sandbox": "/srv/depone/sandbox",
+    "tamper_resistant_same_uid": false
+  },
+  "source_fixture_hash": "009327cf064732c631c6a3144fb4b79d71e48ca0ccd37e1c9099bfc18af95c29",
+  "test_output": {
+    "command": [
+      "python3",
+      "-c",
+      "from pathlib import Path; assert Path('sample.txt').read_text() == 'signed-evidence-run\\n'"
+    ],
+    "pre_verification_changed_files": [
+      "sample.txt"
+    ],
+    "status": "passed",
+    "summary": "exit 0"
+  },
+  "touched_files": [
+    "sample.txt"
+  ]
+}

@@ -370,6 +370,25 @@ def ingest_dsse_envelope(
     return verdict
 
 
+def _finalize_ingest_verdict(
+    verdict: dict[str, Any],
+    otel_spans: Any,
+    *,
+    trusts_external_signature: bool,
+) -> dict[str, Any]:
+    otel_errors = validate_external_otel_spans(otel_spans) if otel_spans is not None else []
+    if otel_errors:
+        verdict["reasons"] = list(verdict.get("reasons", [])) + otel_errors
+        if verdict.get("decision") == "pass":
+            verdict["decision"] = "blocked"
+    verdict["otel_errors"] = otel_errors
+    verdict["boundary"] = {
+        "raises_assurance": False,
+        "trusts_external_signature": trusts_external_signature,
+    }
+    return verdict
+
+
 def validate_external_otel_spans(spans: Any) -> list[str]:
     """Return structural errors for externally supplied static OTel spans."""
 
@@ -457,17 +476,95 @@ def ingest_external_evidence(
                 "external evidence must be a DSSE envelope or in-toto Statement"
             )
 
-    otel_errors = validate_external_otel_spans(otel_spans) if otel_spans is not None else []
-    if otel_errors:
-        verdict["reasons"] = list(verdict.get("reasons", [])) + otel_errors
-        if verdict.get("decision") == "pass":
-            verdict["decision"] = "blocked"
-    verdict["otel_errors"] = otel_errors
-    verdict["boundary"] = {
-        "raises_assurance": False,
-        "trusts_external_signature": False,
-    }
-    return verdict
+    return _finalize_ingest_verdict(
+        verdict,
+        otel_spans,
+        trusts_external_signature=False,
+    )
+
+
+def ingest_signed_evidence_bundle(
+    bundle: dict[str, Any],
+    public_key_path: str,
+    artifact_paths: dict[str, str],
+    *,
+    artifact_digest_modes: dict[str, str] | None = None,
+    otel_spans: Any = None,
+) -> dict[str, Any]:
+    """Verify an operator-key signed bundle, then ingest its signed subjects.
+
+    This verifies integrity relative to the supplied public key only. It never
+    raises Depone assurance and it does not claim Fulcio/Rekor/keyless identity.
+    """
+
+    from depone.agent_fabric.sign import (  # local import avoids a module cycle
+        SIGNING_STATUS_OPERATOR_KEY,
+        verify_signed_bundle,
+    )
+
+    if not isinstance(bundle, dict):
+        verdict = _blocked_verdict(
+            "signed evidence bundle must be an object",
+            signing_status="unverifiable-signature",
+        )
+        verdict["signature_verified"] = False
+        return _finalize_ingest_verdict(
+            verdict,
+            otel_spans,
+            trusts_external_signature=False,
+        )
+    if not verify_signed_bundle(bundle, public_key_path):
+        verdict = _blocked_verdict(
+            "signed evidence bundle did not verify with public key",
+            signing_status="unverifiable-signature",
+        )
+        verdict["signature_verified"] = False
+        return _finalize_ingest_verdict(
+            verdict,
+            otel_spans,
+            trusts_external_signature=False,
+        )
+
+    envelope = bundle.get("dsse_envelope")
+    if not isinstance(envelope, dict):
+        verdict = _blocked_verdict(
+            "signed evidence bundle missing DSSE envelope",
+            signing_status="unverifiable-signature",
+        )
+        verdict["signature_verified"] = False
+        return _finalize_ingest_verdict(
+            verdict,
+            otel_spans,
+            trusts_external_signature=False,
+        )
+    statement = _safe_decoded_dsse_statement(envelope)
+    if not isinstance(statement, dict):
+        verdict = _blocked_verdict(
+            "signed evidence bundle DSSE payload is not decodable in-toto JSON",
+            signing_status="unverifiable-signature",
+        )
+        verdict["signature_verified"] = False
+        return _finalize_ingest_verdict(
+            verdict,
+            otel_spans,
+            trusts_external_signature=False,
+        )
+
+    subject_names = _subject_names(statement)
+    present_digests, unreadable = resolve_present_artifact_digests(
+        subject_names,
+        artifact_paths,
+        artifact_digest_modes,
+    )
+    verdict = ingest_external_statement(statement, present_digests, unreadable)
+    verdict["signing_status"] = SIGNING_STATUS_OPERATOR_KEY
+    verdict["signature_verified"] = True
+    verdict["signature_boundary"] = bundle.get("signature_boundary")
+    return _finalize_ingest_verdict(
+        verdict,
+        otel_spans,
+        trusts_external_signature=True,
+    )
 
 
 def build_otel_genai_spans(

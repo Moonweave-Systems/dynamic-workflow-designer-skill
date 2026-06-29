@@ -14,6 +14,7 @@ from depone.agent_fabric.evidence_substrate import (
     DIGEST_MODE_CANONICAL_JSON,
     DIGEST_MODE_RAW,
     ingest_external_evidence,
+    ingest_signed_evidence_bundle,
 )
 
 
@@ -24,18 +25,37 @@ def run(args: argparse.Namespace) -> None:
 
     statement_arg = getattr(args, "statement", None)
     dsse_arg = getattr(args, "dsse", None)
-    if bool(statement_arg) == bool(dsse_arg):
+    signed_bundle_arg = getattr(args, "signed_bundle", None)
+    input_count = sum(bool(item) for item in (statement_arg, dsse_arg, signed_bundle_arg))
+    if input_count != 1:
         emit_error(
             args,
             code="ERR_EVIDENCE_INGEST_INPUT_REQUIRED",
-            message="provide exactly one of --statement or --dsse",
+            message="provide exactly one of --statement, --dsse, or --signed-bundle",
+        )
+    public_key = str(getattr(args, "public_key", "") or "")
+    if signed_bundle_arg and not public_key:
+        emit_error(
+            args,
+            code="ERR_EVIDENCE_INGEST_PUBLIC_KEY_REQUIRED",
+            message="--signed-bundle requires --public-key",
+        )
+    if public_key and not signed_bundle_arg:
+        emit_error(
+            args,
+            code="ERR_EVIDENCE_INGEST_PUBLIC_KEY_WITHOUT_SIGNED_BUNDLE",
+            message="--public-key is only valid with --signed-bundle",
         )
 
     try:
         payload = (
             _load_json_selector(str(statement_arg), "statement")
             if statement_arg
-            else _load_json_selector(str(dsse_arg), "dsse_envelope")
+            else (
+                _load_json_selector(str(dsse_arg), "dsse_envelope")
+                if dsse_arg
+                else _load_json_selector(str(signed_bundle_arg), "signed_bundle")
+            )
         )
         artifact_paths, artifact_digest_modes = _parse_artifacts(
             getattr(args, "artifact", []) or []
@@ -50,12 +70,21 @@ def run(args: argparse.Namespace) -> None:
             message=str(exc),
         )
 
-    verdict = ingest_external_evidence(
-        payload,
-        artifact_paths,
-        artifact_digest_modes=artifact_digest_modes,
-        otel_spans=otel_spans,
-    )
+    if signed_bundle_arg:
+        verdict = ingest_signed_evidence_bundle(
+            payload,
+            public_key,
+            artifact_paths,
+            artifact_digest_modes=artifact_digest_modes,
+            otel_spans=otel_spans,
+        )
+    else:
+        verdict = ingest_external_evidence(
+            payload,
+            artifact_paths,
+            artifact_digest_modes=artifact_digest_modes,
+            otel_spans=otel_spans,
+        )
     out_path = Path(str(getattr(args, "out", "evidence-ingest-verdict.json")))
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(
@@ -73,6 +102,7 @@ def run(args: argparse.Namespace) -> None:
             "verified_subject_count": verdict.get("verified_subject_count", 0),
             "predicate_recognized": verdict.get("predicate_recognized", False),
             "signing_status": verdict.get("signing_status"),
+            "signature_verified": verdict.get("signature_verified"),
         },
         human=[
             f"Evidence ingest decision: {verdict['decision']}",
@@ -104,6 +134,11 @@ def _load_json_selector(spec: str, default_key: str) -> Any:
         if isinstance(value, dict) and "otel_spans" in value:
             return value["otel_spans"]
         return value
+    if default_key == "signed_bundle":
+        if isinstance(value, dict) and "dsse_envelope" in value:
+            return value
+        if isinstance(value, dict) and "signed_evidence_bundle" in value:
+            return value["signed_evidence_bundle"]
     raise ValueError(f"JSON does not contain {default_key}")
 
 
@@ -207,6 +242,44 @@ def _self_test() -> None:
             )
             if signed_verdict["decision"] != "blocked":
                 raise AssertionError("unverifiable signatures should be blocked")
+
+            from depone.agent_fabric.sign import (
+                _generate_ed25519_keypair,
+                openssl_path,
+                sign_evidence_bundle,
+            )
+
+            if openssl_path() is not None:
+                signing_dir = Path(temp_dir) / "signing"
+                signing_dir.mkdir()
+                private_key, public_key = _generate_ed25519_keypair(signing_dir)
+                wrong_dir = signing_dir / "wrong"
+                wrong_dir.mkdir()
+                _wrong_private, wrong_public = _generate_ed25519_keypair(wrong_dir)
+                signed_bundle = sign_evidence_bundle(
+                    bundle,
+                    str(private_key),
+                    key_id="operator-test-key",
+                )
+                verified_signed = ingest_signed_evidence_bundle(
+                    signed_bundle,
+                    str(public_key),
+                    artifact_paths,
+                    artifact_digest_modes=artifact_digest_modes,
+                    otel_spans=signed_bundle["otel_spans"],
+                )
+                if verified_signed["decision"] != "pass":
+                    raise AssertionError("verified signed bundle should pass ingest")
+                if verified_signed.get("signature_verified") is not True:
+                    raise AssertionError("verified signed bundle should record verification")
+                wrong_key_signed = ingest_signed_evidence_bundle(
+                    signed_bundle,
+                    str(wrong_public),
+                    artifact_paths,
+                    artifact_digest_modes=artifact_digest_modes,
+                )
+                if wrong_key_signed["decision"] != "blocked":
+                    raise AssertionError("wrong public key should block signed ingest")
 
             # A subject artifact that is present on disk but cannot be hashed
             # (corrupt JSON in canonical mode) must fail closed as blocked, not

@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -9,6 +11,12 @@ from depone.agent_fabric.evidence_substrate import (
     build_evidence_bundle,
     DIGEST_MODE_CANONICAL_JSON,
     ingest_external_evidence,
+    ingest_signed_evidence_bundle,
+)
+from depone.agent_fabric.sign import (
+    _generate_ed25519_keypair,
+    openssl_path,
+    sign_evidence_bundle,
 )
 
 
@@ -52,6 +60,10 @@ class AgentFabricEvidenceIngestTests(unittest.TestCase):
 
     def _external_dir(self) -> Path:
         return Path("depone/fixtures/agent_fabric/external")
+
+    def _require_openssl(self) -> None:
+        if openssl_path() is None:
+            self.skipTest("openssl executable is not on PATH")
 
     def test_pass_when_all_real_bundle_subjects_match_disk(self) -> None:
         bundle = self._bundle()
@@ -174,6 +186,153 @@ class AgentFabricEvidenceIngestTests(unittest.TestCase):
 
         self.assertEqual(verdict["decision"], "blocked")
         self.assertEqual(verdict["signing_status"], "unverifiable-signature")
+
+    def test_signed_bundle_passes_when_public_key_and_subjects_verify(self) -> None:
+        self._require_openssl()
+        with tempfile.TemporaryDirectory() as temp_text:
+            temp_dir = Path(temp_text)
+            private_key, public_key = _generate_ed25519_keypair(temp_dir)
+            signed_bundle = sign_evidence_bundle(
+                self._bundle(),
+                str(private_key),
+                key_id="operator-test-key",
+            )
+
+            verdict = ingest_signed_evidence_bundle(
+                signed_bundle,
+                str(public_key),
+                self._artifact_paths(),
+                artifact_digest_modes=self._artifact_digest_modes(),
+                otel_spans=signed_bundle["otel_spans"],
+            )
+
+        self.assertEqual(verdict["decision"], "pass")
+        self.assertEqual(verdict["verified_subject_count"], 3)
+        self.assertEqual(verdict["signing_status"], "signed-ed25519-operator-key")
+        self.assertTrue(verdict["signature_verified"])
+        self.assertFalse(verdict["boundary"]["raises_assurance"])
+        self.assertTrue(verdict["boundary"]["trusts_external_signature"])
+
+    def test_signed_bundle_blocks_when_public_key_does_not_verify(self) -> None:
+        self._require_openssl()
+        with tempfile.TemporaryDirectory() as temp_text:
+            temp_dir = Path(temp_text)
+            private_key, _public_key = _generate_ed25519_keypair(temp_dir)
+            wrong_dir = temp_dir / "wrong"
+            wrong_dir.mkdir()
+            _wrong_private, wrong_public = _generate_ed25519_keypair(wrong_dir)
+            signed_bundle = sign_evidence_bundle(
+                self._bundle(),
+                str(private_key),
+                key_id="operator-test-key",
+            )
+
+            verdict = ingest_signed_evidence_bundle(
+                signed_bundle,
+                str(wrong_public),
+                self._artifact_paths(),
+                artifact_digest_modes=self._artifact_digest_modes(),
+            )
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertEqual(verdict["signing_status"], "unverifiable-signature")
+        self.assertFalse(verdict["signature_verified"])
+
+    def test_signed_bundle_cli_round_trip_passes_with_public_key(self) -> None:
+        self._require_openssl()
+        with tempfile.TemporaryDirectory() as temp_text:
+            temp_dir = Path(temp_text)
+            private_key, public_key = _generate_ed25519_keypair(temp_dir)
+            signed_bundle = sign_evidence_bundle(
+                self._bundle(),
+                str(private_key),
+                key_id="operator-test-key",
+            )
+            signed_path = temp_dir / "signed-bundle.json"
+            verdict_path = temp_dir / "verdict.json"
+            signed_path.write_text(
+                json.dumps(signed_bundle, indent=2, sort_keys=True),
+                encoding="utf-8",
+            )
+
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "depone",
+                    "evidence-ingest",
+                    "--signed-bundle",
+                    str(signed_path),
+                    "--public-key",
+                    str(public_key),
+                    "--artifact",
+                    f"source_fixture={self._artifact_paths()['source_fixture']}:json",
+                    "--artifact",
+                    (
+                        "depone-capture-manifest="
+                        f"{self._artifact_paths()['depone-capture-manifest']}:json"
+                    ),
+                    "--artifact",
+                    f"observer_capture={self._artifact_paths()['observer_capture']}:json",
+                    "--out",
+                    str(verdict_path),
+                ],
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            verdict = json.loads(verdict_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(verdict["decision"], "pass")
+        self.assertTrue(verdict["signature_verified"])
+        self.assertEqual(verdict["signing_status"], "signed-ed25519-operator-key")
+
+    def test_cli_rejects_signed_bundle_without_public_key_before_loading(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "depone",
+                "evidence-ingest",
+                "--signed-bundle",
+                "missing.json",
+                "--json",
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 3)
+        self.assertEqual(
+            json.loads(result.stdout)["error"]["code"],
+            "ERR_EVIDENCE_INGEST_PUBLIC_KEY_REQUIRED",
+        )
+
+    def test_cli_rejects_public_key_without_signed_bundle_before_loading(self) -> None:
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "depone",
+                "evidence-ingest",
+                "--dsse",
+                "missing.json",
+                "--public-key",
+                "operator.pub.pem",
+                "--json",
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 3)
+        self.assertEqual(
+            json.loads(result.stdout)["error"]["code"],
+            "ERR_EVIDENCE_INGEST_PUBLIC_KEY_WITHOUT_SIGNED_BUNDLE",
+        )
 
     def test_blocked_when_dsse_is_malformed_without_raise(self) -> None:
         verdict = ingest_external_evidence(

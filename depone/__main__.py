@@ -142,6 +142,15 @@ def _add_evidence_ingest_args(parser: argparse.ArgumentParser) -> None:
         "--dsse",
         help="Input DSSE envelope JSON or bundle JSON containing dsse_envelope",
     )
+    group.add_argument(
+        "--signed-bundle",
+        help="Input signed evidence bundle JSON; requires --public-key",
+    )
+    parser.add_argument(
+        "--public-key",
+        default="",
+        help="Ed25519 public key PEM used to verify --signed-bundle",
+    )
     parser.add_argument(
         "--otel-spans",
         default=None,

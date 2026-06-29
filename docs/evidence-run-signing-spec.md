@@ -53,6 +53,8 @@ This slice:
 - Keeps the existing unsigned ingest path unchanged.
 - Reuses a shared `sign_evidence_bundle(...)` helper for both `evidence-run` and
   `agent-fabric-sign`.
+- Lets `evidence-ingest --signed-bundle ... --public-key ...` verify the signed
+  bundle before subject digest ingest.
 - Commits re-validatable machine artifacts under `docs/evidence-run-signing/`.
 
 It deliberately does not add Python dependencies, Sigstore, Rekor, OIDC, or an
@@ -89,6 +91,16 @@ PY
 python3 -m depone agent-fabric-verify-signature \
   --bundle docs/evidence-run-signing/signed-evidence-bundle.json \
   --public-key docs/evidence-run-signing/operator-ed25519.pub.pem
+
+python3 -m depone evidence-ingest \
+  --signed-bundle docs/evidence-run-signing/signed-evidence-bundle.json \
+  --public-key docs/evidence-run-signing/operator-ed25519.pub.pem \
+  --otel-spans docs/evidence-run-signing/signed-evidence-bundle.json \
+  --artifact depone-capture-manifest=docs/evidence-run-signing/capture-manifest.json:json \
+  --artifact source_fixture=depone/fixtures/agent_fabric/reference_adapter_shell.json:json \
+  --artifact observer_capture=docs/evidence-run-signing/observer-capture.json:json \
+  --out /tmp/depone-signed-ingest-verdict.json \
+  --json
 ```
 
 Expected successful output must include:
@@ -96,6 +108,7 @@ Expected successful output must include:
 ```text
 MERGE_OK: True
 verified: true
+{"command": "evidence-ingest", "decision": "pass", ... "signature_verified": true, ...}
 ```
 
 ## Honest Residuals

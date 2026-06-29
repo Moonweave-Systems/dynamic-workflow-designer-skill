@@ -14,11 +14,14 @@ are committed under `docs/evidence-run-signing/`:
 
 - `capture-manifest.json`
 - `evidence-run-summary.json`
+- `observer-capture.json`
 - `signed-evidence-bundle.json`
 - `operator-ed25519.pub.pem`
 
 The private key used for capture was generated outside the repo and is not
-committed. The public key verifies the committed signed bundle.
+committed. The public key verifies the committed signed bundle, and
+`evidence-ingest` can verify the signed bundle against the committed subject
+artifacts.
 
 Re-validate with the commands in `docs/evidence-run-signing-spec.md`.
 
