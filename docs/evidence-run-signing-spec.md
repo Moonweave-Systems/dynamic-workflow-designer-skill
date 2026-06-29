@@ -37,8 +37,8 @@ Fail-closed cases:
 - OpenSSL is unavailable.
 - The private key, key id, or DSSE envelope is missing.
 - The signed bundle does not verify with the supplied public key.
-- A consumer tampers with the unsigned top-level statement or assurance fields
-  that mirror the signed statement payload.
+- A consumer tampers with or strips the unsigned top-level statement,
+  assurance, or boundary fields that mirror the signed statement payload.
 - A consumer tampers with the top-level operator-key signing metadata into a
   keyless or transparency-logged claim.
 

@@ -240,21 +240,25 @@ def verify_signed_bundle(bundle: dict[str, Any], public_key_path: str) -> bool:
     if bundle.get("signature_boundary") != operator_key_signature_boundary():
         return False
 
-    if "statement" in bundle and bundle["statement"] != signed_statement:
+    if bundle.get("statement") != signed_statement:
         return False
 
     predicate = signed_statement.get("predicate")
     predicate = predicate if isinstance(predicate, dict) else {}
-    if "assurance" in bundle and bundle["assurance"] != predicate.get("assurance"):
+    if bundle.get("assurance") != predicate.get("assurance"):
         return False
 
     signed_boundary = predicate.get("boundary")
-    signed_boundary = signed_boundary if isinstance(signed_boundary, dict) else {}
+    if not isinstance(signed_boundary, dict):
+        return False
     bundle_boundary = bundle.get("boundary")
-    if isinstance(bundle_boundary, dict):
-        for key, signed_value in signed_boundary.items():
-            if key in bundle_boundary and bundle_boundary[key] != signed_value:
-                return False
+    if not isinstance(bundle_boundary, dict):
+        return False
+    for key, signed_value in signed_boundary.items():
+        if key == "signing_status":
+            continue
+        if bundle_boundary.get(key) != signed_value:
+            return False
     return True
 
 

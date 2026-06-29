@@ -122,6 +122,22 @@ class AgentFabricSignTest(unittest.TestCase):
             upgraded_boundary["signature_boundary"]["transparency_logged"] = True
             self.assertFalse(verify_signed_bundle(upgraded_boundary, str(public_key)))
 
+    def test_verify_signed_bundle_rejects_stripped_top_level_claims(self) -> None:
+        self._require_openssl()
+        bundle = self._bundle()
+        with tempfile.TemporaryDirectory() as temp_text:
+            temp_dir = Path(temp_text)
+            private_key, public_key = _generate_ed25519_keypair(temp_dir)
+            signed_bundle = sign_evidence_bundle(
+                bundle, str(private_key), key_id="operator-test-key"
+            )
+            self.assertTrue(verify_signed_bundle(signed_bundle, str(public_key)))
+
+            for key in ("statement", "assurance", "boundary"):
+                stripped = json.loads(json.dumps(signed_bundle))
+                stripped.pop(key)
+                self.assertFalse(verify_signed_bundle(stripped, str(public_key)))
+
     def test_tamper_wrong_key_and_malformed_signatures_fail_closed(self) -> None:
         self._require_openssl()
         bundle = self._bundle()
