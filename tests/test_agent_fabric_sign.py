@@ -79,6 +79,30 @@ class AgentFabricSignTest(unittest.TestCase):
             )
             self.assertFalse(verify_signed_bundle(tampered, str(public_key)))
 
+    def test_verify_signed_bundle_rejects_upgraded_top_level_claims(self) -> None:
+        # The signature covers only the statement. Top-level fields that echo
+        # signed content (assurance, overlapping boundary keys) must agree with
+        # the signed predicate, or a forged upgrade would ride along with a
+        # valid signature.
+        self._require_openssl()
+        bundle = self._bundle()
+        with tempfile.TemporaryDirectory() as temp_text:
+            temp_dir = Path(temp_text)
+            private_key, public_key = _generate_ed25519_keypair(temp_dir)
+            signed_bundle = dict(bundle)
+            signed_bundle["dsse_envelope"] = sign_dsse_envelope(
+                bundle["dsse_envelope"], str(private_key), key_id="operator-test-key"
+            )
+            self.assertTrue(verify_signed_bundle(signed_bundle, str(public_key)))
+
+            upgraded = json.loads(json.dumps(signed_bundle))
+            upgraded["assurance"] = "A3-keyless-signed-rekor"
+            self.assertFalse(verify_signed_bundle(upgraded, str(public_key)))
+
+            flipped = json.loads(json.dumps(signed_bundle))
+            flipped["boundary"]["signed"] = True
+            self.assertFalse(verify_signed_bundle(flipped, str(public_key)))
+
     def test_tamper_wrong_key_and_malformed_signatures_fail_closed(self) -> None:
         self._require_openssl()
         bundle = self._bundle()

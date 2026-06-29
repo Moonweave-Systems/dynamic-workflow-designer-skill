@@ -170,10 +170,21 @@ def verify_dsse_envelope(envelope: dict[str, Any], public_key_path: str) -> bool
 def verify_signed_bundle(bundle: dict[str, Any], public_key_path: str) -> bool:
     """Verify a signed evidence bundle, returning False on any failure.
 
-    The DSSE signature must verify AND, if the bundle carries a plaintext
-    ``statement``, it must equal the signed payload — otherwise a consumer
-    reading ``bundle['statement']`` could be fooled by an unsigned duplicate the
-    signature does not cover.
+    The DSSE signature covers only the in-toto statement. Any top-level bundle
+    field that duplicates signed content must agree with it, or a consumer
+    reading that field after a ``True`` result would be fooled by an unsigned
+    duplicate the signature does not cover. This guards the plaintext
+    ``statement``, the ``assurance`` claim, and the overlapping keys of
+    ``boundary`` (for example ``signed`` and ``raises_assurance``) against the
+    signed statement predicate.
+
+    Residual, by design of a statement-only signature: fields that describe the
+    signing act itself (``signing_status``, ``signature_boundary``) are written
+    after — and therefore cannot live inside — the signed payload, and
+    ``otel_spans`` plus any ``boundary`` key with no counterpart in the signed
+    predicate (such as ``approves_public_claim``) are likewise not covered.
+    Consumers must not treat those as signed; closing that needs them moved into
+    the signed predicate or the whole bundle signed (a later milestone).
     """
 
     if not isinstance(bundle, dict):
@@ -183,14 +194,30 @@ def verify_signed_bundle(bundle: dict[str, Any], public_key_path: str) -> bool:
         return False
     if not verify_dsse_envelope(envelope, public_key_path):
         return False
-    if "statement" in bundle:
-        try:
-            _payload_type, payload = _decode_envelope_payload(envelope)
-            signed_statement = json.loads(payload)
-        except Exception:
-            return False
-        if bundle["statement"] != signed_statement:
-            return False
+
+    try:
+        _payload_type, payload = _decode_envelope_payload(envelope)
+        signed_statement = json.loads(payload)
+    except Exception:
+        return False
+    if not isinstance(signed_statement, dict):
+        return False
+
+    if "statement" in bundle and bundle["statement"] != signed_statement:
+        return False
+
+    predicate = signed_statement.get("predicate")
+    predicate = predicate if isinstance(predicate, dict) else {}
+    if "assurance" in bundle and bundle["assurance"] != predicate.get("assurance"):
+        return False
+
+    signed_boundary = predicate.get("boundary")
+    signed_boundary = signed_boundary if isinstance(signed_boundary, dict) else {}
+    bundle_boundary = bundle.get("boundary")
+    if isinstance(bundle_boundary, dict):
+        for key, signed_value in signed_boundary.items():
+            if key in bundle_boundary and bundle_boundary[key] != signed_value:
+                return False
     return True
 
 
@@ -260,4 +287,12 @@ def _self_test() -> None:
         _ = wrong_private
         if verify_dsse_envelope(signed, str(wrong_public)):
             raise AssertionError("wrong public key should not verify")
+        signed_bundle = dict(bundle)
+        signed_bundle["dsse_envelope"] = signed
+        if not verify_signed_bundle(signed_bundle, str(public_key)):
+            raise AssertionError("honest signed bundle should verify")
+        upgraded = json.loads(json.dumps(signed_bundle))
+        upgraded["assurance"] = "A3-keyless-signed"
+        if verify_signed_bundle(upgraded, str(public_key)):
+            raise AssertionError("an upgraded top-level assurance must not verify")
     print("depone agent-fabric-sign --self-test: pass")
