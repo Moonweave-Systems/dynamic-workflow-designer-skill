@@ -238,7 +238,7 @@ def _normalize_check_summary(pr: dict[str, Any]) -> dict[str, int | str | None]:
         elif isinstance(raw_rollup.get("nodes"), list):
             raw_rollup = raw_rollup.get("nodes")
 
-    if not isinstance(raw_rollup, list):
+    if not isinstance(raw_rollup, list) or not raw_rollup:
         return {"status": "blocked", "total_count": 0, "failed_count": 0, "pending_count": 1}
 
     failed_count = 0
@@ -437,6 +437,12 @@ def _self_test() -> None:
     )
     if not any(error["code"] == "ERR_TEAM_PR_ARTIFACT_HEAD_SHA_MISMATCH" for error in mismatch):
         raise AssertionError("expected head SHA mismatch")
+    empty_rollup = dict(source)
+    empty_rollup["statusCheckRollup"] = {"contexts": []}
+    empty_artifact = build_team_pr_artifact(empty_rollup, captured_at="2026-06-30T15:00:00Z", strict=False)
+    empty_errors = validate_team_pr_artifact(empty_artifact, expected_head_sha=source["headRefOid"])
+    if not any(error["code"] == "ERR_TEAM_PR_ARTIFACT_CHECKS_NOT_PASSING" for error in empty_errors):
+        raise AssertionError("empty statusCheckRollup contexts must block")
     with tempfile.TemporaryDirectory() as temp_text:
         out = Path(temp_text) / "pr-artifact.json"
         write_team_pr_artifact(artifact, out)
