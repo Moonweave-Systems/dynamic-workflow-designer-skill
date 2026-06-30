@@ -1,0 +1,13 @@
+{
+  "command": "printf \"after\\n\" > sample.txt",
+  "cwd": "/srv/depone/advance-sandbox",
+  "ended_at": "2026-06-30T01:43:40Z",
+  "exit_code": 0,
+  "observed_uid": 1002,
+  "runtime": "posix-sudo",
+  "started_at": "2026-06-30T01:43:40Z",
+  "stderr": "",
+  "stdout": "",
+  "uid": 1002,
+  "user": "deponerun"
+}

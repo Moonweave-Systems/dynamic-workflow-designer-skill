@@ -1,0 +1,72 @@
+{
+  "boundary": {
+    "isolation": {
+      "boundary": true,
+      "model": "uid-boundary-observer-launched-unwritable-observer-dir",
+      "observer_dir_writable_by_runner": false,
+      "observer_launched": true,
+      "observer_uid": 1001,
+      "reasons": [],
+      "runner_uid": 1002
+    },
+    "note": "A2 isolated observed: observer-launched uid runner ran under a different uid and could not write the observer output.",
+    "observer_assurance": "A2-isolated-observed",
+    "privilege_isolated": true
+  },
+  "capture_manifest": {
+    "assurance": "A2-isolated-observed",
+    "decision": "isolated-observed",
+    "error_count": 0,
+    "errors": [],
+    "path": "docs/depone-advance-one-step/evidence-run-next/capture-manifest.json"
+  },
+  "command": "evidence-run",
+  "decision": "pass",
+  "evidence_ingest": {
+    "decision": "pass",
+    "out": "docs/depone-advance-one-step/evidence-run-next/ingest-verdict.json",
+    "signing_status": "unsigned-content-addressed",
+    "subject_count": 4,
+    "verified_subject_count": 4
+  },
+  "evidence_substrate": {
+    "assurance": "A2-isolated-observed",
+    "decision": "pass",
+    "error_count": 0,
+    "errors": [],
+    "otel_span_count": 2,
+    "out": "docs/depone-advance-one-step/evidence-run-next/evidence-bundle.json",
+    "signing_status": "unsigned-content-addressed",
+    "subject_count": 4
+  },
+  "observe": {
+    "decision": "pass",
+    "log": "docs/depone-advance-one-step/evidence-run-next/observer-owned/verify-log.json",
+    "observer_capture_hash": "4119e65b477a108d0ff304d1b119ef332ea8809a7938f31bcb95254de298ba37",
+    "out": "docs/depone-advance-one-step/evidence-run-next/observer-owned/observer-capture.json",
+    "status": "passed"
+  },
+  "out": "docs/depone-advance-one-step/evidence-run-next",
+  "runner_receipt": {
+    "arm": "governed",
+    "error_count": 0,
+    "errors": [],
+    "path": "docs/depone-advance-one-step/evidence-run-next/runner-receipt.json",
+    "runner_kind": "manual"
+  },
+  "signed_evidence_bundle": {
+    "decision": "skipped",
+    "out": null,
+    "public_key": null,
+    "signing_status": "unsigned-content-addressed",
+    "verified": null
+  },
+  "verify": {
+    "assurance": "A0-claims-only",
+    "decision": "pass",
+    "operator_view_out": "docs/depone-advance-one-step/evidence-run-next/operator-view.md",
+    "out": "docs/depone-advance-one-step/evidence-run-next/verify-report.json",
+    "phase_count": 2,
+    "verdict": "verified"
+  }
+}

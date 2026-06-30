@@ -1,0 +1,27 @@
+{
+  "arm": "governed",
+  "ended_at": "2026-06-30T01:43:40Z",
+  "exit_code": 0,
+  "human_intervened": false,
+  "invocation": [
+    "/usr/bin/sudo",
+    "-u",
+    "deponerun",
+    "bash",
+    "-lc",
+    "set -eu\nprintf \"__DEPONE_RUNNER_UID=%s\\n\" \"$(id -u)\"\nprintf \"after\\n\" > sample.txt"
+  ],
+  "kind": "agent-fabric-runner-receipt",
+  "runner_kind": "manual",
+  "schema_version": "1.0",
+  "source_hashes": {
+    "receipt": "b95fe5773538ac95df07d158ae637522c83290da5ec13107f2d0ec04ec2e5156"
+  },
+  "started_at": "2026-06-30T01:43:40Z",
+  "task_id": "evidence-run",
+  "touched_files": [
+    "sample.txt"
+  ],
+  "transcript_path": "docs/depone-advance-one-step/evidence-run-next/runner-transcript.json",
+  "worktree": "/srv/depone/advance-sandbox"
+}

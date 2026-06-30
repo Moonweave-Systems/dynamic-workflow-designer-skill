@@ -28,7 +28,6 @@ from depone.cli import (
     doctor,
     evidence_next,
     evidence_run,
-    advance,
     validate,
     validate_contracts,
 )
@@ -341,20 +340,6 @@ def _add_evidence_run_args(parser: argparse.ArgumentParser) -> None:
     )
 
 
-def _add_advance_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument(
-        "--evidence-dir",
-        default="",
-        help="Previous evidence-run artifact directory to re-validate before one continuation",
-    )
-    parser.add_argument(
-        "--advance-out",
-        default="",
-        help="Output path for the advance decision artifact; defaults to <out>/advance-decision.json",
-    )
-    _add_evidence_run_args(parser)
-
-
 def _add_evidence_next_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--evidence-dir",
@@ -387,13 +372,13 @@ def _add_advance_args(parser: argparse.ArgumentParser) -> None:
     )
     parser.add_argument(
         "--advance-out",
-        default="advance-decision.json",
-        help="Machine-readable advance decision artifact path",
+        default="",
+        help="Output path for the advance decision artifact; defaults to <out>/advance-decision.json",
     )
     parser.add_argument(
         "--previous-source-fixture",
         default="",
-        help="Optional source fixture override for the previous evidence-next gate",
+        help="Optional source fixture override used only for the previous evidence-next gate",
     )
     _add_evidence_run_args(parser)
 

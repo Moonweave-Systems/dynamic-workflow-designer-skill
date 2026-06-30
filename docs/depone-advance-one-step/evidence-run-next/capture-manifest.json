@@ -1,0 +1,168 @@
+{
+  "allowed_touched_files": [
+    "sample.txt"
+  ],
+  "assurance": "A2-isolated-observed",
+  "decision": "isolated-observed",
+  "fixture": {
+    "adapter": {
+      "executes_commands": false,
+      "harness": "shell",
+      "mode": "fixture-only",
+      "name": "shell-reference-fixture"
+    },
+    "capture": {
+      "command_receipts": [],
+      "diff_summary": {
+        "changed_files": [],
+        "summary": "fixture-only adapter did not observe a diff"
+      },
+      "self_report": {
+        "agent_role": "runner",
+        "command_receipts": [],
+        "errors": [
+          "fixture-only adapter did not execute work"
+        ],
+        "output_files": [
+          "out/agent/result.txt"
+        ],
+        "profile": "self-test-profile",
+        "result_version": "1.0",
+        "self_reported_claims": [
+          "fixture captured a self-report shape"
+        ],
+        "status": "partial"
+      },
+      "test_output": {
+        "command": null,
+        "status": "not-run",
+        "summary": "fixture-only adapter did not run tests"
+      },
+      "touched_files": [],
+      "trust_level": "A0-claims-only"
+    },
+    "invocation": {
+      "context_policy": "local-code-only",
+      "evidence_obligations": [
+        "command_receipt"
+      ],
+      "instructions": "Run local checks and report outputs without writing observer-owned evidence.",
+      "packet_version": "1.0",
+      "profile": "self-test-profile",
+      "role": "runner",
+      "target_harness": "shell",
+      "toolbelt": {
+        "allowed_mcp": [],
+        "allowed_tools": [
+          "cat",
+          "python3"
+        ],
+        "context_policy": "local-code-only",
+        "evidence_obligations": [
+          "command_receipt"
+        ],
+        "forbidden_tools": [
+          "write"
+        ],
+        "output_schema": "runner-result-v1"
+      }
+    },
+    "kind": "agent-fabric-reference-adapter-fixture",
+    "schema_version": "1.0"
+  },
+  "isolation": {
+    "boundary": true,
+    "model": "uid-boundary-observer-launched-unwritable-observer-dir",
+    "observer_dir_writable_by_runner": false,
+    "observer_launched": true,
+    "observer_uid": 1001,
+    "reasons": [],
+    "runner_uid": 1002
+  },
+  "isolation_hash": "7d6d2c085ab84e2a9997af1802a4648942a11cb69e71c240752f8cfd7dcaae53",
+  "kind": "agent-fabric-capture-manifest",
+  "observer_capture": {
+    "command_receipts": [
+      {
+        "command": [
+          "python",
+          "-c",
+          "from pathlib import Path; assert Path('sample.txt').read_text() == 'after\\n'"
+        ],
+        "cwd": "/srv/depone/advance-sandbox",
+        "ended_at": "2026-06-30T01:43:40Z",
+        "exit_code": 0,
+        "log_path": "/home/ubuntu/depone/docs/depone-advance-one-step/evidence-run-next/observer-owned/verify-log.json",
+        "started_at": "2026-06-30T01:43:40Z",
+        "status": "passed"
+      }
+    ],
+    "diff_summary": {
+      "changed_file_count": 1,
+      "changed_files": [
+        "sample.txt"
+      ],
+      "stat": " sample.txt | 2 +-\n 1 file changed, 1 insertion(+), 1 deletion(-)"
+    },
+    "observed_by": "depone-observer",
+    "observer_independence": {
+      "model": "separate-process-observer-owned-dir",
+      "note": "Process- and directory-separated capture. Not privilege-isolated (same uid); full A2 requires a uid or container boundary, deferred.",
+      "observer_dir": "/home/ubuntu/depone/docs/depone-advance-one-step/evidence-run-next/observer-owned",
+      "observer_pid": 1689969,
+      "out_is_outside_sandbox": true,
+      "privilege_boundary": false,
+      "runner_sandbox": "/srv/depone/advance-sandbox",
+      "tamper_resistant_same_uid": false
+    },
+    "runner_uid_launch": {
+      "command": "printf \"after\\n\" > sample.txt",
+      "cwd": "/srv/depone/advance-sandbox",
+      "ended_at": "2026-06-30T01:43:40Z",
+      "exit_code": 0,
+      "invocation": [
+        "/usr/bin/sudo",
+        "-u",
+        "deponerun",
+        "bash",
+        "-lc",
+        "set -eu\nprintf \"__DEPONE_RUNNER_UID=%s\\n\" \"$(id -u)\"\nprintf \"after\\n\" > sample.txt"
+      ],
+      "observed_uid": 1002,
+      "runtime": "posix-sudo",
+      "started_at": "2026-06-30T01:43:40Z",
+      "stderr": "",
+      "stdout": "",
+      "uid": 1002,
+      "user": "deponerun"
+    },
+    "source_fixture_hash": "009327cf064732c631c6a3144fb4b79d71e48ca0ccd37e1c9099bfc18af95c29",
+    "test_output": {
+      "command": [
+        "python",
+        "-c",
+        "from pathlib import Path; assert Path('sample.txt').read_text() == 'after\\n'"
+      ],
+      "pre_verification_changed_files": [
+        "sample.txt"
+      ],
+      "status": "passed",
+      "summary": "exit 0"
+    },
+    "touched_files": [
+      "sample.txt"
+    ]
+  },
+  "observer_capture_hash": "4119e65b477a108d0ff304d1b119ef332ea8809a7938f31bcb95254de298ba37",
+  "prev_capture_hash": null,
+  "required_observer_fields": [
+    "command_receipts",
+    "diff_summary",
+    "observed_by",
+    "source_fixture_hash",
+    "test_output",
+    "touched_files"
+  ],
+  "schema_version": "1.0",
+  "source_fixture_hash": "009327cf064732c631c6a3144fb4b79d71e48ca0ccd37e1c9099bfc18af95c29"
+}

@@ -1,0 +1,11 @@
+{
+  "command": [
+    "python",
+    "-c",
+    "from pathlib import Path; assert Path('sample.txt').read_text() == 'after\\n'"
+  ],
+  "cwd": "/srv/depone/advance-sandbox",
+  "exit_code": 0,
+  "stderr": "",
+  "stdout": ""
+}

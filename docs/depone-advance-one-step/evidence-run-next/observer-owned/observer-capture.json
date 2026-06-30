@@ -1,0 +1,72 @@
+{
+  "command_receipts": [
+    {
+      "command": [
+        "python",
+        "-c",
+        "from pathlib import Path; assert Path('sample.txt').read_text() == 'after\\n'"
+      ],
+      "cwd": "/srv/depone/advance-sandbox",
+      "ended_at": "2026-06-30T01:43:40Z",
+      "exit_code": 0,
+      "log_path": "/home/ubuntu/depone/docs/depone-advance-one-step/evidence-run-next/observer-owned/verify-log.json",
+      "started_at": "2026-06-30T01:43:40Z",
+      "status": "passed"
+    }
+  ],
+  "diff_summary": {
+    "changed_file_count": 1,
+    "changed_files": [
+      "sample.txt"
+    ],
+    "stat": " sample.txt | 2 +-\n 1 file changed, 1 insertion(+), 1 deletion(-)"
+  },
+  "observed_by": "depone-observer",
+  "observer_independence": {
+    "model": "separate-process-observer-owned-dir",
+    "note": "Process- and directory-separated capture. Not privilege-isolated (same uid); full A2 requires a uid or container boundary, deferred.",
+    "observer_dir": "/home/ubuntu/depone/docs/depone-advance-one-step/evidence-run-next/observer-owned",
+    "observer_pid": 1689969,
+    "out_is_outside_sandbox": true,
+    "privilege_boundary": false,
+    "runner_sandbox": "/srv/depone/advance-sandbox",
+    "tamper_resistant_same_uid": false
+  },
+  "runner_uid_launch": {
+    "command": "printf \"after\\n\" > sample.txt",
+    "cwd": "/srv/depone/advance-sandbox",
+    "ended_at": "2026-06-30T01:43:40Z",
+    "exit_code": 0,
+    "invocation": [
+      "/usr/bin/sudo",
+      "-u",
+      "deponerun",
+      "bash",
+      "-lc",
+      "set -eu\nprintf \"__DEPONE_RUNNER_UID=%s\\n\" \"$(id -u)\"\nprintf \"after\\n\" > sample.txt"
+    ],
+    "observed_uid": 1002,
+    "runtime": "posix-sudo",
+    "started_at": "2026-06-30T01:43:40Z",
+    "stderr": "",
+    "stdout": "",
+    "uid": 1002,
+    "user": "deponerun"
+  },
+  "source_fixture_hash": "009327cf064732c631c6a3144fb4b79d71e48ca0ccd37e1c9099bfc18af95c29",
+  "test_output": {
+    "command": [
+      "python",
+      "-c",
+      "from pathlib import Path; assert Path('sample.txt').read_text() == 'after\\n'"
+    ],
+    "pre_verification_changed_files": [
+      "sample.txt"
+    ],
+    "status": "passed",
+    "summary": "exit 0"
+  },
+  "touched_files": [
+    "sample.txt"
+  ]
+}

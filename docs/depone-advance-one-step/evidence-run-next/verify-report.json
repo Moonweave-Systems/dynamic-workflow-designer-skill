@@ -1,0 +1,36 @@
+{
+  "agent_fabric_captures": [],
+  "assurance": "A0-claims-only",
+  "claim_evaluations": [],
+  "decision": "pass",
+  "evidence_contract": [],
+  "framework": "generic",
+  "phases": [
+    {
+      "adversarial": [],
+      "budget": {
+        "exceeded": [],
+        "within_limits": true
+      },
+      "gates": [],
+      "handoffs": [],
+      "phase_id": "phase-1",
+      "status": "passed"
+    },
+    {
+      "adversarial": [],
+      "budget": {
+        "exceeded": [],
+        "within_limits": true
+      },
+      "gates": [],
+      "handoffs": [],
+      "phase_id": "phase-2",
+      "status": "passed"
+    }
+  ],
+  "plan_hash": "f94bd226b8c66d3930a71974c020b7ec761100c213d4e76761af05038f262205",
+  "run_id": "v105-good",
+  "schema_version": "1.0",
+  "verdict": "verified"
+}

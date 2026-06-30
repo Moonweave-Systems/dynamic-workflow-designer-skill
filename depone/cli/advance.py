@@ -60,9 +60,14 @@ def advance_once(args: argparse.Namespace) -> dict[str, Any]:
     """Gate a single evidence-run continuation on a fresh evidence-next verdict."""
 
     previous_dir = Path(str(getattr(args, "evidence_dir", "") or ""))
-    source_fixture_arg = str(getattr(args, "source_fixture", "") or "")
-    source_fixture = Path(source_fixture_arg) if source_fixture_arg else None
-    next_decision = evaluate_evidence_dir(previous_dir, source_fixture=source_fixture)
+    previous_source_fixture_arg = str(getattr(args, "previous_source_fixture", "") or "")
+    previous_source_fixture = (
+        Path(previous_source_fixture_arg) if previous_source_fixture_arg else None
+    )
+    next_decision = evaluate_evidence_dir(
+        previous_dir,
+        source_fixture=previous_source_fixture,
+    )
     artifact = _base_artifact(args, previous_dir, next_decision)
 
     blockers = next_decision.get("blocking_reasons", [])
@@ -75,6 +80,7 @@ def advance_once(args: argparse.Namespace) -> dict[str, Any]:
                 "action": "refuse_continuation",
                 "reason": "evidence-next did not return continue with zero blockers",
                 "continuation": None,
+                "executed_continuations": 0,
                 "automation_boundary": {
                     "executed_continuation_count": 0,
                     "max_continuations": 1,
@@ -91,6 +97,7 @@ def advance_once(args: argparse.Namespace) -> dict[str, Any]:
             "decision": "pass" if continuation.get("decision") == "pass" else "blocked",
             "action": "ran_one_evidence_run_continuation",
             "reason": "continuation completed" if continuation.get("decision") == "pass" else "continuation did not pass",
+            "executed_continuations": 1,
             "continuation": {
                 "command": continuation.get("command"),
                 "decision": continuation.get("decision"),
@@ -128,6 +135,9 @@ def _base_artifact(
             "assurance": next_decision.get("assurance"),
             "verified_artifacts": next_decision.get("verified_artifacts"),
         },
+        "previous_source_fixture": str(
+            getattr(args, "previous_source_fixture", "") or ""
+        ),
         "requested_continuation": {
             "runner_sandbox": str(getattr(args, "runner_sandbox", "") or ""),
             "source_fixture": str(getattr(args, "source_fixture", "") or ""),

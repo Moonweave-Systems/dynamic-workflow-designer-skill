@@ -38,6 +38,7 @@ class EvidenceAdvanceTests(unittest.TestCase):
             sign_private_key="",
             sign_key_id="",
             sign_public_key="",
+            previous_source_fixture="",
             verification_command=[sys.executable, "-m", "unittest"],
             json=True,
         )
@@ -46,6 +47,7 @@ class EvidenceAdvanceTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
             args = self._args(root)
+            args.previous_source_fixture = str(root / "previous-source.json")
             calls = []
 
             def fake_evaluate(path: Path, *, source_fixture: Path | None = None) -> dict[str, object]:
@@ -65,9 +67,10 @@ class EvidenceAdvanceTests(unittest.TestCase):
                 ):
                     artifact = advance.advance_once(args)
 
-        self.assertEqual(calls, [(Path(args.evidence_dir), Path(args.source_fixture))])
+        self.assertEqual(calls, [(Path(args.evidence_dir), Path(args.previous_source_fixture))])
         self.assertEqual(artifact["decision"], "pass")
         self.assertEqual(artifact["next_gate"]["decision"], "continue")
+        self.assertEqual(artifact["previous_source_fixture"], args.previous_source_fixture)
 
     def test_advance_refuses_when_next_decision_is_not_continue(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -83,6 +86,7 @@ class EvidenceAdvanceTests(unittest.TestCase):
 
         self.assertEqual(artifact["decision"], "blocked")
         self.assertEqual(artifact["action"], "refuse_continuation")
+        self.assertEqual(artifact["executed_continuations"], 0)
         self.assertEqual(artifact["automation_boundary"]["executed_continuation_count"], 0)
         run_loop.assert_not_called()
 
@@ -119,6 +123,7 @@ class EvidenceAdvanceTests(unittest.TestCase):
                     artifact = advance.advance_once(args)
 
         run_loop.assert_called_once_with(args)
+        self.assertEqual(artifact["executed_continuations"], 1)
         self.assertEqual(artifact["automation_boundary"]["executed_continuation_count"], 1)
         self.assertFalse(artifact["automation_boundary"]["full_scheduler"])
 
@@ -146,6 +151,7 @@ class EvidenceAdvanceTests(unittest.TestCase):
         self.assertEqual(payload["decision"], "pass")
         self.assertEqual(payload["previous_evidence_dir"], str(root / "previous"))
         self.assertEqual(payload["continuation"]["decision"], "pass")
+        self.assertEqual(payload["executed_continuations"], 1)
         self.assertEqual(payload["out"], str(root / "advance-decision.json"))
 
     def test_cli_advance_dispatches_to_advance(self) -> None:

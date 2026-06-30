@@ -1,0 +1,79 @@
+{
+  "action": "ran_one_evidence_run_continuation",
+  "automation_boundary": {
+    "executed_continuation_count": 1,
+    "full_scheduler": false,
+    "max_continuations": 1
+  },
+  "command": "advance",
+  "continuation": {
+    "boundary": {
+      "isolation": {
+        "boundary": true,
+        "model": "uid-boundary-observer-launched-unwritable-observer-dir",
+        "observer_dir_writable_by_runner": false,
+        "observer_launched": true,
+        "observer_uid": 1001,
+        "reasons": [],
+        "runner_uid": 1002
+      },
+      "note": "A2 isolated observed: observer-launched uid runner ran under a different uid and could not write the observer output.",
+      "observer_assurance": "A2-isolated-observed",
+      "privilege_isolated": true
+    },
+    "command": "evidence-run",
+    "decision": "pass",
+    "evidence_ingest": {
+      "decision": "pass",
+      "out": "docs/depone-advance-one-step/evidence-run-next/ingest-verdict.json",
+      "signing_status": "unsigned-content-addressed",
+      "subject_count": 4,
+      "verified_subject_count": 4
+    },
+    "observe": {
+      "decision": "pass",
+      "log": "docs/depone-advance-one-step/evidence-run-next/observer-owned/verify-log.json",
+      "observer_capture_hash": "4119e65b477a108d0ff304d1b119ef332ea8809a7938f31bcb95254de298ba37",
+      "out": "docs/depone-advance-one-step/evidence-run-next/observer-owned/observer-capture.json",
+      "status": "passed"
+    },
+    "out": "docs/depone-advance-one-step/evidence-run-next",
+    "verify": {
+      "assurance": "A0-claims-only",
+      "decision": "pass",
+      "operator_view_out": "docs/depone-advance-one-step/evidence-run-next/operator-view.md",
+      "out": "docs/depone-advance-one-step/evidence-run-next/verify-report.json",
+      "phase_count": 2,
+      "verdict": "verified"
+    }
+  },
+  "decision": "pass",
+  "executed_continuations": 1,
+  "next_gate": {
+    "assurance": "A2-isolated-observed",
+    "blocking_reasons": [],
+    "command": "evidence-next",
+    "decision": "continue",
+    "next_action": "run_next_evidence_slice",
+    "verified_artifacts": {
+      "subject_count": 4,
+      "verified_subject_count": 4
+    }
+  },
+  "out": "docs/depone-advance-one-step/advance-decision.json",
+  "previous_evidence_dir": "docs/depone-run-receipt-frontdoor",
+  "previous_source_fixture": "",
+  "reason": "continuation completed",
+  "requested_continuation": {
+    "out": "docs/depone-advance-one-step/evidence-run-next",
+    "runner_sandbox": "/srv/depone/advance-sandbox",
+    "source_fixture": "depone/fixtures/agent_fabric/reference_adapter_shell.json",
+    "verification_command": [
+      "--",
+      "python",
+      "-c",
+      "from pathlib import Path; assert Path('sample.txt').read_text() == 'after\\n'"
+    ]
+  },
+  "schema_version": "1.0"
+}
