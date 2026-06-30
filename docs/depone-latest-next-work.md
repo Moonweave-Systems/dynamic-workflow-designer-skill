@@ -1,12 +1,12 @@
 # Depone Latest Next Work
 
-Status: current agent-facing execution note after PR #51 merge.
+Status: current agent-facing execution note after PR #53 merge.
 Date: 2026-06-30
-Base: `origin/main` at `7d28e02` (`Add shell lane launch receipt (#51)`)
+Base: `origin/main` at `c53a96d` (`Add Codex local capability receipt (#53)`)
 
 ## Current Truth
 
-Depone has reached the first non-model launch receipt rung:
+Depone has reached the first Codex adapter readiness rung:
 
 - PR #51 merged the canonical agent operating contract under
   `packaging/depone-agent-operating-contract.json`.
@@ -17,24 +17,31 @@ Depone has reached the first non-model launch receipt rung:
   flags.
 - The committed shell-lane artifact revalidates through
   `scripts/check_contract.py --tier changed`.
-- This is still local A1-style shell evidence. It is not a live model launch,
-  not a scheduler, not A2/container evidence, and not an assurance upgrade.
+- PR #53 added `codex-local-capability`, a capability-only detector that records
+  local Codex adapter readiness facts under `docs/codex-local-capability/`.
+- The committed Codex capability artifact revalidates locally with
+  `validate_codex_local_capability(...) -> []`.
+- This is still capability evidence. It is not a Codex model session launch, not
+  a coding task, not a scheduler, not A2/container evidence, and not an
+  assurance upgrade.
 
 ## Next Slice
 
-The next implementation slice is **Codex local capability detection**.
+The next implementation work should follow
+`docs/superpowers/plans/2026-06-30-depone-agent-team-wave-backlog.md`.
 
-Do not launch a coding task yet. The first Codex adapter PR should only detect
-whether a local Codex lane can be launched safely and write a blocked/pass
-capability artifact. Missing binary, missing auth/config, unsupported repo
-state, denied sandbox/approval mode, or unobservable instruction state must be
-recorded as `blocked`, not as a human gate and not as a best-effort launch.
+That document is the large-unit wave backlog for agents. It starts from the
+post-PR #53 state and orders the next work as capability pass readiness, bounded
+Codex local launch receipt, local lane fan-in, PR/check artifacts,
+verifier/reviewer receipts, minimal native team command, observed cloud lanes,
+signing, and a small benchmark corpus.
 
 ## Why This Comes Next
 
 The shell lane proved that Depone can bind a local command receipt to a shared
-agent contract. The next missing layer is not more prose about teams; it is a
-machine-readable adapter capability receipt for the first real coding adapter.
+agent contract. The Codex capability slice proved that adapter readiness can be
+recorded without launching a model session. The next missing layer is now a
+bounded launch receipt and then Team Ledger fan-in over real lane artifacts.
 
 This keeps the direction aligned with the broader agent-tool market:
 
@@ -44,64 +51,42 @@ This keeps the direction aligned with the broader agent-tool market:
   transcripts, and continuation gates;
 - adapter claims must degrade honestly when the local environment is not ready.
 
-## Proposed PR
+## Proposed PR Sequence
 
-- Branch: `codex/codex-local-capability`
-- Title: `Add Codex local capability receipt`
-- Scope:
-  - add `depone.agent_fabric.codex_local_capability`;
-  - add CLI `python3 -m depone codex-local-capability`;
-  - detect `codex` binary path, version command result, repo root, branch/head,
-    working tree dirtiness, allowed sandbox mode, allowed approval mode, and
-    loaded instruction file hashes when observable;
-  - emit a deterministic receipt with `decision: pass` or `decision: blocked`;
-  - bind the receipt to the same `agent_contract_hash` pattern used by
-    `team-shell-lane-launch`;
-  - commit a blocked-safe fixture if the current server cannot prove a pass
-    capability without interactive auth assumptions.
-- Anti-scope:
-  - no live Codex prompt execution;
-  - no model call;
-  - no background worker;
-  - no worktree deletion;
-  - no PR/check ingestion;
-  - no assurance upgrade.
+Use one PR per wave from
+`docs/superpowers/plans/2026-06-30-depone-agent-team-wave-backlog.md`:
 
-## Acceptance Evidence
-
-Required before opening the PR:
-
-```bash
-python3 -m unittest tests.test_agent_fabric_codex_local_capability tests.test_codex_local_capability_cli -v
-python3 -m depone codex-local-capability --self-test
-python3 scripts/check_contract.py --tier changed
-python3 scripts/dwm.py doctor
-git diff --check
-```
-
-If a fixture is committed, it must be revalidated by the changed-tier contract
-or by a focused validation helper that recomputes every hash in the receipt.
+1. `codex/codex-capability-pass-readiness` if a pass can be proven without
+   secrets or interactive auth; otherwise keep Wave 1 as a blocked-safe doc and
+   test refinement.
+2. `codex/codex-local-launch-receipt` for the first bounded launch receipt.
+3. `codex/local-lane-fanin` for Team Ledger consumption of local lane artifacts.
+4. `codex/pr-artifact-evidence` for PR/check JSON validation.
+5. `codex/lane-verifier-reviewer-receipts` for deterministic verifier receipts
+   and advisory reviewer receipts.
+6. `codex/native-team-run-v0` only after launch and fan-in receipts are stable.
 
 ## Stop Conditions
 
 Stop and report blocked when:
 
 - detecting Codex readiness would require reading secrets or interactive auth;
-- the local `codex` executable is absent or returns an unparseable version;
-- the repo is not a git worktree;
-- the adapter cannot record the instruction files it claims to have used;
+- launching Codex would be required in a capability-only wave;
+- the adapter cannot record the instruction files, repo state, changed files, or
+  verification commands it claims to have used;
 - the implementation would need non-stdlib Python dependencies;
-- the next step would launch a live model instead of writing only capability
-  evidence.
+- the next step would raise assurance without independently revalidatable facts.
 
 ## Follow-On Order
 
 After the Codex capability slice lands:
 
 1. Codex local launch receipt for one bounded packet.
-2. Reviewer/verifier receipt over the changed files and deterministic tests.
+2. Local lane fan-in through Team Ledger.
 3. PR/check artifact fan-in.
-4. Claude Code/OpenCode capability adapters only after the Codex pattern is
+4. Reviewer/verifier receipt over the changed files and deterministic tests.
+5. Minimal native team command over stable local lane receipts.
+6. Claude Code/OpenCode capability adapters only after the Codex pattern is
    stable.
-5. Owned cloud launch only after observed cloud artifacts and local adapters are
+7. Owned cloud launch only after observed cloud artifacts and local adapters are
    boring.
