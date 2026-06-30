@@ -30,6 +30,7 @@ from depone.cli import (
     evidence_next,
     evidence_run,
     team_dry_run,
+    team_launch_preflight,
     validate,
     validate_contracts,
 )
@@ -374,6 +375,49 @@ def _add_team_dry_run_args(parser: argparse.ArgumentParser) -> None:
         "--out-dir",
         default="out/team-dry-run",
         help="Repo-relative output directory for dry-run artifacts",
+    )
+    parser.add_argument(
+        "--self-test", action="store_true", help="Run self-test and exit"
+    )
+    _add_json_arg(parser)
+
+
+def _add_team_launch_preflight_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--team-dry-run",
+        default="",
+        help="Team dry-run artifact JSON path",
+    )
+    parser.add_argument(
+        "--repo",
+        default=".",
+        help="Repository root recorded in the preflight artifact",
+    )
+    parser.add_argument(
+        "--base-commit",
+        default="",
+        help="Base commit to validate; defaults to the team dry-run artifact base_commit",
+    )
+    parser.add_argument(
+        "--launch-intent",
+        default="plan-only",
+        choices=("plan-only", "launch-ready"),
+        help="Preflight strictness; plan-only remains non-executing",
+    )
+    parser.add_argument(
+        "--adapter-availability",
+        default="",
+        help="Optional adapter availability JSON path",
+    )
+    parser.add_argument(
+        "--out",
+        default="",
+        help="Optional output path for the team launch preflight JSON",
+    )
+    parser.add_argument(
+        "--team-ledger-out",
+        default="",
+        help="Optional output path for the Team Ledger JSON copied from the dry-run artifact",
     )
     parser.add_argument(
         "--self-test", action="store_true", help="Run self-test and exit"
@@ -1075,6 +1119,12 @@ def main() -> None:
     )
     _add_team_dry_run_args(team_dry_run_parser)
 
+    team_launch_preflight_parser = sub.add_parser(
+        "team-launch-preflight",
+        help="Preflight planned team lanes without launching workers",
+    )
+    _add_team_launch_preflight_args(team_launch_preflight_parser)
+
     # agent-fabric-claim-gate
     claim_gate_parser = sub.add_parser(
         "agent-fabric-claim-gate",
@@ -1169,6 +1219,8 @@ def main() -> None:
             agent_fabric_team_ledger.run_worktree_receipt(args)
         elif args.command == "team-dry-run":
             team_dry_run.run(args)
+        elif args.command == "team-launch-preflight":
+            team_launch_preflight.run(args)
         elif args.command in ("evidence-run", "run"):
             evidence_run.run(args)
         elif args.command in ("evidence-next", "next"):
