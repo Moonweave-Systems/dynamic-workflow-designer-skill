@@ -20,6 +20,7 @@ from depone.cli import (
     agent_fabric_seal,
     agent_fabric_sign,
     agent_fabric_smoke,
+    agent_fabric_team_ledger,
     agent_fabric_verify_seal,
     agent_fabric_verify_signature,
     advance,
@@ -338,6 +339,28 @@ def _add_evidence_run_args(parser: argparse.ArgumentParser) -> None:
         nargs=argparse.REMAINDER,
         help="Observer-chosen verification command to run after --",
     )
+
+
+def _add_team_ledger_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--ledger",
+        default="",
+        help="Team Ledger v0 JSON path to validate",
+    )
+    parser.add_argument(
+        "--base-dir",
+        default="",
+        help="Base directory for relative lane evidence_dir values; defaults to ledger parent",
+    )
+    parser.add_argument(
+        "--out",
+        default="",
+        help="Optional output path for the Team Ledger verdict JSON",
+    )
+    parser.add_argument(
+        "--self-test", action="store_true", help="Run self-test and exit"
+    )
+    _add_json_arg(parser)
 
 
 def _add_evidence_next_args(parser: argparse.ArgumentParser) -> None:
@@ -930,6 +953,20 @@ def main() -> None:
     )
     _add_advance_args(advance_parser)
 
+
+    # team-ledger
+    team_ledger_parser = sub.add_parser(
+        "team-ledger",
+        help="Validate a Team Ledger v0 leader/lane fan-in record",
+    )
+    _add_team_ledger_args(team_ledger_parser)
+
+    team_ledger_alias_parser = sub.add_parser(
+        "agent-fabric-team-ledger",
+        help="Validate a Team Ledger v0 leader/lane fan-in record",
+    )
+    _add_team_ledger_args(team_ledger_alias_parser)
+
     # agent-fabric-claim-gate
     claim_gate_parser = sub.add_parser(
         "agent-fabric-claim-gate",
@@ -1016,6 +1053,8 @@ def main() -> None:
             agent_fabric_evidence_ingest.run(args)
         elif args.command in ("agent-fabric-evidence-chain", "evidence-chain"):
             agent_fabric_evidence_chain.run(args)
+        elif args.command in ("team-ledger", "agent-fabric-team-ledger"):
+            agent_fabric_team_ledger.run(args)
         elif args.command in ("evidence-run", "run"):
             evidence_run.run(args)
         elif args.command in ("evidence-next", "next"):

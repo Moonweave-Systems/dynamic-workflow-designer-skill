@@ -2296,6 +2296,7 @@ def require_changed_surface_commands_pass() -> None:
         [sys.executable, "-m", "depone", "agent-fabric-evidence-substrate", "--self-test"],
         [sys.executable, "-m", "depone", "agent-fabric-evidence-ingest", "--self-test"],
         [sys.executable, "-m", "depone", "agent-fabric-evidence-chain", "--self-test"],
+        [sys.executable, "-m", "depone", "team-ledger", "--self-test"],
         [sys.executable, "-m", "depone", "mcp", "--self-test"],
         [sys.executable, "-m", "depone", "agent-fabric-observe", "--self-test"],
         [sys.executable, "-m", "depone", "agent-fabric-verify-seal", "--self-test"],
@@ -2537,10 +2538,16 @@ def require_agent_surface_contract_pass() -> None:
             [sys.executable, "-m", "depone", "evidence-chain", "--self-test"]
         )
         run_contract_command(
+            [sys.executable, "-m", "depone", "team-ledger", "--self-test"]
+        )
+        run_contract_command(
             [sys.executable, "-m", "depone", "evidence-next", "--self-test"]
         )
         run_contract_command(
             [sys.executable, "-m", "depone", "advance", "--self-test"]
+        )
+        run_contract_command(
+            [sys.executable, "-m", "depone", "team-ledger", "--self-test"]
         )
 
         capture_fixture = ROOT / "depone" / "fixtures" / "agent_fabric" / "capture_manifest_v126_governed_utf8.json"
