@@ -9,11 +9,13 @@ from pathlib import Path
 from depone.agent_fabric.agent_operating_contract import (
     AGENT_OPERATING_CONTRACT_ID,
     AGENT_OPERATING_CONTRACT_KIND,
+    build_agent_contract_facts,
     build_agent_operating_contract,
     load_agent_operating_contract,
     load_v22_role_registry,
     validate_agent_operating_contract,
     validate_repo_agent_operating_contract,
+    validate_v22_role_id,
 )
 
 
@@ -79,6 +81,36 @@ class AgentFabricAgentOperatingContractTests(unittest.TestCase):
 
         self.assertBlockedBy(errors, "ERR_AGENT_CONTRACT_V22_ROLE_ID_INVALID")
         self.assertBlockedBy(errors, "ERR_AGENT_CONTRACT_HASH_MISMATCH")
+
+    def test_real_v22_lane_role_ids_are_validated_from_registry(self) -> None:
+        roles = self._roles()
+        role_ids = [role["id"] for role in roles["roles"]]
+
+        self.assertEqual(
+            role_ids,
+            ["planner", "explorer", "worker", "reviewer", "verifier", "operator"],
+        )
+        for role_id in role_ids:
+            with self.subTest(role_id=role_id):
+                self.assertEqual(validate_v22_role_id(roles, role_id), [])
+
+        self.assertBlockedBy(
+            validate_v22_role_id(roles, "executor"),
+            "ERR_AGENT_CONTRACT_V22_ROLE_ID_UNKNOWN",
+        )
+
+    def test_agent_contract_facts_bind_contract_hash_and_role_id(self) -> None:
+        facts = build_agent_contract_facts(self._contract(), self._roles(), "worker")
+
+        self.assertEqual(facts["agent_contract_id"], AGENT_OPERATING_CONTRACT_ID)
+        self.assertEqual(facts["role_id"], "worker")
+        self.assertEqual(facts["role_registry_path"], "packaging/dwm-roles.json")
+        self.assertRegex(str(facts["agent_contract_hash"]), r"^[0-9a-f]{64}$")
+        self.assertRegex(str(facts["role_registry_sha256"]), r"^[0-9a-f]{64}$")
+
+    def test_agent_contract_facts_fail_closed_for_unknown_role(self) -> None:
+        with self.assertRaisesRegex(ValueError, "ERR_AGENT_CONTRACT_V22_ROLE_ID_UNKNOWN"):
+            build_agent_contract_facts(self._contract(), self._roles(), "executor")
 
     def test_repo_loader_fails_closed_for_missing_contract(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
