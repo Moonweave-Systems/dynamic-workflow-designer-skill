@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 import tempfile
@@ -9,6 +10,7 @@ from pathlib import Path
 from depone.agent_fabric.team_shell_lane_launch import (
     TEAM_SHELL_LANE_LAUNCH_KIND,
     TeamShellLaneLaunchError,
+    _canonical_hash,
     run_shell_lane_command,
 )
 from depone.agent_fabric.agent_operating_contract import build_agent_operating_contract
@@ -18,15 +20,16 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
     def test_allowlisted_argv_command_writes_receipt_shape(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
+            allowlist = {
+                "commands": [
+                    {
+                        "id": "hello",
+                        "argv": [sys.executable, "-c", "print('hello shell lane')"],
+                    }
+                ]
+            }
             receipt = run_shell_lane_command(
-                allowlist={
-                    "commands": [
-                        {
-                            "id": "hello",
-                            "argv": [sys.executable, "-c", "print('hello shell lane')"],
-                        }
-                    ]
-                },
+                allowlist=allowlist,
                 command_id="hello",
                 cwd=root,
                 transcript_path=root / "transcript.json",
@@ -39,6 +42,7 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
             self.assertEqual(receipt["argv"][1:], ["-c", "print('hello shell lane')"])
             self.assertIn("stdout_sha256", receipt)
             self.assertIn("stderr_sha256", receipt)
+            self.assertEqual(receipt["allowlist_sha256"], _canonical_hash(allowlist))
             self.assertIsInstance(receipt["agent_contract_hash"], str)
             self.assertEqual(receipt["agent_contract_hash"], receipt["agent_contract"]["agent_contract_hash"])
             self.assertEqual(receipt["agent_contract"]["role_id"], "worker")
@@ -53,6 +57,14 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
             self.assertFalse(receipt["boundary"]["raises_assurance"])
             transcript = json.loads(Path(str(receipt["transcript_path"])).read_text(encoding="utf-8"))
             self.assertEqual(transcript["stdout_text"], "hello shell lane\n")
+            self.assertEqual(
+                receipt["stdout_sha256"],
+                hashlib.sha256(transcript["stdout_text"].encode("utf-8")).hexdigest(),
+            )
+            self.assertEqual(
+                receipt["stderr_sha256"],
+                hashlib.sha256(transcript["stderr_text"].encode("utf-8")).hexdigest(),
+            )
 
     def test_agent_contract_hash_binds_common_contract_and_v22_role(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

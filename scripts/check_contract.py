@@ -2917,6 +2917,18 @@ def require_team_shell_lane_launch_docs_contract() -> None:
     transcript_hash = hashlib.sha256(transcript_path.read_bytes()).hexdigest()
     if receipt.get("transcript_sha256") != transcript_hash:
         raise SystemExit("team-shell-lane-launch transcript_sha256 mismatch")
+    allowlist_payload = json.dumps(allowlist, sort_keys=True, separators=(",", ":")).encode("utf-8")
+    allowlist_hash = hashlib.sha256(allowlist_payload).hexdigest()
+    if receipt.get("allowlist_sha256") != allowlist_hash:
+        raise SystemExit("team-shell-lane-launch allowlist_sha256 mismatch")
+    stdout_text = transcript.get("stdout_text")
+    stderr_text = transcript.get("stderr_text")
+    if not isinstance(stdout_text, str) or not isinstance(stderr_text, str):
+        raise SystemExit("team-shell-lane-launch transcript stdout/stderr text must be strings")
+    if receipt.get("stdout_sha256") != hashlib.sha256(stdout_text.encode("utf-8")).hexdigest():
+        raise SystemExit("team-shell-lane-launch stdout_sha256 mismatch")
+    if receipt.get("stderr_sha256") != hashlib.sha256(stderr_text.encode("utf-8")).hexdigest():
+        raise SystemExit("team-shell-lane-launch stderr_sha256 mismatch")
 
     expected_facts = build_agent_contract_facts(contract, role_registry, V22_WORKER_ROLE_ID)
     agent_contract = receipt.get("agent_contract")

@@ -112,6 +112,10 @@ class AgentFabricAgentOperatingContractTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "ERR_AGENT_CONTRACT_V22_ROLE_ID_UNKNOWN"):
             build_agent_contract_facts(self._contract(), self._roles(), "executor")
 
+    def test_agent_contract_facts_fail_closed_for_non_bound_role(self) -> None:
+        with self.assertRaisesRegex(ValueError, "ERR_AGENT_CONTRACT_V22_ROLE_ID_MISMATCH"):
+            build_agent_contract_facts(self._contract(), self._roles(), "operator")
+
     def test_repo_loader_fails_closed_for_missing_contract(self) -> None:
         with tempfile.TemporaryDirectory() as temp_dir:
             root = Path(temp_dir)

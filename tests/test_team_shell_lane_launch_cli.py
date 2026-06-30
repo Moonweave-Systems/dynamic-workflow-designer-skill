@@ -99,6 +99,55 @@ class TeamShellLaneLaunchCliTests(unittest.TestCase):
         self.assertEqual(getattr(seen[0], "command"), "team-shell-lane-launch")
         self.assertTrue(getattr(seen[0], "self_test"))
 
+    def test_cli_blocks_role_not_bound_by_contract(self) -> None:
+        allowlist = self.root / "allowlist.json"
+        receipt_path = self.root / "receipt.json"
+        transcript_path = self.root / "transcript.json"
+        allowlist.write_text(
+            json.dumps(
+                {
+                    "commands": [
+                        {
+                            "id": "fixture-echo",
+                            "argv": [sys.executable, "-c", "print('should not run')"],
+                        }
+                    ]
+                },
+                sort_keys=True,
+            ),
+            encoding="utf-8",
+        )
+
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "depone",
+                "team-shell-lane-launch",
+                "--allowlist",
+                str(allowlist),
+                "--command-id",
+                "fixture-echo",
+                "--cwd",
+                str(self.root),
+                "--out",
+                str(receipt_path),
+                "--transcript",
+                str(transcript_path),
+                "--agent-role-id",
+                "operator",
+                "--json",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertNotEqual(completed.returncode, 0)
+        self.assertIn("ERR_TEAM_SHELL_LANE_AGENT_ROLE_INVALID", completed.stdout)
+        self.assertFalse(receipt_path.exists())
+        self.assertFalse(transcript_path.exists())
+
 
 if __name__ == "__main__":
     unittest.main()

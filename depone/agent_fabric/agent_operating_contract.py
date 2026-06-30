@@ -113,6 +113,9 @@ def build_agent_contract_facts(
     registry = contract["role_registry"]
     if not isinstance(registry, dict):
         raise ValueError("agent contract facts invalid: role_registry")
+    binding = contract.get("v22_role_binding")
+    if not isinstance(binding, dict) or binding.get("required_role_id") != role_id:
+        raise ValueError("agent contract facts invalid: ERR_AGENT_CONTRACT_V22_ROLE_ID_MISMATCH")
     return {
         "agent_contract_id": contract["agent_contract_id"],
         "agent_contract_hash": contract["agent_contract_hash"],
