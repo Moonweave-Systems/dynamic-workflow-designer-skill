@@ -139,6 +139,54 @@ class AgentFabricTeamLaunchPreflightTests(unittest.TestCase):
 
         self.assertEqual(payload["decision"], "pass")
 
+
+    def test_invalid_launch_intent_blocks(self) -> None:
+        team_dry_run = self._fixture()
+
+        payload = build_team_launch_preflight(
+            team_dry_run,
+            repo_root=Path("."),
+            base_commit=str(team_dry_run["base_commit"]),
+            launch_intent="run-now",
+            adapter_availability={"codex": {"available": True, "source": "test"}},
+        )
+
+        self.assertBlockedBy(payload, "ERR_TEAM_LAUNCH_PREFLIGHT_LAUNCH_INTENT_INVALID")
+
+    def test_executing_dry_run_boundary_blocks(self) -> None:
+        team_dry_run = self._fixture()
+        team_dry_run["boundary"]["launches_agents"] = True
+
+        self.assertBlockedBy(
+            self._preflight(team_dry_run),
+            "ERR_TEAM_LAUNCH_PREFLIGHT_DRY_RUN_BOUNDARY_INVALID",
+        )
+
+    def test_launch_ready_uses_runner_adapter_kind_from_embedded_ledger(self) -> None:
+        team_dry_run = self._fixture()
+        team_dry_run["team_ledger"]["lanes"][0]["runner_adapter_kind"] = "opencode"
+
+        payload = self._preflight(
+            team_dry_run,
+            launch_intent="launch-ready",
+            adapter_availability={
+                "codex": {"available": True, "source": "test"},
+                "opencode": {"available": False, "source": "test"},
+            },
+        )
+
+        self.assertBlockedBy(payload, "ERR_TEAM_LAUNCH_PREFLIGHT_ADAPTER_UNAVAILABLE")
+        self.assertEqual(payload["lanes"][0]["runner_adapter_kind"], "opencode")
+
+    def test_missing_next_command_lane_blocks(self) -> None:
+        team_dry_run = self._fixture()
+        team_dry_run["next_commands"] = [team_dry_run["next_commands"][0]]
+
+        self.assertBlockedBy(
+            self._preflight(team_dry_run),
+            "ERR_TEAM_LAUNCH_PREFLIGHT_NEXT_COMMANDS_INCOMPLETE",
+        )
+
     def test_validate_team_launch_preflight_reports_bad_boundary(self) -> None:
         payload = self._preflight()
         payload["boundary"]["launches_agents"] = True
