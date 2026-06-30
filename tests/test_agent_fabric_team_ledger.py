@@ -519,6 +519,25 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
             {error["code"] for error in verdict["errors"]},
         )
 
+    def test_evidence_next_continue_with_blockers_blocks_passed_lane(self) -> None:
+        ledger = build_sample_team_ledger("lane-evidence")
+        ledger["lanes"][0]["evidence_next_verdict"] = self._write_evidence_next_verdict(
+            decision="continue",
+            blocking_reasons=["required claim is inconclusive"],
+        )
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertIn(
+            "ERR_TEAM_LEDGER_EVIDENCE_NEXT_NOT_CONTINUE",
+            {error["code"] for error in verdict["errors"]},
+        )
+        self.assertEqual(
+            verdict["lane_results"][0]["evidence_next"]["blocking_reason_count"],
+            1,
+        )
+
     def test_overlapping_touched_files_require_merge_receipt(self) -> None:
         ledger = self._ledger_with_evidence_next()
         self._add_second_passing_lane(ledger)
