@@ -2536,6 +2536,9 @@ def require_agent_surface_contract_pass() -> None:
         run_contract_command(
             [sys.executable, "-m", "depone", "evidence-chain", "--self-test"]
         )
+        run_contract_command(
+            [sys.executable, "-m", "depone", "evidence-next", "--self-test"]
+        )
 
         capture_fixture = ROOT / "depone" / "fixtures" / "agent_fabric" / "capture_manifest_v126_governed_utf8.json"
         source_fixture = ROOT / "depone" / "fixtures" / "agent_fabric" / "reference_adapter_shell.json"

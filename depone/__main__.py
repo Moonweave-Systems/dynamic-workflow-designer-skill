@@ -25,6 +25,7 @@ from depone.cli import (
     demo,
     design,
     doctor,
+    evidence_next,
     evidence_run,
     validate,
     validate_contracts,
@@ -336,6 +337,31 @@ def _add_evidence_run_args(parser: argparse.ArgumentParser) -> None:
         nargs=argparse.REMAINDER,
         help="Observer-chosen verification command to run after --",
     )
+
+
+def _add_evidence_next_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--evidence-dir",
+        default="",
+        help="Evidence-run artifact directory to re-validate before selecting next action",
+    )
+    parser.add_argument(
+        "--source-fixture",
+        default="",
+        help=(
+            "Source fixture JSON path for the source_fixture subject; defaults "
+            "to the committed reference adapter fixture"
+        ),
+    )
+    parser.add_argument(
+        "--out",
+        default="",
+        help="Optional output path for the evidence-next decision JSON",
+    )
+    parser.add_argument(
+        "--self-test", action="store_true", help="Run self-test and exit"
+    )
+    _add_json_arg(parser)
 
 
 def main() -> None:
@@ -857,6 +883,20 @@ def main() -> None:
     )
     _add_evidence_run_args(run_parser)
 
+    # evidence-next
+    evidence_next_parser = sub.add_parser(
+        "evidence-next",
+        help="Re-validate an evidence-run directory and select the next safe action",
+    )
+    _add_evidence_next_args(evidence_next_parser)
+
+    # next (native operator alias)
+    next_parser = sub.add_parser(
+        "next",
+        help="Compatibility alias for evidence-next",
+    )
+    _add_evidence_next_args(next_parser)
+
     # agent-fabric-claim-gate
     claim_gate_parser = sub.add_parser(
         "agent-fabric-claim-gate",
@@ -945,6 +985,8 @@ def main() -> None:
             agent_fabric_evidence_chain.run(args)
         elif args.command in ("evidence-run", "run"):
             evidence_run.run(args)
+        elif args.command in ("evidence-next", "next"):
+            evidence_next.run(args)
         elif args.command == "agent-fabric-claim-gate":
             agent_fabric_claim_gate.run(args)
         elif args.command == "demo":
