@@ -190,6 +190,7 @@ lane `end_commit`:
     "failed_count": 0,
     "pending_count": 0
   },
+  "stale": false,
   "captured_at": "2026-06-30T06:30:00Z"
 }
 ```

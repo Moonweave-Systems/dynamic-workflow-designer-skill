@@ -99,6 +99,7 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
         check_status: str = "pass",
         failed_count: int = 0,
         pending_count: int = 0,
+        stale: bool = False,
     ) -> str:
         artifact_path = self.root / relative_path
         artifact_path.parent.mkdir(parents=True, exist_ok=True)
@@ -120,6 +121,7 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
                         "failed_count": failed_count,
                         "pending_count": pending_count,
                     },
+                    "stale": stale,
                     "captured_at": "2026-06-30T06:30:00Z",
                 },
                 indent=2,
@@ -500,6 +502,18 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
         self.assertEqual(verdict["decision"], "blocked")
         self.assertIn(
             "ERR_TEAM_LEDGER_PR_ARTIFACT_NOT_MERGEABLE",
+            {error["code"] for error in verdict["errors"]},
+        )
+
+    def test_stale_pr_artifact_blocks_passed_lane(self) -> None:
+        ledger = self._ledger_with_evidence_next()
+        ledger["lanes"][0]["pr_artifact"] = self._write_pr_artifact(stale=True)
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertIn(
+            "ERR_TEAM_LEDGER_PR_ARTIFACT_STALE",
             {error["code"] for error in verdict["errors"]},
         )
 

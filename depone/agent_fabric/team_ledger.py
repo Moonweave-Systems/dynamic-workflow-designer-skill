@@ -563,6 +563,7 @@ def _validate_pr_artifact(
     summary["base_sha"] = artifact.get("base_sha")
     summary["state"] = artifact.get("state")
     summary["merge_state_status"] = artifact.get("merge_state_status")
+    summary["stale"] = artifact.get("stale")
 
     if artifact.get("kind") != TEAM_LEDGER_PR_ARTIFACT_KIND:
         errors.append(
@@ -594,6 +595,14 @@ def _validate_pr_artifact(
     _validate_pr_artifact_string_field(artifact, "head_sha", errors, lane_id=lane_id)
     _validate_pr_artifact_string_field(artifact, "merge_state_status", errors, lane_id=lane_id)
     _validate_pr_artifact_captured_at(artifact.get("captured_at"), errors, lane_id=lane_id)
+    if artifact.get("stale") is not False:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_STALE",
+                "message": "pr_artifact stale must be false",
+                "lane_id": lane_id,
+            }
+        )
     merge_state_status = artifact.get("merge_state_status")
     if (
         not isinstance(merge_state_status, str)
@@ -1046,6 +1055,7 @@ def _self_test() -> None:
                         "failed_count": 0,
                         "pending_count": 0,
                     },
+                    "stale": False,
                     "captured_at": "2026-06-30T06:30:00Z",
                 },
                 indent=2,
