@@ -1,83 +1,119 @@
-# Depone Cloud And Team Control Plane
+# Depone Cloud/Team Control Plane
 
-Date: 2026-06-30.
-Status: follow-up direction note plus Team Ledger v0 slice.
-
-Depone's near-term role is a **cloud-first, local-fallback evidence and control
-plane** over coding agents and team runtimes. It should observe and validate
-runs from Codex, Claude Code, OpenCode, GitHub Copilot-style cloud agents,
-OMX/LazyCodex-style local teams, shell adapters, and future Depone-native teams.
-It should not replace their coding UX or claim to be a full scheduler yet.
+Status: V130 follow-up direction note and Team Ledger v0 slice.  
+Date: 2026-06-30.  
+Source context: `.omx/context/cloud-team-control-20260630T043433Z.md`.
 
 ## Position
 
-The current roadmap keeps Depone as a non-executing control/evidence plane:
-artifacts and source hashes are the source of truth, deterministic verification
-is authoritative, and LLM review remains advisory. The next team direction is to
-bind each worker lane to durable evidence before a leader can summarize fan-in.
+Depone should be a cloud-first, local-fallback control and evidence plane over
+coding agents, not a replacement coding UX. The durable job is to record what a
+runner or team did, revalidate artifacts before continuation, and keep assurance
+claims tied to independently checkable evidence.
 
-Cloud agent products increasingly converge on the same operating shape:
-background work, isolated development environments, deterministic setup,
-project instructions, hooks or permissions, test/build receipts, and pull
-request output. Depone should sit above that shape as the neutral verifier:
-record what environment was used, which adapter produced the lane, what commits
-bounded it, where the evidence lives, and whether deterministic verification
-passed or the lane was explicitly blocked.
+This keeps the V125/V129 direction intact:
 
-## Terms
+- Depone remains a non-executing design/verify/control layer unless a bounded
+  runner command is explicitly invoked.
+- Execution systems such as Codex, GitHub Copilot cloud agent, Claude Code,
+  Cursor, OpenCode, OMX, LazyCodex-style teams, shell runners, and future
+  Depone-native teams are adapters.
+- Deterministic checks, receipts, source hashes, and evidence directories are
+  the pass/fail authority. LLM review is advisory.
+- Team control starts with a small evidence ledger before any Depone-owned team
+  scheduler.
 
-- **External team adapter**: a runner or team system Depone observes, such as
-  Codex, Claude Code, OpenCode, GitHub Copilot-style cloud work, OMX, LazyCodex,
-  or shell. The adapter owns execution; Depone owns validation of recorded
-  artifacts.
-- **Depone-native future team runtime**: a possible later scheduler over the same
-  ledger and evidence model. It is not implemented in this slice.
-- **Cloud runner**: an execution environment outside the local checkout, usually
-  background/ephemeral and PR-oriented. This document only defines how Depone
-  records cloud lanes; it does not launch cloud jobs.
-- **Local fallback**: the same evidence contract can describe a local worktree,
-  tmux team, or shell runner when cloud execution is unavailable or unnecessary.
-- **Evidence ledger / fan-in**: the leader record that refuses to call a lane
-  complete unless its evidence validates, and treats merge conflicts or blocked
-  lanes as evidence events rather than chat-only status.
+## External surfaces to audit, not duplicate
+
+The current market direction is background work, isolated or configured
+development environments, branch/PR output, persistent instructions, hooks,
+subagents, and permission boundaries:
+
+- OpenAI Codex cloud threads run in an isolated environment, clone the repo, and
+  work on a branch; Codex also exposes permissions profiles and PR-oriented Git
+  tools for local/worktree tasks. See OpenAI's Codex prompting, permissions, and
+  app feature docs.
+- GitHub Copilot cloud agent works on GitHub in a GitHub Actions-powered
+  environment, can research/plan/change code on a branch, and can open or
+  prepare pull requests. Its setup workflow is `.github/workflows/copilot-setup-steps.yml`.
+- Claude Code exposes subagents, hooks, permissions, MCP, skills, and SDK
+  sessions. Hooks are deterministic lifecycle commands; subagents have their
+  own context and permission behavior.
+- Cursor Cloud Agents are another cloud/background coding surface. Depone should
+  treat them as an adapter whose artifacts and PRs can be audited.
+
+Depone's role is to make those runs auditable, restartable, comparable, and hard
+to overclaim. It should not claim competitive superiority or attempt to out-UI
+these tools.
+
+## Control-plane boundaries
+
+Depone should distinguish five concepts that are easy to blur:
+
+1. **External team adapters**: Codex, Claude Code, GitHub Copilot cloud agent,
+   Cursor, OMX, LazyCodex-style queues, OpenCode, shell, and similar systems.
+   They own coding ergonomics and execution.
+2. **Depone-native future team runtime**: a possible future scheduler. It is not
+   implemented by this slice and should only be added after ledgers prove useful.
+3. **Cloud runner**: a future execution environment for `run`/`advance` style
+   steps. This slice records `environment_kind: "cloud"` but does not execute in
+   the cloud.
+4. **Local fallback**: local/worktree/shell execution that can still produce
+   evidence and pass the same validators.
+5. **Evidence ledger/fan-in**: a leader-level record that every lane either
+   passed with evidence or is explicitly blocked with a reason.
 
 ## Team Ledger v0
 
-Team Ledger v0 is the smallest useful evidence model for audited team fan-in.
-It records one leader objective and one or more lane records:
+Team Ledger v0 is the first narrow team-control slice. It is deliberately only a
+schema plus validator:
 
-- `leader_objective`, `leader_id`, `start_commit`, optional `end_commit`, and a
-  `stop_rule`.
-- Lane `lane_id`, `objective`, `env_kind` (`local`, `container`, `cloud`),
-  `runner_adapter_kind`, `team_adapter_kind`, `start_commit`, `end_commit`,
-  `evidence_dir`, optional `pr_url`, and `verification_state` (`pass` or
-  `blocked`).
-- Passed lanes must have a present evidence directory. Blocked lanes must have a
-  non-empty `blocked_reason`.
+- `kind`: `depone-team-ledger`
+- `schema_version`: `1.0`
+- `objective`: leader objective for the team run
+- `leader`: leader lane/worker identity
+- `lanes`: lane records with:
+  - `lane_id`
+  - `environment_kind`: `local`, `container`, or `cloud`
+  - `adapter_kind`: external or Depone-native adapter label
+  - `start_commit` and `end_commit`
+  - `evidence_dir` for passed lanes
+  - optional `pr_url`
+  - `verification_state`: `pass` or `blocked`
+  - `blocked_reason` for blocked lanes
 
-The validator emits a verdict:
+Fan-in is fail-closed:
 
-- `pass`: every lane passed and all required evidence is present.
-- `blocked-explicit`: no schema/evidence errors, but one or more lanes are
-  explicitly blocked with reasons.
-- `blocked`: required fields, allowed values, or passed-lane evidence are
-  missing/invalid.
+- empty or malformed lane lists block;
+- duplicate lane IDs block;
+- invalid environment or adapter kinds block;
+- a `pass` lane without an existing evidence directory blocks;
+- a `blocked` lane without an explicit reason blocks;
+- any blocked lane keeps the ledger verdict `blocked` until the leader resolves
+  or accepts that blocked state as the next planning input.
 
-This is intentionally not a scheduler. It does not launch agents, call models,
-inspect live cloud state, sign bundles, merge PRs, or raise assurance. It gives
-later `depone team`, `depone loop`, or cloud-runner work a stable fan-in seam.
+The ledger does not introduce a parallel evidence chain. Continuity remains the
+canonical `capture-manifest.prev_capture_hash` plus `evidence-chain` seam.
 
-## Boundaries And Deferred Work
+## Near-term roadmap fit
 
-This slice does **not** implement Docker A2C, signing, a GitHub App, a cloud
-runner, a full scheduler, or PR #38 integration. Those remain downstream work
-after the current `run -> next -> advance` evidence chain and the
-`capture-manifest.prev_capture_hash` continuity seam stay stable.
+This slice supports the roadmap without adding source-only control layers:
 
-The next safe extensions are:
+1. V128/V129 continuity remains first: keep `run -> next -> advance` artifacts
+   revalidatable.
+2. Team audit comes next as ledger validation over ordinary lane evidence
+   directories.
+3. Container A2C, signing, cloud runners, GitHub Apps, and full scheduling stay
+   future work until evidence proves the smaller seam.
 
-1. Convert real OMX/LazyCodex lane receipts into Team Ledger v0 JSON.
-2. Require every passed lane to include an evidence-run directory that `next`
-   can revalidate.
-3. Record merge conflicts as lane or leader evidence events.
-4. Only then add container/cloud runner facts or signing.
+## Sources checked
+
+- OpenAI Codex prompting: <https://developers.openai.com/codex/prompting>
+- OpenAI Codex permissions: <https://developers.openai.com/codex/permissions>
+- OpenAI Codex app Git features: <https://developers.openai.com/codex/app/features>
+- GitHub Copilot cloud agent overview: <https://docs.github.com/copilot/concepts/agents/cloud-agent/about-cloud-agent>
+- GitHub Copilot setup environment: <https://docs.github.com/copilot/how-tos/use-copilot-agents/coding-agent/customize-the-agent-environment>
+- Claude Code subagents: <https://docs.anthropic.com/en/docs/claude-code/sub-agents>
+- Claude Code hooks guide: <https://docs.anthropic.com/en/docs/claude-code/hooks-guide>
+- Claude Code permissions: <https://code.claude.com/docs/en/permissions>
+- Cursor Cloud Agents: <https://cursor.com/docs/cloud-agent>

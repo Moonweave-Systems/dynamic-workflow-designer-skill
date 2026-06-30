@@ -68,33 +68,27 @@ def build_team_ledger_verdict(ledger: dict[str, Any], *, base_dir: Path | None =
         )
         lanes = []
 
-    lane_ids: set[str] = set()
-    passed = 0
-    blocked = 0
-    for index, lane in enumerate(lanes):
-        if not isinstance(lane, dict):
-            errors.append(
-                {
-                    "code": "ERR_TEAM_LEDGER_LANE_OBJECT_REQUIRED",
-                    "message": "lane record must be an object",
-                    "lane_id": f"index:{index}",
-                }
-            )
+    seen_lane_ids: set[str] = set()
+    for index, raw_lane in enumerate(lanes):
+        if not isinstance(raw_lane, dict):
+            errors.append(f"lanes[{index}] must be an object")
             continue
-        result = _validate_lane(lane, root, lane_ids)
-        lane_results.append(result)
-        errors.extend(result["errors"])
-        if result["verification_state"] == "pass" and not result["errors"]:
-            passed += 1
-        if result["verification_state"] == "blocked" and not result["errors"]:
-            blocked += 1
-
-    if errors:
-        decision = "blocked"
-    elif blocked:
-        decision = "blocked-explicit"
-    else:
-        decision = "pass"
+        lane_id = raw_lane.get("lane_id")
+        lane_errors: list[str] = []
+        if isinstance(lane_id, str) and lane_id.strip():
+            if lane_id in seen_lane_ids:
+                lane_errors.append(f"lanes[{index}].lane_id must be unique: {lane_id}")
+            seen_lane_ids.add(lane_id)
+        lane_errors.extend(_validate_lane(raw_lane, index, root))
+        state = str(raw_lane.get("verification_state", ""))
+        lane_result = {
+            "lane_id": str(raw_lane.get("lane_id", f"lanes[{index}]")),
+            "verification_state": state,
+            "decision": "blocked" if lane_errors or state == "blocked" else "pass",
+            "errors": lane_errors,
+        }
+        lane_results.append(lane_result)
+        errors.extend(lane_errors)
 
     return {
         "kind": TEAM_LEDGER_VERDICT_KIND,
