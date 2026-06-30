@@ -399,6 +399,42 @@ def _add_team_ledger_merge_receipt_args(parser: argparse.ArgumentParser) -> None
     _add_json_arg(parser)
 
 
+def _add_worktree_lane_receipt_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--worktree",
+        required=False,
+        default=".",
+        help="Local git worktree path to inspect read-only",
+    )
+    parser.add_argument(
+        "--base-commit",
+        required=False,
+        default="",
+        help="Base commit/revision used to derive changed_files",
+    )
+    parser.add_argument(
+        "--evidence-dir",
+        required=False,
+        default="",
+        help="Repo-relative lane evidence directory recorded in the receipt",
+    )
+    parser.add_argument(
+        "--command-receipt",
+        action="append",
+        default=[],
+        help="JSON object for an already-run lane command; repeatable",
+    )
+    parser.add_argument(
+        "--out",
+        default="",
+        help="Optional output path for the worktree lane receipt JSON",
+    )
+    parser.add_argument(
+        "--self-test", action="store_true", help="Run self-test and exit"
+    )
+    _add_json_arg(parser)
+
+
 def _add_evidence_next_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--evidence-dir",
@@ -1009,6 +1045,12 @@ def main() -> None:
     )
     _add_team_ledger_merge_receipt_args(team_ledger_merge_receipt_parser)
 
+    worktree_lane_receipt_parser = sub.add_parser(
+        "worktree-lane-receipt",
+        help="Write a read-only local worktree lane receipt JSON artifact",
+    )
+    _add_worktree_lane_receipt_args(worktree_lane_receipt_parser)
+
     # agent-fabric-claim-gate
     claim_gate_parser = sub.add_parser(
         "agent-fabric-claim-gate",
@@ -1099,6 +1141,8 @@ def main() -> None:
             agent_fabric_team_ledger.run(args)
         elif args.command == "team-ledger-merge-receipt":
             agent_fabric_team_ledger.run_merge_receipt(args)
+        elif args.command == "worktree-lane-receipt":
+            agent_fabric_team_ledger.run_worktree_receipt(args)
         elif args.command in ("evidence-run", "run"):
             evidence_run.run(args)
         elif args.command in ("evidence-next", "next"):

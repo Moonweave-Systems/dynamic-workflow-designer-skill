@@ -14,6 +14,11 @@ from depone.agent_fabric.team_ledger import (
     build_team_ledger_verdict,
     read_team_ledger,
 )
+from depone.agent_fabric.worktree_receipt import (
+    WorktreeReceiptError,
+    _self_test as worktree_receipt_self_test,
+    build_worktree_lane_receipt,
+)
 from depone.cli._response import EXIT_FAILED, emit_error, emit_result
 
 
@@ -132,5 +137,66 @@ def run_merge_receipt(args: argparse.Namespace) -> None:
             f"  Lanes: {len(receipt['lanes'])}",
             f"  Files: {len(receipt['files'])}",
             *( [f"Team ledger merge receipt written to {out_arg}"] if out_arg else [] ),
+        ],
+    )
+
+
+def run_worktree_receipt(args: argparse.Namespace) -> None:
+    if getattr(args, "self_test", False):
+        worktree_receipt_self_test()
+        print("depone worktree-lane-receipt --self-test: pass")
+        return
+
+    command_receipts: list[dict[str, object]] = []
+    for raw in getattr(args, "command_receipt", []) or []:
+        try:
+            receipt = json.loads(raw)
+        except json.JSONDecodeError as exc:
+            emit_error(
+                args,
+                code="ERR_WORKTREE_RECEIPT_COMMAND_RECEIPT_INVALID",
+                message=f"--command-receipt must be JSON: {exc}",
+            )
+        if not isinstance(receipt, dict):
+            emit_error(
+                args,
+                code="ERR_WORKTREE_RECEIPT_COMMAND_RECEIPT_INVALID",
+                message="--command-receipt must be a JSON object",
+            )
+        command_receipts.append(receipt)
+
+    try:
+        receipt = build_worktree_lane_receipt(
+            worktree=Path(str(getattr(args, "worktree", "") or "")),
+            base_commit=str(getattr(args, "base_commit", "") or ""),
+            evidence_dir=Path(str(getattr(args, "evidence_dir", "") or "")),
+            commands=command_receipts,
+        )
+    except WorktreeReceiptError as exc:
+        emit_error(args, code=exc.code, message=exc.message)
+
+    out_arg = str(getattr(args, "out", "") or "")
+    if out_arg:
+        out_path = Path(out_arg)
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_path.write_text(
+            json.dumps(receipt, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+
+    emit_result(
+        args,
+        {
+            "command": "worktree-lane-receipt",
+            "head_commit": receipt["head_commit"],
+            "dirty": receipt["dirty"],
+            "changed_file_count": len(receipt["changed_files"]),
+            **({"out": out_arg} if out_arg else {}),
+        },
+        human=[
+            "Worktree lane receipt written" if out_arg else "Worktree lane receipt built",
+            f"  Head: {receipt['head_commit']}",
+            f"  Dirty: {receipt['dirty']}",
+            f"  Changed files: {len(receipt['changed_files'])}",
         ],
     )

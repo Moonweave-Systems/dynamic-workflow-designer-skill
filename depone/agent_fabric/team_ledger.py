@@ -14,6 +14,10 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from depone.agent_fabric.claim_gate import canonical_hash
+from depone.agent_fabric.worktree_receipt import (
+    WORKTREE_LANE_RECEIPT_KIND,
+    WORKTREE_LANE_RECEIPT_SCHEMA_VERSION,
+)
 
 TEAM_LEDGER_KIND = "depone-team-ledger"
 TEAM_LEDGER_SCHEMA_VERSION = "0.1"
@@ -299,6 +303,13 @@ def _validate_lane(
         errors,
         lane_id=lane_error_id,
     )
+    worktree_receipt_summary = _validate_worktree_receipt(
+        lane.get("worktree_receipt"),
+        lane,
+        base_dir,
+        errors,
+        lane_id=lane_error_id,
+    )
 
     touched_files = _validate_touched_files(lane.get("touched_files"), errors, lane_id=lane_error_id)
     if state == "pass" and not touched_files:
@@ -322,6 +333,7 @@ def _validate_lane(
         "evidence_next_verdict": evidence_next_verdict,
         "evidence_next": evidence_next_summary,
         "pr_artifact": pr_artifact_summary,
+        "worktree_receipt": worktree_receipt_summary,
         "verification_artifact_count": len(verification_artifacts),
         "touched_files": touched_files,
         "touched_file_count": len(touched_files),
@@ -747,6 +759,264 @@ def _validate_pr_artifact_captured_at(
                 "lane_id": lane_id,
             }
         )
+
+
+def _validate_worktree_receipt(
+    worktree_receipt: Any,
+    lane: dict[str, Any],
+    base_dir: Path,
+    errors: list[dict[str, str]],
+    *,
+    lane_id: str,
+) -> dict[str, Any]:
+    summary: dict[str, Any] = {
+        "path": worktree_receipt if isinstance(worktree_receipt, str) else None,
+        "branch": None,
+        "base_commit": None,
+        "head_commit": None,
+        "dirty": None,
+        "dirty_file_count": None,
+        "changed_files": [],
+    }
+    if worktree_receipt is None:
+        return summary
+    if not isinstance(worktree_receipt, str) or not worktree_receipt.strip():
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_PATH_INVALID",
+                "message": "worktree_receipt must be a relative JSON path when present",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+
+    receipt_path = Path(worktree_receipt)
+    if receipt_path.is_absolute():
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_PATH_INVALID",
+                "message": "worktree_receipt must be relative to the ledger base directory",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+
+    resolved = (base_dir / receipt_path).resolve(strict=False)
+    base_resolved = base_dir.resolve(strict=False)
+    try:
+        resolved.relative_to(base_resolved)
+    except ValueError:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_PATH_INVALID",
+                "message": "worktree_receipt must stay under the ledger base directory",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+
+    if not resolved.is_file():
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_MISSING",
+                "message": "worktree_receipt file must exist",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+
+    try:
+        receipt = json.loads(resolved.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_INVALID",
+                "message": f"worktree_receipt must be readable JSON: {exc}",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+    if not isinstance(receipt, dict):
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_INVALID",
+                "message": "worktree_receipt root must be an object",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+
+    summary["branch"] = receipt.get("branch")
+    summary["base_commit"] = receipt.get("base_commit")
+    summary["head_commit"] = receipt.get("head_commit")
+    summary["dirty"] = receipt.get("dirty")
+    dirty_files = receipt.get("dirty_files")
+    if isinstance(dirty_files, list):
+        summary["dirty_file_count"] = len(dirty_files)
+
+    if receipt.get("kind") != WORKTREE_LANE_RECEIPT_KIND:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_INVALID",
+                "message": f"worktree_receipt kind must be {WORKTREE_LANE_RECEIPT_KIND}",
+                "lane_id": lane_id,
+            }
+        )
+    if receipt.get("schema_version") != WORKTREE_LANE_RECEIPT_SCHEMA_VERSION:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_INVALID",
+                "message": (
+                    "worktree_receipt schema_version must be "
+                    f"{WORKTREE_LANE_RECEIPT_SCHEMA_VERSION}"
+                ),
+                "lane_id": lane_id,
+            }
+        )
+
+    for field in ("worktree", "branch", "base_commit", "head_commit", "evidence_dir"):
+        if not isinstance(receipt.get(field), str) or not str(receipt.get(field)).strip():
+            errors.append(
+                {
+                    "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_INVALID",
+                    "message": f"worktree_receipt {field} must be a non-empty string",
+                    "lane_id": lane_id,
+                }
+            )
+
+    if receipt.get("dirty") is True:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_DIRTY",
+                "message": "worktree_receipt dirty must be false for passed lane fan-in",
+                "lane_id": lane_id,
+            }
+        )
+    elif receipt.get("dirty") is not False:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_INVALID",
+                "message": "worktree_receipt dirty must be a boolean",
+                "lane_id": lane_id,
+            }
+        )
+
+    changed_files = _validate_worktree_receipt_files(
+        receipt.get("changed_files"),
+        errors,
+        lane_id=lane_id,
+        field="changed_files",
+    )
+    _validate_worktree_receipt_files(
+        dirty_files,
+        errors,
+        lane_id=lane_id,
+        field="dirty_files",
+        allow_empty=True,
+    )
+    summary["changed_files"] = changed_files
+
+    command_receipts = receipt.get("command_receipts")
+    if not isinstance(command_receipts, list) or not all(
+        isinstance(item, dict) for item in command_receipts
+    ):
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_INVALID",
+                "message": "worktree_receipt command_receipts must be a list of objects",
+                "lane_id": lane_id,
+            }
+        )
+
+    boundary = receipt.get("boundary")
+    if not isinstance(boundary, dict) or boundary.get("launches_agents") is not False:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_INVALID",
+                "message": "worktree_receipt boundary must record launches_agents=false",
+                "lane_id": lane_id,
+            }
+        )
+
+    if isinstance(lane.get("start_commit"), str) and receipt.get("base_commit") != lane.get("start_commit"):
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_BASE_COMMIT_MISMATCH",
+                "message": "worktree_receipt base_commit must match lane start_commit",
+                "lane_id": lane_id,
+            }
+        )
+    if isinstance(lane.get("end_commit"), str) and receipt.get("head_commit") != lane.get("end_commit"):
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_HEAD_COMMIT_MISMATCH",
+                "message": "worktree_receipt head_commit must match lane end_commit",
+                "lane_id": lane_id,
+            }
+        )
+    if isinstance(lane.get("evidence_dir"), str) and receipt.get("evidence_dir") != lane.get("evidence_dir"):
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_EVIDENCE_DIR_MISMATCH",
+                "message": "worktree_receipt evidence_dir must match lane evidence_dir",
+                "lane_id": lane_id,
+            }
+        )
+
+    lane_touched_files = lane.get("touched_files")
+    if isinstance(lane_touched_files, list) and changed_files:
+        missing_touched = sorted(set(lane_touched_files) - set(changed_files))
+        if missing_touched:
+            errors.append(
+                {
+                    "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_TOUCHED_FILES_MISMATCH",
+                    "message": "worktree_receipt changed_files must cover lane touched_files",
+                    "lane_id": lane_id,
+                }
+            )
+    return summary
+
+
+def _validate_worktree_receipt_files(
+    value: Any,
+    errors: list[dict[str, str]],
+    *,
+    lane_id: str,
+    field: str,
+    allow_empty: bool = False,
+) -> list[str]:
+    if not isinstance(value, list) or (not value and not allow_empty):
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_INVALID",
+                "message": f"worktree_receipt {field} must be a list of repo-relative paths",
+                "lane_id": lane_id,
+            }
+        )
+        return []
+    normalized: list[str] = []
+    for item in value:
+        if not isinstance(item, str) or not item.strip():
+            errors.append(
+                {
+                    "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_INVALID",
+                    "message": f"worktree_receipt {field} entries must be non-empty strings",
+                    "lane_id": lane_id,
+                }
+            )
+            continue
+        path = PurePosixPath(item)
+        if path.is_absolute() or ".." in path.parts:
+            errors.append(
+                {
+                    "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_INVALID",
+                    "message": f"worktree_receipt {field} entries must stay repo-relative",
+                    "lane_id": lane_id,
+                }
+            )
+            continue
+        normalized.append(path.as_posix())
+    return sorted(set(normalized))
 
 
 def _validate_touched_files(
