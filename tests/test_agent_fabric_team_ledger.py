@@ -119,6 +119,64 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
         self.assertEqual(summary["decision"], "pass")
         self.assertEqual(verdict["decision"], "pass")
 
+    def test_duplicate_lane_ids_block(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            ledger = self._ledger(root)
+            ledger["lanes"][1]["lane_id"] = "lane-a"
+            verdict = validate_team_ledger(ledger, base_dir=root)
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertIn("duplicate lane_id", "\n".join(verdict["errors"]))
+
+    def test_empty_or_non_list_lanes_block(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            ledger = self._ledger(root)
+            ledger["lanes"] = []
+            empty_verdict = validate_team_ledger(ledger, base_dir=root)
+            ledger["lanes"] = "lane-a"
+            non_list_verdict = validate_team_ledger(ledger, base_dir=root)
+
+        self.assertEqual(empty_verdict["decision"], "blocked")
+        self.assertEqual(non_list_verdict["decision"], "blocked")
+        self.assertIn("at least one lane", "\n".join(empty_verdict["errors"]))
+        self.assertIn("lanes must be a list", "\n".join(non_list_verdict["errors"]))
+
+    def test_cli_writes_json_verdict(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_dir:
+            root = Path(temp_dir)
+            ledger = self._ledger(root)
+            ledger_path = root / "team-ledger.json"
+            out_path = root / "team-ledger-verdict.json"
+            ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
+
+            import subprocess
+            import sys
+
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "depone",
+                    "team-ledger",
+                    "--ledger",
+                    str(ledger_path),
+                    "--out",
+                    str(out_path),
+                    "--json",
+                ],
+                capture_output=True,
+                text=True,
+                check=True,
+            )
+            stdout = json.loads(completed.stdout)
+            verdict = json.loads(out_path.read_text(encoding="utf-8"))
+
+        self.assertEqual(stdout["decision"], "pass")
+        self.assertEqual(verdict["decision"], "pass")
+        self.assertEqual(verdict["lane_count"], 2)
+
 
 if __name__ == "__main__":
     unittest.main()
