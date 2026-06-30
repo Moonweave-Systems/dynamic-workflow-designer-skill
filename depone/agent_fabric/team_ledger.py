@@ -203,6 +203,15 @@ def _validate_lane(
                 }
             )
 
+    evidence_next_verdict = lane.get("evidence_next_verdict")
+    evidence_next_summary = _validate_evidence_next_verdict(
+        evidence_next_verdict,
+        base_dir,
+        errors,
+        lane_id=lane_error_id,
+        required=state == "pass",
+    )
+
     blocked_reason = lane.get("blocked_reason")
     if state == "blocked" and (not isinstance(blocked_reason, str) or not blocked_reason.strip()):
         errors.append(
@@ -247,6 +256,8 @@ def _validate_lane(
         "decision": "blocked" if errors or state == "blocked" else "pass",
         "evidence_dir": evidence_dir,
         "evidence_dir_exists": evidence_dir_exists,
+        "evidence_next_verdict": evidence_next_verdict,
+        "evidence_next": evidence_next_summary,
         "verification_artifact_count": len(verification_artifacts),
         "errors": errors,
     }
@@ -290,6 +301,110 @@ def _validate_choice(
     return raw if isinstance(raw, str) else None
 
 
+def _validate_evidence_next_verdict(
+    evidence_next_verdict: Any,
+    base_dir: Path,
+    errors: list[dict[str, str]],
+    *,
+    lane_id: str,
+    required: bool,
+) -> dict[str, Any]:
+    summary: dict[str, Any] = {
+        "path": evidence_next_verdict if isinstance(evidence_next_verdict, str) else None,
+        "decision": None,
+        "blocking_reason_count": None,
+    }
+    if not isinstance(evidence_next_verdict, str) or not evidence_next_verdict.strip():
+        if required:
+            errors.append(
+                {
+                    "code": "ERR_TEAM_LEDGER_EVIDENCE_NEXT_VERDICT_REQUIRED",
+                    "message": "passed lane must include evidence_next_verdict",
+                    "lane_id": lane_id,
+                }
+            )
+        return summary
+
+    verdict_path = Path(evidence_next_verdict)
+    if verdict_path.is_absolute():
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_EVIDENCE_NEXT_VERDICT_PATH_INVALID",
+                "message": "evidence_next_verdict must be relative to the ledger base directory",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+
+    resolved = (base_dir / verdict_path).resolve(strict=False)
+    base_resolved = base_dir.resolve(strict=False)
+    try:
+        resolved.relative_to(base_resolved)
+    except ValueError:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_EVIDENCE_NEXT_VERDICT_PATH_INVALID",
+                "message": "evidence_next_verdict must stay under the ledger base directory",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+
+    if not resolved.is_file():
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_EVIDENCE_NEXT_VERDICT_MISSING",
+                "message": "evidence_next_verdict file must exist",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+
+    try:
+        verdict = json.loads(resolved.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_EVIDENCE_NEXT_VERDICT_INVALID",
+                "message": f"evidence_next_verdict must be readable JSON: {exc}",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+    if not isinstance(verdict, dict):
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_EVIDENCE_NEXT_VERDICT_INVALID",
+                "message": "evidence_next_verdict root must be an object",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+
+    blocking_reasons = verdict.get("blocking_reasons", [])
+    if not isinstance(blocking_reasons, list):
+        blocking_reasons = []
+    summary["decision"] = verdict.get("decision")
+    summary["blocking_reason_count"] = len(blocking_reasons)
+    if verdict.get("command") != "evidence-next":
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_EVIDENCE_NEXT_VERDICT_INVALID",
+                "message": "evidence_next_verdict command must be evidence-next",
+                "lane_id": lane_id,
+            }
+        )
+    if verdict.get("decision") != "continue" or blocking_reasons:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_EVIDENCE_NEXT_NOT_CONTINUE",
+                "message": "evidence_next_verdict must have decision=continue and no blocking_reasons",
+                "lane_id": lane_id,
+            }
+        )
+    return summary
+
+
 def build_sample_team_ledger(evidence_dir: str) -> dict[str, Any]:
     """Return a minimal valid Team Ledger v0 object for tests and examples."""
 
@@ -326,12 +441,29 @@ def _self_test() -> None:
         root = Path(temp_text)
         evidence = root / "lane-evidence"
         evidence.mkdir()
+        evidence_next = evidence / "evidence-next-verdict.json"
+        evidence_next.write_text(
+            json.dumps(
+                {
+                    "command": "evidence-next",
+                    "schema_version": "1.0",
+                    "decision": "continue",
+                    "blocking_reasons": [],
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
         ledger = build_sample_team_ledger("lane-evidence")
+        ledger["lanes"][0]["evidence_next_verdict"] = "lane-evidence/evidence-next-verdict.json"
         verdict = build_team_ledger_verdict(ledger, base_dir=root)
         if verdict["decision"] != "pass":
             raise AssertionError("valid ledger must pass")
 
         missing = build_sample_team_ledger("missing")
+        missing["lanes"][0]["evidence_next_verdict"] = "missing/evidence-next-verdict.json"
         missing_verdict = build_team_ledger_verdict(missing, base_dir=root)
         if missing_verdict["decision"] != "blocked":
             raise AssertionError("passed lane with missing evidence must block")

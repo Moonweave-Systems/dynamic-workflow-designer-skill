@@ -20,8 +20,38 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
         self.root = Path(self._tmp.name)
         (self.root / "lane-evidence").mkdir()
 
-    def test_valid_ledger_passes(self) -> None:
+    def _write_evidence_next_verdict(
+        self,
+        relative_path: str = "lane-evidence/evidence-next-verdict.json",
+        *,
+        decision: str = "continue",
+        blocking_reasons: list[str] | None = None,
+    ) -> str:
+        verdict_path = self.root / relative_path
+        verdict_path.parent.mkdir(parents=True, exist_ok=True)
+        verdict_path.write_text(
+            json.dumps(
+                {
+                    "command": "evidence-next",
+                    "schema_version": "1.0",
+                    "decision": decision,
+                    "blocking_reasons": blocking_reasons or [],
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        return relative_path
+
+    def _ledger_with_evidence_next(self) -> dict[str, object]:
         ledger = build_sample_team_ledger("lane-evidence")
+        ledger["lanes"][0]["evidence_next_verdict"] = self._write_evidence_next_verdict()
+        return ledger
+
+    def test_valid_ledger_passes(self) -> None:
+        ledger = self._ledger_with_evidence_next()
 
         verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
 
@@ -33,6 +63,7 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
 
     def test_missing_evidence_dir_blocks_passed_lane(self) -> None:
         ledger = build_sample_team_ledger("missing-evidence")
+        ledger["lanes"][0]["evidence_next_verdict"] = "missing-evidence/evidence-next-verdict.json"
 
         verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
 
@@ -43,7 +74,7 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
         )
 
     def test_invalid_environment_kind_blocks(self) -> None:
-        ledger = build_sample_team_ledger("lane-evidence")
+        ledger = self._ledger_with_evidence_next()
         ledger["lanes"][0]["env_kind"] = "bare-metal"
 
         verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
@@ -85,7 +116,7 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
             ("verification_state", "pending"),
         ):
             with self.subTest(field=field):
-                ledger = build_sample_team_ledger("lane-evidence")
+                ledger = self._ledger_with_evidence_next()
                 ledger["lanes"][0][field] = value
 
                 verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
@@ -97,7 +128,7 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
                 )
 
     def test_empty_lanes_and_duplicate_lane_ids_block(self) -> None:
-        empty = build_sample_team_ledger("lane-evidence")
+        empty = self._ledger_with_evidence_next()
         empty["lanes"] = []
 
         empty_verdict = build_team_ledger_verdict(empty, base_dir=self.root)
@@ -108,7 +139,7 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
             {error["code"] for error in empty_verdict["errors"]},
         )
 
-        duplicate = build_sample_team_ledger("lane-evidence")
+        duplicate = self._ledger_with_evidence_next()
         duplicate["lanes"].append(dict(duplicate["lanes"][0]))
 
         duplicate_verdict = build_team_ledger_verdict(duplicate, base_dir=self.root)
@@ -138,6 +169,19 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
         ledger_root.mkdir()
         (evidence_root / "lane-evidence").mkdir(parents=True)
         ledger = build_sample_team_ledger("lane-evidence")
+        verdict_path = evidence_root / "lane-evidence" / "evidence-next-verdict.json"
+        verdict_path.write_text(
+            json.dumps(
+                {
+                    "command": "evidence-next",
+                    "schema_version": "1.0",
+                    "decision": "continue",
+                    "blocking_reasons": [],
+                }
+            ),
+            encoding="utf-8",
+        )
+        ledger["lanes"][0]["evidence_next_verdict"] = "lane-evidence/evidence-next-verdict.json"
         ledger_path = ledger_root / "team-ledger.json"
         ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
 
@@ -162,7 +206,7 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
         self.assertEqual(json.loads(result.stdout)["decision"], "pass")
 
     def test_cli_writes_verdict(self) -> None:
-        ledger = build_sample_team_ledger("lane-evidence")
+        ledger = self._ledger_with_evidence_next()
         ledger_path = self.root / "team-ledger.json"
         verdict_path = self.root / "team-ledger-verdict.json"
         ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
@@ -191,7 +235,7 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
         self.assertEqual(verdict["decision"], "pass")
 
     def test_duplicate_lane_ids_block(self) -> None:
-        ledger = build_sample_team_ledger("lane-evidence")
+        ledger = self._ledger_with_evidence_next()
         ledger["lanes"].append(dict(ledger["lanes"][0]))
 
         verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
@@ -203,7 +247,7 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
         )
 
     def test_empty_or_non_list_lanes_block(self) -> None:
-        ledger = build_sample_team_ledger("lane-evidence")
+        ledger = self._ledger_with_evidence_next()
         ledger["lanes"] = []
         empty_verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
         ledger["lanes"] = "lane-a"
@@ -221,7 +265,7 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
         )
 
     def test_cli_writes_json_verdict(self) -> None:
-        ledger = build_sample_team_ledger("lane-evidence")
+        ledger = self._ledger_with_evidence_next()
         second = dict(ledger["lanes"][0])
         second["lane_id"] = "lane-tests"
         ledger["lanes"].append(second)
@@ -251,6 +295,32 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
         self.assertEqual(stdout["decision"], "pass")
         self.assertEqual(verdict["decision"], "pass")
         self.assertEqual(verdict["lane_count"], 2)
+
+    def test_passed_lane_without_evidence_next_verdict_blocks(self) -> None:
+        ledger = build_sample_team_ledger("lane-evidence")
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertIn(
+            "ERR_TEAM_LEDGER_EVIDENCE_NEXT_VERDICT_REQUIRED",
+            {error["code"] for error in verdict["errors"]},
+        )
+
+    def test_blocked_evidence_next_verdict_blocks_passed_lane(self) -> None:
+        ledger = build_sample_team_ledger("lane-evidence")
+        ledger["lanes"][0]["evidence_next_verdict"] = self._write_evidence_next_verdict(
+            decision="blocked",
+            blocking_reasons=["tampered capture manifest"],
+        )
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertIn(
+            "ERR_TEAM_LEDGER_EVIDENCE_NEXT_NOT_CONTINUE",
+            {error["code"] for error in verdict["errors"]},
+        )
 
 
 if __name__ == "__main__":
