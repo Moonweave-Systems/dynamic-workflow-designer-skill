@@ -11,6 +11,7 @@ from typing import Any
 from depone.agent_fabric.team_launch_preflight import (
     _self_test as team_launch_preflight_self_test,
     build_team_launch_preflight,
+    build_team_launch_preflight_ledger,
 )
 from depone.cli._response import emit_error, emit_result, exit_code_for_decision
 
@@ -70,12 +71,13 @@ def run(args: argparse.Namespace) -> None:
     team_ledger_arg = str(getattr(args, "team_ledger_out", "") or "")
     team_ledger_path = Path(team_ledger_arg) if team_ledger_arg else None
     if team_ledger_path is not None:
-        team_ledger = team_dry_run.get("team_ledger")
-        if not isinstance(team_ledger, dict):
+        try:
+            team_ledger = build_team_launch_preflight_ledger(team_dry_run, preflight)
+        except ValueError as exc:
             emit_error(
                 args,
                 code="ERR_TEAM_LAUNCH_PREFLIGHT_TEAM_LEDGER_MISSING",
-                message="team dry-run artifact must include team_ledger to write --team-ledger-out",
+                message=str(exc),
             )
         _write_json(team_ledger_path, team_ledger)
 

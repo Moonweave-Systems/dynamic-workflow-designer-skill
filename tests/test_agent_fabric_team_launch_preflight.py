@@ -8,6 +8,7 @@ from pathlib import Path
 from depone.agent_fabric.team_launch_preflight import (
     TEAM_LAUNCH_PREFLIGHT_KIND,
     build_team_launch_preflight,
+    build_team_launch_preflight_ledger,
     validate_team_launch_preflight,
 )
 
@@ -51,6 +52,23 @@ class AgentFabricTeamLaunchPreflightTests(unittest.TestCase):
         self.assertFalse(payload["boundary"]["launches_agents"])
         self.assertFalse(payload["boundary"]["creates_worktrees"])
         self.assertEqual(validate_team_launch_preflight(payload), [])
+
+    def test_build_team_launch_preflight_ledger_binds_preflight_lanes(self) -> None:
+        team_dry_run = self._fixture()
+        preflight = self._preflight(team_dry_run)
+
+        ledger = build_team_launch_preflight_ledger(team_dry_run, preflight)
+
+        self.assertEqual(ledger["kind"], "depone-team-ledger")
+        self.assertIn("team_launch_preflight", ledger["source_hashes"])
+        self.assertEqual(
+            [lane["lane_id"] for lane in ledger["lanes"]],
+            [lane["lane_id"] for lane in preflight["lanes"]],
+        )
+        self.assertEqual(
+            [lane["planned_worktree"] for lane in ledger["lanes"]],
+            [lane["planned_worktree"] for lane in preflight["lanes"]],
+        )
 
     def test_missing_kind_in_input_blocks(self) -> None:
         team_dry_run = self._fixture()

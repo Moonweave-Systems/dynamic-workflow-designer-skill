@@ -417,7 +417,7 @@ def _add_team_launch_preflight_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--team-ledger-out",
         default="",
-        help="Optional output path for the Team Ledger JSON copied from the dry-run artifact",
+        help="Optional output path for Team Ledger JSON generated from the preflight lanes",
     )
     parser.add_argument(
         "--self-test", action="store_true", help="Run self-test and exit"

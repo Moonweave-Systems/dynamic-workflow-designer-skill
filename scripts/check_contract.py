@@ -2711,6 +2711,52 @@ def require_team_launch_preflight_docs_contract() -> None:
                 "team-launch-preflight generated artifacts must not be committed before the CLI exists: "
                 + ", ".join(present)
             )
+        return
+
+    missing = [str(path.relative_to(ROOT)) for path in generated_artifacts if not path.exists()]
+    if missing:
+        raise SystemExit(
+            "team-launch-preflight generated artifacts are required now that the CLI exists: "
+            + ", ".join(missing)
+        )
+    preflight = json.loads(
+        (ROOT / "docs" / "team-launch-preflight" / "team-launch-preflight.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    ledger = json.loads(
+        (ROOT / "docs" / "team-launch-preflight" / "team-ledger.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    verdict = json.loads(
+        (ROOT / "docs" / "team-launch-preflight" / "team-ledger-verdict.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    if preflight.get("kind") != "depone-team-launch-preflight":
+        raise SystemExit("team-launch-preflight.json kind mismatch")
+    if preflight.get("decision") != "pass":
+        raise SystemExit("team-launch-preflight.json must record decision pass")
+    boundary = preflight.get("boundary")
+    if not isinstance(boundary, dict):
+        raise SystemExit("team-launch-preflight.json boundary must be an object")
+    for key in (
+        "launches_agents",
+        "creates_worktrees",
+        "executes_commands",
+        "mutates_worktree",
+        "calls_live_models",
+        "raises_assurance",
+    ):
+        if boundary.get(key) is not False:
+            raise SystemExit(f"team-launch-preflight boundary.{key} must be false")
+    if ledger.get("kind") != "depone-team-ledger":
+        raise SystemExit("team-ledger.json kind mismatch")
+    if verdict.get("kind") != "depone-team-ledger-verdict":
+        raise SystemExit("team-ledger-verdict.json kind mismatch")
+    if verdict.get("decision") not in {"blocked-explicit", "pass"}:
+        raise SystemExit("team-ledger-verdict.json must be re-validatable")
 
 
 def contract_steps_for_tier(tier: str) -> list[tuple[str, object, int]]:

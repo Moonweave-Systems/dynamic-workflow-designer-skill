@@ -1,0 +1,56 @@
+{
+  "end_commit": "b0416e69c6ac7f155db66af8cbff3edacd4350d3",
+  "kind": "depone-team-ledger",
+  "lanes": [
+    {
+      "blocked_reason": "dry-run plan only; no lane evidence has been captured and no worker was launched",
+      "end_commit": "b0416e69c6ac7f155db66af8cbff3edacd4350d3",
+      "env_kind": "local",
+      "evidence_dir": "lane-1",
+      "lane_id": "lane-1",
+      "objective": "Implement the bounded team-dry-run CLI and planner",
+      "planned_worktree": "docs/team-dry-run/worktrees/lane-1",
+      "runner_adapter_kind": "codex",
+      "start_commit": "b0416e69c6ac7f155db66af8cbff3edacd4350d3",
+      "team_adapter_kind": "depone-native",
+      "touched_files": [
+        "depone/agent_fabric/team_dry_run.py",
+        "depone/cli/team_dry_run.py",
+        "depone/__main__.py",
+        "tests/test_agent_fabric_team_dry_run.py"
+      ],
+      "verification_artifacts": [],
+      "verification_state": "blocked",
+      "worktree_receipt": "lane-1/worktree-receipt.json"
+    },
+    {
+      "blocked_reason": "dry-run plan only; no lane evidence has been captured and no worker was launched",
+      "end_commit": "b0416e69c6ac7f155db66af8cbff3edacd4350d3",
+      "env_kind": "local",
+      "evidence_dir": "docs-artifacts",
+      "lane_id": "docs-artifacts",
+      "objective": "Document the dry-run contract and regenerate committed artifacts",
+      "planned_worktree": "worktrees/docs-artifacts",
+      "runner_adapter_kind": "codex",
+      "start_commit": "b0416e69c6ac7f155db66af8cbff3edacd4350d3",
+      "team_adapter_kind": "depone-native",
+      "touched_files": [
+        "docs/command-reference.md",
+        "docs/depone-cloud-team-control.md",
+        "docs/team-dry-run/team-plan.json"
+      ],
+      "verification_artifacts": [],
+      "verification_state": "blocked",
+      "worktree_receipt": "docs-artifacts/worktree-receipt.json"
+    }
+  ],
+  "leader_id": "codex-leader",
+  "leader_objective": "Prepare a planning-only Depone native team dry-run without launching workers",
+  "schema_version": "0.1",
+  "source_hashes": {
+    "team_dry_run": "66f691b1f863f041412c166b21c7de5e0b2a5b529df9fadf71659e9499a29e48",
+    "team_launch_preflight": "d08404025bfcc0e207ee5264126f47100c2f2247d00b0db68b4c76fae8488d77"
+  },
+  "start_commit": "b0416e69c6ac7f155db66af8cbff3edacd4350d3",
+  "stop_rule": "dry-run only; fan-in remains blocked until lane evidence exists"
+}

@@ -7,6 +7,7 @@ from typing import Any
 
 from depone.agent_fabric.claim_gate import canonical_hash
 from depone.agent_fabric.team_dry_run import TEAM_DRY_RUN_KIND, TEAM_DRY_RUN_SCHEMA_VERSION
+from depone.agent_fabric.team_ledger import TEAM_LEDGER_KIND, TEAM_LEDGER_SCHEMA_VERSION
 
 TEAM_LAUNCH_PREFLIGHT_KIND = "depone-team-launch-preflight"
 TEAM_LAUNCH_PREFLIGHT_SCHEMA_VERSION = "0.1"
@@ -179,6 +180,63 @@ def validate_team_launch_preflight(payload: dict[str, object]) -> list[dict[str,
     return errors
 
 
+def build_team_launch_preflight_ledger(
+    team_dry_run: dict[str, object],
+    preflight: dict[str, object],
+) -> dict[str, object]:
+    """Build a Team Ledger artifact bound to the preflight lane records."""
+
+    source_ledger = team_dry_run.get("team_ledger")
+    if not isinstance(source_ledger, dict):
+        raise ValueError("team dry-run artifact must include team_ledger")
+    if source_ledger.get("kind") != TEAM_LEDGER_KIND:
+        raise ValueError(f"team_ledger.kind must be {TEAM_LEDGER_KIND}")
+    if source_ledger.get("schema_version") != TEAM_LEDGER_SCHEMA_VERSION:
+        raise ValueError(f"team_ledger.schema_version must be {TEAM_LEDGER_SCHEMA_VERSION}")
+
+    raw_source_lanes = source_ledger.get("lanes")
+    raw_preflight_lanes = preflight.get("lanes")
+    raw_dry_run_lanes = team_dry_run.get("lanes")
+    if not isinstance(raw_source_lanes, list):
+        raise ValueError("team_ledger.lanes must be a list")
+    if not isinstance(raw_preflight_lanes, list):
+        raise ValueError("preflight.lanes must be a list")
+    if not isinstance(raw_dry_run_lanes, list):
+        raise ValueError("team dry-run lanes must be a list")
+
+    source_lanes = _lanes_by_id(raw_source_lanes, "team_ledger.lanes")
+    dry_run_lanes = _lanes_by_id(raw_dry_run_lanes, "team_dry_run.lanes")
+    generated_lanes: list[dict[str, object]] = []
+    for raw_preflight_lane in raw_preflight_lanes:
+        if not isinstance(raw_preflight_lane, dict):
+            raise ValueError("preflight.lanes entries must be objects")
+        lane_id = _non_empty_string(raw_preflight_lane.get("lane_id"))
+        if lane_id is None:
+            raise ValueError("preflight lane_id must be a non-empty string")
+        source_lane = dict(source_lanes[lane_id])
+        dry_run_lane = dry_run_lanes[lane_id]
+        planned_worktree = _non_empty_string(raw_preflight_lane.get("planned_worktree"))
+        evidence_dir = _non_empty_string(raw_preflight_lane.get("evidence_dir"))
+        if planned_worktree is None or evidence_dir is None:
+            raise ValueError("preflight lanes must include planned_worktree and evidence_dir")
+        if dry_run_lane.get("planned_worktree") != planned_worktree:
+            raise ValueError(f"planned_worktree mismatch for lane {lane_id}")
+        if dry_run_lane.get("evidence_dir") != evidence_dir:
+            raise ValueError(f"evidence_dir mismatch for lane {lane_id}")
+        source_lane["lane_id"] = lane_id
+        source_lane["planned_worktree"] = planned_worktree
+        source_lane["evidence_dir"] = evidence_dir
+        generated_lanes.append(source_lane)
+
+    ledger = dict(source_ledger)
+    ledger["lanes"] = generated_lanes
+    ledger["source_hashes"] = {
+        "team_dry_run": canonical_hash(team_dry_run),
+        "team_launch_preflight": canonical_hash(preflight),
+    }
+    return ledger
+
+
 def _validate_team_dry_run_input(team_dry_run: dict[str, object]) -> list[dict[str, str]]:
     errors: list[dict[str, str]] = []
     if team_dry_run.get("kind") != TEAM_DRY_RUN_KIND:
@@ -298,6 +356,7 @@ def _lane_preflights(
                 "lane_id": lane_id,
                 "planned_worktree": planned_worktree,
                 "evidence_dir": evidence_dir,
+                "worktree_receipt": _ledger_worktree_receipts(team_dry_run).get(lane_id),
                 "runner_adapter_kind": adapter,
                 "availability_required": availability_required,
                 "adapter_available": _adapter_is_available(adapter_record),
@@ -308,6 +367,20 @@ def _lane_preflights(
                 },
             }
         )
+    return lanes
+
+
+def _lanes_by_id(raw_lanes: list[object], label: str) -> dict[str, dict[str, object]]:
+    lanes: dict[str, dict[str, object]] = {}
+    for index, raw_lane in enumerate(raw_lanes):
+        if not isinstance(raw_lane, dict):
+            raise ValueError(f"{label}[{index}] must be an object")
+        lane_id = _non_empty_string(raw_lane.get("lane_id"))
+        if lane_id is None:
+            raise ValueError(f"{label}[{index}].lane_id must be a non-empty string")
+        if lane_id in lanes:
+            raise ValueError(f"{label}.lane_id must be unique")
+        lanes[lane_id] = raw_lane
     return lanes
 
 
@@ -374,6 +447,24 @@ def _ledger_adapters(team_dry_run: dict[str, object]) -> dict[str, str]:
         if lane_id is not None and adapter is not None:
             adapters[lane_id] = adapter
     return adapters
+
+
+def _ledger_worktree_receipts(team_dry_run: dict[str, object]) -> dict[str, str]:
+    team_ledger = team_dry_run.get("team_ledger")
+    if not isinstance(team_ledger, dict):
+        return {}
+    lanes = team_ledger.get("lanes")
+    if not isinstance(lanes, list):
+        return {}
+    receipts: dict[str, str] = {}
+    for lane in lanes:
+        if not isinstance(lane, dict):
+            continue
+        lane_id = _non_empty_string(lane.get("lane_id"))
+        receipt = _non_empty_string(lane.get("worktree_receipt"))
+        if lane_id is not None and receipt is not None:
+            receipts[lane_id] = receipt
+    return receipts
 
 
 def _adapter_record(
