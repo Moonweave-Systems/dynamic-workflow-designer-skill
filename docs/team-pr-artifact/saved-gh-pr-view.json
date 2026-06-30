@@ -1,0 +1,23 @@
+{
+  "baseRefOid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "headRefOid": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "mergeStateStatus": "CLEAN",
+  "number": 42,
+  "repository": {
+    "nameWithOwner": "Moonweave-Systems/Depone"
+  },
+  "state": "OPEN",
+  "statusCheckRollup": [
+    {
+      "conclusion": "SUCCESS",
+      "name": "contract",
+      "status": "COMPLETED"
+    },
+    {
+      "conclusion": "SUCCESS",
+      "name": "unit",
+      "status": "COMPLETED"
+    }
+  ],
+  "url": "https://github.com/Moonweave-Systems/Depone/pull/42"
+}

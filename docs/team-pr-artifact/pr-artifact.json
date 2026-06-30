@@ -1,5 +1,13 @@
 {
   "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "boundary": {
+    "approves_merge": false,
+    "calls_live_models": false,
+    "executes_commands": false,
+    "launches_agents": false,
+    "observed_external_facts_only": true,
+    "raises_assurance": false
+  },
   "captured_at": "2026-06-30T15:30:00Z",
   "check_summary": {
     "failed_count": 0,
@@ -17,7 +25,7 @@
   "schema_version": "0.1",
   "source_command": [
     "saved-json",
-    "/tmp/depone-pr-saved.json"
+    "docs/team-pr-artifact/saved-gh-pr-view.json"
   ],
   "stale": false,
   "state": "OPEN"

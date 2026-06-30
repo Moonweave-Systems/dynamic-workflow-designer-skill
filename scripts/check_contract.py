@@ -3003,10 +3003,27 @@ def require_team_pr_artifact_docs_contract() -> None:
     if errors:
         raise SystemExit(f"team-pr-artifact fixture invalid: {errors}")
 
-    if artifact.get("kind") != "depone-team-pr-artifact":
+    if artifact.get("kind") != "depone-team-ledger-pr-artifact":
         raise SystemExit("team-pr-artifact fixture kind mismatch")
-    if artifact.get("decision") != "pass":
-        raise SystemExit("team-pr-artifact fixture must record decision pass")
+    if artifact.get("schema_version") != "0.1":
+        raise SystemExit("team-pr-artifact fixture schema_version mismatch")
+    if artifact.get("provider") != "github":
+        raise SystemExit("team-pr-artifact fixture provider must be github")
+    if artifact.get("stale") is not False:
+        raise SystemExit("team-pr-artifact fixture must not be stale")
+    check_summary = artifact.get("check_summary")
+    if not isinstance(check_summary, dict) or check_summary.get("status") != "pass":
+        raise SystemExit("team-pr-artifact fixture check_summary.status must be pass")
+    if check_summary.get("failed_count") != 0 or check_summary.get("pending_count") != 0:
+        raise SystemExit("team-pr-artifact fixture checks must have zero failed and pending")
+    for key in ("base_sha", "head_sha"):
+        value = artifact.get(key)
+        if (
+            not isinstance(value, str)
+            or len(value) != 40
+            or any(character not in "0123456789abcdef" for character in value.lower())
+        ):
+            raise SystemExit(f"team-pr-artifact fixture {key} must be a 40-character hex SHA")
     boundary = artifact.get("boundary")
     if not isinstance(boundary, dict):
         raise SystemExit("team-pr-artifact boundary must be an object")
