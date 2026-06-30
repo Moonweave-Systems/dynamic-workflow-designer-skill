@@ -1,6 +1,7 @@
 # Team shell lane launch fixture
 
-This directory contains the first machine fixture for `depone team-shell-lane-launch`.
+This directory contains the first machine fixture for
+`python3 -m depone team-shell-lane-launch`.
 
 The command is selected by `command_id` from `allowlist.json` and executed as an
 argv list with `subprocess.run(..., shell=False)`. The adapter does not accept or
@@ -31,7 +32,8 @@ Generated files:
 This is shell-only A1-style local evidence. It executes the allowlisted local
 argv command, but it does not launch Codex, Claude, OpenCode, live models, team
 workers, or a scheduler. It does not prove lane task completion and does not
-raise assurance to A2.
+raise assurance to A2. It does not raise assurance and does not claim
+A2/container isolation.
 
 Residual: the committed receipt records the absolute `cwd` of the capture host.
 A fresh clone can revalidate the JSON shape and boundary fields, but should

@@ -42,6 +42,7 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
             self.assertFalse(receipt["boundary"]["uses_shell"])
             self.assertTrue(receipt["boundary"]["uses_argv_allowlist"])
             self.assertFalse(receipt["boundary"]["allows_arbitrary_shell_string"])
+            self.assertFalse(receipt["boundary"]["raises_assurance"])
             transcript = json.loads(Path(str(receipt["transcript_path"])).read_text(encoding="utf-8"))
             self.assertEqual(transcript["stdout_text"], "hello shell lane\n")
 
@@ -59,17 +60,29 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
             self.assertFalse((Path(tmp) / "transcript.json").exists())
 
     def test_agent_executables_are_blocked_even_when_allowlisted(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            with self.assertRaises(TeamShellLaneLaunchError) as raised:
-                run_shell_lane_command(
-                    allowlist={"commands": [{"id": "codex", "argv": ["codex", "--version"]}]},
-                    command_id="codex",
-                    cwd=Path(tmp),
-                    transcript_path=Path(tmp) / "transcript.json",
-                )
+        for executable in ("codex", "claude", "claude-code", "opencode"):
+            with self.subTest(executable=executable):
+                with tempfile.TemporaryDirectory() as tmp:
+                    with self.assertRaises(TeamShellLaneLaunchError) as raised:
+                        run_shell_lane_command(
+                            allowlist={
+                                "commands": [
+                                    {
+                                        "id": "agent",
+                                        "argv": [executable, "--version"],
+                                    }
+                                ]
+                            },
+                            command_id="agent",
+                            cwd=Path(tmp),
+                            transcript_path=Path(tmp) / "transcript.json",
+                        )
 
-            self.assertEqual(raised.exception.code, "ERR_TEAM_SHELL_LANE_AGENT_EXECUTABLE_BLOCKED")
-            self.assertFalse((Path(tmp) / "transcript.json").exists())
+                    self.assertEqual(
+                        raised.exception.code,
+                        "ERR_TEAM_SHELL_LANE_AGENT_EXECUTABLE_BLOCKED",
+                    )
+                    self.assertFalse((Path(tmp) / "transcript.json").exists())
 
 
 if __name__ == "__main__":

@@ -4,6 +4,7 @@
 from pathlib import Path
 import argparse
 import _thread
+import hashlib
 import json
 import re
 import shutil
@@ -2298,6 +2299,7 @@ def require_changed_surface_commands_pass() -> None:
         [sys.executable, "-m", "depone", "agent-fabric-evidence-chain", "--self-test"],
         [sys.executable, "-m", "depone", "team-ledger", "--self-test"],
         [sys.executable, "-m", "depone", "team-ledger-merge-receipt", "--self-test"],
+        [sys.executable, "-m", "depone", "team-shell-lane-launch", "--self-test"],
         [sys.executable, "-m", "depone", "mcp", "--self-test"],
         [sys.executable, "-m", "depone", "agent-fabric-observe", "--self-test"],
         [sys.executable, "-m", "depone", "agent-fabric-verify-seal", "--self-test"],
@@ -2546,6 +2548,9 @@ def require_agent_surface_contract_pass() -> None:
         )
         run_contract_command(
             [sys.executable, "-m", "depone", "team-worktree-prep", "--self-test"]
+        )
+        run_contract_command(
+            [sys.executable, "-m", "depone", "team-shell-lane-launch", "--self-test"]
         )
         run_contract_command(
             [sys.executable, "-m", "depone", "evidence-next", "--self-test"]
@@ -2823,6 +2828,79 @@ def require_team_worktree_prep_docs_contract() -> None:
         raise SystemExit("team-worktree-prep artifact validator did not print []")
 
 
+def require_team_shell_lane_launch_docs_contract() -> None:
+    readme_path = ROOT / "docs" / "team-shell-lane-launch" / "README.md"
+    if not readme_path.exists():
+        raise SystemExit("docs/team-shell-lane-launch/README.md is required")
+    require_terms(
+        "docs/team-shell-lane-launch/README.md",
+        [
+            "python3 -m depone team-shell-lane-launch",
+            "allowlist.json",
+            "subprocess.run(..., shell=False)",
+            "does not accept or concatenate arbitrary shell command strings",
+            "does not launch Codex, Claude, OpenCode",
+            "does not raise assurance",
+            "does not claim A2/container isolation",
+        ],
+    )
+
+    allowlist_path = ROOT / "docs" / "team-shell-lane-launch" / "allowlist.json"
+    receipt_path = ROOT / "docs" / "team-shell-lane-launch" / "receipt.json"
+    transcript_path = ROOT / "docs" / "team-shell-lane-launch" / "transcript.json"
+    for path in (allowlist_path, receipt_path, transcript_path):
+        if not path.exists():
+            raise SystemExit(f"{path.relative_to(ROOT)} is required")
+
+    allowlist = json.loads(allowlist_path.read_text(encoding="utf-8"))
+    receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+    transcript = json.loads(transcript_path.read_text(encoding="utf-8"))
+    if receipt.get("kind") != "depone-team-shell-lane-launch":
+        raise SystemExit("team-shell-lane-launch receipt kind mismatch")
+    if receipt.get("decision") != "pass":
+        raise SystemExit("team-shell-lane-launch receipt must record decision pass")
+    if receipt.get("command_id") != transcript.get("command_id"):
+        raise SystemExit("team-shell-lane-launch receipt/transcript command_id mismatch")
+    if receipt.get("argv") != transcript.get("argv"):
+        raise SystemExit("team-shell-lane-launch receipt/transcript argv mismatch")
+
+    commands = allowlist.get("commands")
+    if not isinstance(commands, list) or not commands:
+        raise SystemExit("team-shell-lane-launch allowlist.commands must be a non-empty list")
+    prohibited = {"codex", "claude", "claude-code", "opencode"}
+    for command in commands:
+        if not isinstance(command, dict):
+            raise SystemExit("team-shell-lane-launch allowlist command must be an object")
+        argv = command.get("argv")
+        if not isinstance(argv, list) or not argv or not all(isinstance(part, str) and part for part in argv):
+            raise SystemExit("team-shell-lane-launch allowlist argv must be non-empty strings")
+        if Path(argv[0]).name.lower() in prohibited:
+            raise SystemExit("team-shell-lane-launch allowlist must not launch agent executables")
+
+    boundary = receipt.get("boundary")
+    if not isinstance(boundary, dict):
+        raise SystemExit("team-shell-lane-launch receipt boundary must be an object")
+    expected_boundary = {
+        "uses_shell": False,
+        "uses_argv_allowlist": True,
+        "executes_commands": True,
+        "launches_agents": False,
+        "calls_live_models": False,
+        "raises_assurance": False,
+        "allows_arbitrary_shell_string": False,
+    }
+    for key, expected in expected_boundary.items():
+        if boundary.get(key) is not expected:
+            raise SystemExit(f"team-shell-lane-launch boundary.{key} must be {expected}")
+
+    transcript_rel = receipt.get("transcript_path")
+    if transcript_rel != "docs/team-shell-lane-launch/transcript.json":
+        raise SystemExit("team-shell-lane-launch transcript_path must point to committed fixture")
+    transcript_hash = hashlib.sha256(transcript_path.read_bytes()).hexdigest()
+    if receipt.get("transcript_sha256") != transcript_hash:
+        raise SystemExit("team-shell-lane-launch transcript_sha256 mismatch")
+
+
 def contract_steps_for_tier(tier: str) -> list[tuple[str, object, int]]:
     if tier == "smoke":
         return [
@@ -2837,6 +2915,7 @@ def contract_steps_for_tier(tier: str) -> list[tuple[str, object, int]]:
             ("install-readiness smoke", require_install_readiness_contract_pass, 600),
             ("team-launch-preflight docs contract", require_team_launch_preflight_docs_contract, 300),
             ("team-worktree-prep docs contract", require_team_worktree_prep_docs_contract, 300),
+            ("team-shell-lane-launch docs contract", require_team_shell_lane_launch_docs_contract, 300),
         ]
     if tier != "full":
         raise SystemExit(f"unknown contract tier: {tier}")
@@ -2927,6 +3006,7 @@ Overclaims execution: no
         "install-readiness smoke",
         "team-launch-preflight docs contract",
         "team-worktree-prep docs contract",
+        "team-shell-lane-launch docs contract",
     ]:
         raise SystemExit("self-test failed: changed tier steps changed")
     if "release command corpus" not in [label for label, _callback, _timeout in contract_steps_for_tier("full")]:

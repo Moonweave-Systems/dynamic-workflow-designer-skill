@@ -5,7 +5,7 @@
     "print('depone shell lane fixture')"
   ],
   "command_id": "fixture-echo",
-  "cwd": "/tmp/depone-install-readiness/.omx/team/depone-wave-3-single-74805df1/worktrees/worker-2",
+  "cwd": "/tmp/depone-install-readiness",
   "exit_code": 0,
   "stderr_text": "",
   "stdout_text": "depone shell lane fixture\n"
