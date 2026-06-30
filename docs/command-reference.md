@@ -81,9 +81,10 @@ live models, delete worktrees, raise assurance, or prove task completion.
 only an argv command selected by `command_id` from a JSON allowlist, invokes
 `subprocess.run(..., shell=False)`, and writes a command receipt containing the
 resolved cwd, argv, exit code, stdout/stderr SHA-256 hashes, and transcript
-path/hash. It is a command adapter only: it does not accept arbitrary shell
-strings, launch Codex/Claude/OpenCode, call live models, schedule teams, or
-raise assurance.
+path/hash. It is a shell-only command adapter with A1-style local evidence only:
+it does not accept arbitrary shell strings, concatenate shell commands, launch
+Codex/Claude/OpenCode, call live models, schedule teams, or raise assurance to
+A2.
 
 `team-ledger-merge-receipt` writes the machine JSON merge receipt consumed by
 `team-ledger` when passed lanes touch the same file. It normalizes lane ids and

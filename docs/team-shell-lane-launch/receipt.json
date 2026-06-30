@@ -14,7 +14,7 @@
     "uses_shell": false
   },
   "command_id": "fixture-echo",
-  "cwd": "/tmp/depone-install-readiness/.omx/team/depone-wave-3-single-74805df1/worktrees/worker-1",
+  "cwd": "/tmp/depone-install-readiness/.omx/team/depone-wave-3-single-74805df1/worktrees/worker-2",
   "decision": "pass",
   "exit_code": 0,
   "kind": "depone-team-shell-lane-launch",
@@ -22,5 +22,5 @@
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "stdout_sha256": "67d800906931d7e374f0a96e4f40469f9f1a4de90ec72fe3690079b244f71573",
   "transcript_path": "docs/team-shell-lane-launch/transcript.json",
-  "transcript_sha256": "74226977e0777b0b4caf9224cbf272f95b97991cbd09bd61069ca13a8fca43f7"
+  "transcript_sha256": "73cfde0918a077420e23c32163b770c3822e2bf6315b397b8314d49564aa5b8d"
 }
