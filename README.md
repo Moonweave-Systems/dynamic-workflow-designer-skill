@@ -87,6 +87,8 @@ flowchart LR
 | `depone evidence-chain` | Verify an ordered append-only capture manifest chain |
 | `depone evidence-run` | Run the common observe -> substrate -> ingest -> verify loop |
 | `depone run` | Native-runner convenience alias for `evidence-run`; not a scheduler |
+| `depone next` | Re-validate an evidence-run directory and select a safe next action |
+| `depone advance` | Fail-closed one-step gate: only after `next=continue`, run one existing evidence-run continuation and write `advance-decision.json` |
 | `depone mcp` | Serve the same evidence/verify capabilities over MCP stdio |
 | `depone demo` | Run a complete design -> compile -> verify cycle |
 

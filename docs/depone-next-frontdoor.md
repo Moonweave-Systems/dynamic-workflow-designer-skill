@@ -43,3 +43,27 @@ blocking_reasons: []
 Honest boundary: this is a verifier/selector front door, not a scheduler. It
 reduces the repeated human "what next?" step by making the next action
 machine-readable, but another loop or operator must still execute it.
+
+## One-step advance gate
+
+`depone advance` is the smallest execution bridge above this verifier. It
+recomputes the `depone next` decision for a previous evidence-run directory and
+fails closed unless `decision` is `continue` and `blocking_reasons` is empty. On
+that exact gate pass, it runs one supplied `depone run` / `evidence-run`
+continuation and records `executed_continuations: 1` in an
+`advance-decision.json` artifact. On a blocked gate it records
+`executed_continuations: 0` and does not call the runner.
+
+Example shape:
+
+```bash
+python3 -m depone advance \
+  --evidence-dir docs/depone-run-receipt-frontdoor \
+  --advance-out out/advance-decision.json \
+  --runner-sandbox ./runner-worktree \
+  --source-fixture depone/fixtures/agent_fabric/reference_adapter_shell.json \
+  --out out/evidence-run-next \
+  --json -- python3 -m unittest
+```
+
+This remains a one-step gate, not a scheduler or agent runtime.
