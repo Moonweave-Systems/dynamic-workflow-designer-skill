@@ -1,0 +1,82 @@
+{
+  "assurance": "A2-isolated-observed",
+  "automation_boundary": {
+    "executes_next_action": false,
+    "requires_operator_or_loop_to_execute": true
+  },
+  "blocking_reasons": [],
+  "boundary": {
+    "isolation": {
+      "boundary": true,
+      "model": "uid-boundary-observer-launched-unwritable-observer-dir",
+      "observer_dir_writable_by_runner": false,
+      "observer_launched": true,
+      "observer_uid": 1001,
+      "reasons": [],
+      "runner_uid": 1002
+    },
+    "privilege_isolated": true
+  },
+  "capture": {
+    "errors": [],
+    "path": "docs/depone-run-receipt-frontdoor/capture-manifest.json"
+  },
+  "command": "evidence-next",
+  "decision": "continue",
+  "evidence_bundle": {
+    "path": "docs/depone-run-receipt-frontdoor/evidence-bundle.json",
+    "statement_errors": []
+  },
+  "evidence_dir": "docs/depone-run-receipt-frontdoor",
+  "evidence_ingest": {
+    "decision": "pass",
+    "reasons": [],
+    "subject_results": [
+      {
+        "actual": "5cb2e350f4b644858543191c62b9f0b612dcc0c29620d6d4ef450c0cfd10188c",
+        "expected": "5cb2e350f4b644858543191c62b9f0b612dcc0c29620d6d4ef450c0cfd10188c",
+        "name": "depone-capture-manifest",
+        "status": "verified"
+      },
+      {
+        "actual": "009327cf064732c631c6a3144fb4b79d71e48ca0ccd37e1c9099bfc18af95c29",
+        "expected": "009327cf064732c631c6a3144fb4b79d71e48ca0ccd37e1c9099bfc18af95c29",
+        "name": "source_fixture",
+        "status": "verified"
+      },
+      {
+        "actual": "60a58662e65f153d1ad820cc5c430a41b871fb79c97205d12b39b5df59a7eab5",
+        "expected": "60a58662e65f153d1ad820cc5c430a41b871fb79c97205d12b39b5df59a7eab5",
+        "name": "observer_capture",
+        "status": "verified"
+      },
+      {
+        "actual": "8a80303e6c6474b079ba1bdd04643c86df6fc35a04d036e10027457fce132ed9",
+        "expected": "8a80303e6c6474b079ba1bdd04643c86df6fc35a04d036e10027457fce132ed9",
+        "name": "runner_receipt",
+        "status": "verified"
+      }
+    ],
+    "verified_subject_count": 4
+  },
+  "next_action": "run_next_evidence_slice",
+  "out": "docs/depone-next-frontdoor/evidence-next-decision.json",
+  "recorded_ingest": {
+    "decision": "pass",
+    "path": "docs/depone-run-receipt-frontdoor/ingest-verdict.json"
+  },
+  "runner_receipt": {
+    "errors": [],
+    "path": "docs/depone-run-receipt-frontdoor/runner-receipt.json"
+  },
+  "schema_version": "1.0",
+  "verified_artifacts": {
+    "subject_count": 4,
+    "verified_subject_count": 4
+  },
+  "verify": {
+    "errors": [],
+    "report_decision": null,
+    "summary_decision": "skipped"
+  }
+}

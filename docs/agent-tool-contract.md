@@ -24,6 +24,7 @@ Core official surface:
 | `depone evidence-substrate --json` | Emit in-toto/DSSE and OTel GenAI-shaped evidence. |
 | `depone evidence-ingest --json` | Verify untrusted external evidence subject digests. |
 | `depone run --json` | Native runner-facing alias for the existing evidence loop. |
+| `depone next --json` | Re-validate an evidence-run directory and select the next safe action. |
 | `depone mcp` | Serve evidence tools over MCP stdio. |
 | `depone demo --json` | Run the offline design, compile, verify demo. |
 
@@ -33,6 +34,8 @@ Convenience wrapper:
 | --- | --- |
 | `depone run --json` | Native-runner alias for the existing evidence loop; behavior-compatible with `evidence-run`. |
 | `depone evidence-run --json` | Run the common observe, substrate, ingest, and verify loop in one command. |
+| `depone next --json` | Native operator alias for `evidence-next`; re-validates artifacts and recommends a next action without executing it. |
+| `depone evidence-next --json` | Re-validate capture, runner receipt, statement subjects, and ingest decision before continuing. |
 
 The older `agent-fabric-*` commands remain callable for compatibility but are
 not the preferred agent-facing surface.
@@ -46,6 +49,11 @@ When `depone run` / `evidence-run` launches a uid runner itself with
 `--runner-user`, it also writes `runner-receipt.json` under the output
 directory. That receipt is rehashed as a DSSE statement subject and reflected in
 the OTel GenAI-shaped spans; it does not raise assurance by itself.
+
+`depone next` consumes the artifact directory produced by `depone run`. It
+recomputes the capture, runner receipt, in-toto/DSSE subject digests, and OTel
+shape before returning `continue` or `blocked`. A recorded `ingest-verdict.json`
+is reported but not trusted as the decision source.
 
 ## Machine Contract
 
@@ -102,6 +110,8 @@ python -m depone run --runner-sandbox ./runner-worktree \
   --out ../observer/evidence-run --allow-touched-file sample.txt \
   --verify-plan plan.json --verify-evidence ./evidence \
   --json -- python -m unittest
+python -m depone next --evidence-dir ../observer/evidence-run \
+  --out ../observer/evidence-next.json --json
 ```
 
 The expanded loop remains available when agents need to inspect each artifact:
