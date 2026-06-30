@@ -87,8 +87,8 @@ flowchart LR
 | `depone evidence-chain` | Verify an ordered append-only capture manifest chain |
 | `depone evidence-run` | Run the common observe -> substrate -> ingest -> verify loop |
 | `depone run` | Native-runner convenience alias for `evidence-run`; not a scheduler |
-| `depone next` | Re-validate an evidence-run directory and select a safe next action |
-| `depone advance` | Fail-closed one-step gate: only after `next=continue`, run one existing evidence-run continuation and write `advance-decision.json` |
+| `depone next` | Re-validate an evidence-run directory and recommend the next safe action without executing it |
+| `depone advance` | Re-validate with `next`, then run exactly one existing evidence-run continuation when unblocked |
 | `depone mcp` | Serve the same evidence/verify capabilities over MCP stdio |
 | `depone demo` | Run a complete design -> compile -> verify cycle |
 
@@ -122,7 +122,10 @@ sequenceDiagram
 `design` makes safe workflow contracts, `compile` emits target artifacts, and
 `verify` checks execution evidence against the plan. `run` is the evidence-native
 entrypoint for the existing local evidence loop: a compatibility alias over
-`evidence-run`, not a general-purpose agent-team scheduler.
+`evidence-run`, not a general-purpose agent-team scheduler. `next` is the
+non-executing revalidation gate. `advance` is the explicit one-step operator
+gate: it refuses unless `next` returns `continue` with zero blockers, then runs
+exactly one `evidence-run` continuation and writes `advance-decision.json`.
 
 ## Safety Model
 

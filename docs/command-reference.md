@@ -24,7 +24,7 @@ python -m depone evidence-ingest --dsse evidence-bundle.json:dsse_envelope --art
 python -m depone evidence-chain --capture capture-0.json --capture capture-1.json --out evidence-chain-verdict.json --json
 python -m depone run --runner-sandbox ./runner-worktree --source-fixture depone/fixtures/agent_fabric/reference_adapter_shell.json --out ../observer/evidence-run --allow-touched-file sample.txt --json -- python -m unittest
 python -m depone next --evidence-dir ../observer/evidence-run --out evidence-next.json --json
-python -m depone advance --evidence-dir ../observer/evidence-run --advance-out advance-decision.json --runner-sandbox ./runner-worktree --source-fixture depone/fixtures/agent_fabric/reference_adapter_shell.json --out ../observer/evidence-run-next --allow-touched-file sample.txt --json -- python -m unittest
+python -m depone advance --evidence-dir ../observer/evidence-run --runner-sandbox ./runner-worktree --source-fixture depone/fixtures/agent_fabric/reference_adapter_shell.json --out ../observer/evidence-run-next --advance-out advance-decision.json --json -- python -m unittest
 python -m depone mcp
 python -m depone demo --out out/depone-quickstart --json
 ```
@@ -45,12 +45,11 @@ existing evidence-run directory from the machine artifacts and emits
 `continue` or `blocked` with a concrete `next_action`. It does not execute the
 next action.
 
-`advance` is the deliberately narrow one-step execution gate. It first recomputes
-the same `next` decision for a previous evidence-run directory, refuses to run
-when the decision is not `continue` or any blocker is present, and otherwise
-runs exactly one normal `evidence-run` continuation using the supplied runner
-arguments. It writes a machine-readable `advance-decision.json`; it is not a
-scheduler or agent runtime.
+`advance` is the explicit one-step continuation gate. It runs `next` over the
+previous evidence-run directory and refuses before execution unless the decision
+is `continue` and blockers are empty. Only then does it invoke one existing
+`evidence-run` continuation, write `advance-decision.json`, and stop; it is not
+a queue, scheduler, or agent runtime.
 
 When the observer launches a uid runner through `--runner-user`, the output
 directory also contains `runner-receipt.json`. The evidence bundle binds that
