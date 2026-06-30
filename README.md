@@ -134,17 +134,8 @@ production deployment, and history rewrite require explicit gates.
 
 ## Roadmap
 
-```mermaid
-flowchart TD
-    A["Agent-safe CLI"] --> B["Evidence substrate"]
-    B --> C["depone run / evidence-run wrapper"]
-    C --> D["Session receipt adapters"]
-    D --> E["Operator signing policy"]
-    E --> F["A2 isolation path"]
-    C --> C1["Current: A1 local observed"]
-    D --> D1["Next: Codex / Claude receipts"]
-    E --> E1["Later: signed trust policy"]
-```
+Depone is moving from agent-safe CLI and evidence substrate toward stronger
+session receipt adapters, operator signing policy, and A2 isolation paths.
 
 ## What Is Still Honest
 Depone claims **no direct-agent superiority** - it is a design + verification layer, not an agent runtime.
@@ -174,8 +165,8 @@ Legacy diagnostics: `python scripts/dwm_demo.py run --out out/demo/quickstart`, 
 ## Quality
 
 Core CLI commands include built-in `--self-test`, including `verify`,
-`observe`, `evidence-substrate`, `evidence-ingest`, `run`/`evidence-run`, and
-`demo`.
+`observe`, `evidence-substrate`, `evidence-ingest`, `run`/`evidence-run`,
+`next`/`evidence-next`, `advance`, and `demo`.
 
 ```bash
 python scripts/check_contract.py --tier changed
@@ -189,10 +180,8 @@ DWM Core keeps agentic work inspectable, reproducible, resumable, and honest
 about what has actually been executed.
 ## Documentation
 - [`docs/agent-tool-contract.md`](docs/agent-tool-contract.md): agent-facing CLI and evidence contract.
-- [`docs/command-reference.md`](docs/command-reference.md) and [`docs/spec.md`](docs/spec.md): command reference and product spec.
-- [`docs/release-history.md`](docs/release-history.md): versioned implementation history.
-- [`references/workflow-plan-schema.md`](references/workflow-plan-schema.md): plan schema v0.5 reference.
-- [`SKILL.md`](SKILL.md): installed agent skill for Codex environments.
+- [`docs/command-reference.md`](docs/command-reference.md), [`docs/spec.md`](docs/spec.md), and [`docs/release-history.md`](docs/release-history.md): command, product, and release references.
+- [`references/workflow-plan-schema.md`](references/workflow-plan-schema.md) and [`SKILL.md`](SKILL.md): plan schema and installed Codex skill.
 
 ## License
 
