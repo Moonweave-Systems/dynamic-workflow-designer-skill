@@ -964,8 +964,13 @@ def _validate_worktree_receipt(
         )
 
     lane_touched_files = lane.get("touched_files")
-    if isinstance(lane_touched_files, list) and changed_files:
-        missing_touched = sorted(set(lane_touched_files) - set(changed_files))
+    if (
+        isinstance(lane_touched_files, list)
+        and all(isinstance(item, str) for item in lane_touched_files)
+        and changed_files
+    ):
+        normalized_touched = {PurePosixPath(item).as_posix() for item in lane_touched_files}
+        missing_touched = sorted(normalized_touched - set(changed_files))
         if missing_touched:
             errors.append(
                 {

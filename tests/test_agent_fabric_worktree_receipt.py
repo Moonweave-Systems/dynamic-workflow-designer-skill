@@ -179,6 +179,44 @@ class AgentFabricWorktreeReceiptTests(unittest.TestCase):
             {error["code"] for error in verdict["errors"]},
         )
 
+    def test_invalid_touched_files_with_worktree_receipt_blocks_without_crash(self) -> None:
+        receipt_dir = self.root / "lane-evidence"
+        self._write_evidence_next(receipt_dir)
+        receipt_path = receipt_dir / "worktree-receipt.json"
+        receipt_path.write_text(
+            json.dumps(
+                {
+                    "kind": "depone-worktree-lane-receipt",
+                    "schema_version": "0.1",
+                    "worktree": "repo",
+                    "branch": "codex/worktree-lane-receipt",
+                    "base_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "head_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                    "dirty": False,
+                    "dirty_files": [],
+                    "changed_files": ["sample.txt"],
+                    "evidence_dir": "lane-evidence",
+                    "command_receipts": [],
+                    "boundary": {"executes_commands": False, "launches_agents": False},
+                },
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        ledger = build_sample_team_ledger("lane-evidence")
+        ledger["lanes"][0]["evidence_next_verdict"] = "lane-evidence/evidence-next-verdict.json"
+        ledger["lanes"][0]["worktree_receipt"] = "lane-evidence/worktree-receipt.json"
+        ledger["lanes"][0]["touched_files"] = [["sample.txt"]]
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertIn(
+            "ERR_TEAM_LEDGER_TOUCHED_FILES_INVALID",
+            {error["code"] for error in verdict["errors"]},
+        )
+
     def test_missing_worktree_repo_blocks_receipt_producer(self) -> None:
         missing = self.root / "missing"
 
