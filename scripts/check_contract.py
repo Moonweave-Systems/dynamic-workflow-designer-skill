@@ -2673,6 +2673,92 @@ def require_install_readiness_contract_pass() -> None:
         raise SystemExit("install smoke must not claim PyPI readiness")
 
 
+def require_team_launch_preflight_docs_contract() -> None:
+    readme_path = ROOT / "docs" / "team-launch-preflight" / "README.md"
+    if not readme_path.exists():
+        raise SystemExit("docs/team-launch-preflight/README.md is required")
+    require_terms(
+        "docs/team-launch-preflight/README.md",
+        [
+            "python3 -m depone team-launch-preflight",
+            "team-launch-preflight.json",
+            "team-ledger.json",
+            "team-ledger-verdict.json",
+            "does not launch agents",
+            "does not create worktrees",
+            "does not execute",
+            "lane commands",
+            "does not prove task completion",
+            "planned lanes",
+            "machine evidence exists",
+            "not copied from the older dry-run fixture",
+            "lane ids",
+            "evidence directories",
+            "planned worktrees",
+            "worktree receipt paths",
+        ],
+    )
+    generated_artifacts = [
+        ROOT / "docs" / "team-launch-preflight" / "team-launch-preflight.json",
+        ROOT / "docs" / "team-launch-preflight" / "team-ledger.json",
+        ROOT / "docs" / "team-launch-preflight" / "team-ledger-verdict.json",
+    ]
+    command_available = (ROOT / "depone" / "cli" / "team_launch_preflight.py").exists()
+    if not command_available:
+        present = [str(path.relative_to(ROOT)) for path in generated_artifacts if path.exists()]
+        if present:
+            raise SystemExit(
+                "team-launch-preflight generated artifacts must not be committed before the CLI exists: "
+                + ", ".join(present)
+            )
+        return
+
+    missing = [str(path.relative_to(ROOT)) for path in generated_artifacts if not path.exists()]
+    if missing:
+        raise SystemExit(
+            "team-launch-preflight generated artifacts are required now that the CLI exists: "
+            + ", ".join(missing)
+        )
+    preflight = json.loads(
+        (ROOT / "docs" / "team-launch-preflight" / "team-launch-preflight.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    ledger = json.loads(
+        (ROOT / "docs" / "team-launch-preflight" / "team-ledger.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    verdict = json.loads(
+        (ROOT / "docs" / "team-launch-preflight" / "team-ledger-verdict.json").read_text(
+            encoding="utf-8"
+        )
+    )
+    if preflight.get("kind") != "depone-team-launch-preflight":
+        raise SystemExit("team-launch-preflight.json kind mismatch")
+    if preflight.get("decision") != "pass":
+        raise SystemExit("team-launch-preflight.json must record decision pass")
+    boundary = preflight.get("boundary")
+    if not isinstance(boundary, dict):
+        raise SystemExit("team-launch-preflight.json boundary must be an object")
+    for key in (
+        "launches_agents",
+        "creates_worktrees",
+        "executes_commands",
+        "mutates_worktree",
+        "calls_live_models",
+        "raises_assurance",
+    ):
+        if boundary.get(key) is not False:
+            raise SystemExit(f"team-launch-preflight boundary.{key} must be false")
+    if ledger.get("kind") != "depone-team-ledger":
+        raise SystemExit("team-ledger.json kind mismatch")
+    if verdict.get("kind") != "depone-team-ledger-verdict":
+        raise SystemExit("team-ledger-verdict.json kind mismatch")
+    if verdict.get("decision") not in {"blocked-explicit", "pass"}:
+        raise SystemExit("team-ledger-verdict.json must be re-validatable")
+
+
 def contract_steps_for_tier(tier: str) -> list[tuple[str, object, int]]:
     if tier == "smoke":
         return [
@@ -2685,6 +2771,7 @@ def contract_steps_for_tier(tier: str) -> list[tuple[str, object, int]]:
             ("changed-surface command tier", require_changed_surface_commands_pass, 600),
             ("agent-facing CLI contract", require_agent_surface_contract_pass, 300),
             ("install-readiness smoke", require_install_readiness_contract_pass, 600),
+            ("team-launch-preflight docs contract", require_team_launch_preflight_docs_contract, 300),
         ]
     if tier != "full":
         raise SystemExit(f"unknown contract tier: {tier}")
@@ -2773,6 +2860,7 @@ Overclaims execution: no
         "changed-surface command tier",
         "agent-facing CLI contract",
         "install-readiness smoke",
+        "team-launch-preflight docs contract",
     ]:
         raise SystemExit("self-test failed: changed tier steps changed")
     if "release command corpus" not in [label for label, _callback, _timeout in contract_steps_for_tier("full")]:

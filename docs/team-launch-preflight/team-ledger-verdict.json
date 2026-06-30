@@ -1,0 +1,145 @@
+{
+  "blocked_lane_count": 2,
+  "boundary": {
+    "approves_merge": false,
+    "calls_live_models": false,
+    "executes_commands": false,
+    "inspects_cloud_runtime": false,
+    "launches_agents": false,
+    "raises_assurance": false
+  },
+  "decision": "blocked-explicit",
+  "errors": [],
+  "kind": "depone-team-ledger-verdict",
+  "lane_count": 2,
+  "lane_results": [
+    {
+      "cloud_artifact": {
+        "adapter_kind": null,
+        "attests_runtime_isolation": null,
+        "base_sha": null,
+        "evidence_hash": null,
+        "external_run_id": null,
+        "head_sha": null,
+        "observed_external_facts_only": null,
+        "path": null,
+        "pr_url": null,
+        "provider": null,
+        "repo": null
+      },
+      "decision": "blocked",
+      "env_kind": "local",
+      "errors": [],
+      "evidence_dir": "lane-1",
+      "evidence_dir_exists": false,
+      "evidence_next": {
+        "blocking_reason_count": null,
+        "decision": null,
+        "path": null
+      },
+      "evidence_next_verdict": null,
+      "lane_id": "lane-1",
+      "pr_artifact": {
+        "base_sha": null,
+        "check_status": null,
+        "failed_count": null,
+        "head_sha": null,
+        "merge_state_status": null,
+        "path": null,
+        "pending_count": null,
+        "pr_url": null,
+        "state": null
+      },
+      "runner_adapter_kind": "codex",
+      "team_adapter_kind": "depone-native",
+      "touched_file_count": 4,
+      "touched_files": [
+        "depone/__main__.py",
+        "depone/agent_fabric/team_dry_run.py",
+        "depone/cli/team_dry_run.py",
+        "tests/test_agent_fabric_team_dry_run.py"
+      ],
+      "verification_artifact_count": 0,
+      "verification_state": "blocked",
+      "worktree_receipt": {
+        "base_commit": null,
+        "branch": null,
+        "changed_files": [],
+        "dirty": null,
+        "dirty_file_count": null,
+        "head_commit": null,
+        "path": "lane-1/worktree-receipt.json"
+      }
+    },
+    {
+      "cloud_artifact": {
+        "adapter_kind": null,
+        "attests_runtime_isolation": null,
+        "base_sha": null,
+        "evidence_hash": null,
+        "external_run_id": null,
+        "head_sha": null,
+        "observed_external_facts_only": null,
+        "path": null,
+        "pr_url": null,
+        "provider": null,
+        "repo": null
+      },
+      "decision": "blocked",
+      "env_kind": "local",
+      "errors": [],
+      "evidence_dir": "docs-artifacts",
+      "evidence_dir_exists": false,
+      "evidence_next": {
+        "blocking_reason_count": null,
+        "decision": null,
+        "path": null
+      },
+      "evidence_next_verdict": null,
+      "lane_id": "docs-artifacts",
+      "pr_artifact": {
+        "base_sha": null,
+        "check_status": null,
+        "failed_count": null,
+        "head_sha": null,
+        "merge_state_status": null,
+        "path": null,
+        "pending_count": null,
+        "pr_url": null,
+        "state": null
+      },
+      "runner_adapter_kind": "codex",
+      "team_adapter_kind": "depone-native",
+      "touched_file_count": 3,
+      "touched_files": [
+        "docs/command-reference.md",
+        "docs/depone-cloud-team-control.md",
+        "docs/team-dry-run/team-plan.json"
+      ],
+      "verification_artifact_count": 0,
+      "verification_state": "blocked",
+      "worktree_receipt": {
+        "base_commit": null,
+        "branch": null,
+        "changed_files": [],
+        "dirty": null,
+        "dirty_file_count": null,
+        "head_commit": null,
+        "path": "docs-artifacts/worktree-receipt.json"
+      }
+    }
+  ],
+  "leader_objective": "Prepare a planning-only Depone native team dry-run without launching workers",
+  "merge_receipt": {
+    "decision": null,
+    "overlap_count": 0,
+    "path": null,
+    "required": false
+  },
+  "overlapping_touched_files": [],
+  "passed_lane_count": 0,
+  "schema_version": "0.1",
+  "source_hashes": {
+    "team_ledger": "2698724a2cc9beb19ee809f12c1e9275ec4d487bce61ade86e5340641981fa8b"
+  }
+}

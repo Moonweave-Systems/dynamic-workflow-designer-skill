@@ -1,8 +1,8 @@
 # Depone Next Work Plan
 
-Status: post-team-dry-run and cloud-lane-artifact planning note
+Status: post-install-readiness and native-team-runtime planning note
 Date: 2026-06-30
-Base: `origin/main` at `89948b7` (`Add Team Ledger merge receipt producer`)
+Base: `origin/main` at `2a7144c` (`Add source install readiness smoke`)
 
 ## Purpose
 
@@ -53,6 +53,10 @@ must stop.
 - Depone can produce a planning-only native team dry-run artifact and validate
   observed cloud lane artifacts, but does not yet launch and manage a durable
   multi-agent team by itself.
+- Depone can now smoke-test source installation in a clean virtualenv through
+  `scripts/install_smoke.py`, and that smoke is part of the changed-tier
+  contract. This proves source install readiness in the observed environment; it
+  does not claim PyPI readiness.
 - Depone does not yet create per-lane worktrees, assign tasks, run workers, and
   collect lane evidence end-to-end.
 - Depone does not yet own a cloud runner backend or remote workspace lifecycle.
@@ -215,7 +219,19 @@ Implement a minimal local lane launcher preflight.
 
 This is the best next step now that PR artifacts, local worktree receipts,
 planning-only team dry-run artifacts, and observed cloud lane artifacts exist.
-Keep it narrow: create or select per-lane worktrees, run explicit preflight
-checks, emit planned launch receipts, and stop before background worker
-execution. The goal is to remove one more manual handoff without pretending that
-Depone already owns full team scheduling.
+Keep it narrow: validate planned per-lane worktree paths, run explicit
+preflight checks, emit a non-executing preflight artifact, and stop before
+background worker execution or worktree creation. The goal is to remove one more
+manual handoff without pretending that Depone already owns full team scheduling.
+
+The executable planning basis is now:
+
+- `docs/depone-native-team-runtime-spec.md`
+- `docs/depone-native-team-runtime-wave-plan.md`
+
+Wave 1 from that plan now has a first implementation slice:
+`team-launch-preflight` validates planned lanes and writes re-validatable
+machine artifacts without launching workers, creating worktrees, executing lane
+commands, or raising assurance. Do not skip straight to launching Codex, Claude
+Code, OMX, or cloud workers; after this PR is reviewed, the next implementation
+rung is Wave 2's explicit local worktree creation receipt.

@@ -1,0 +1,53 @@
+{
+  "adapter_availability": {},
+  "base_commit": "b0416e69c6ac7f155db66af8cbff3edacd4350d3",
+  "boundary": {
+    "calls_live_models": false,
+    "creates_worktrees": false,
+    "executes_commands": false,
+    "launches_agents": false,
+    "mutates_worktree": false,
+    "raises_assurance": false
+  },
+  "decision": "pass",
+  "errors": [],
+  "kind": "depone-team-launch-preflight",
+  "lane_count": 2,
+  "lanes": [
+    {
+      "adapter_available": false,
+      "availability_required": false,
+      "boundary": {
+        "creates_worktrees": false,
+        "executes_commands": false,
+        "launches_agents": false
+      },
+      "evidence_dir": "lane-1",
+      "lane_id": "lane-1",
+      "planned_worktree": "docs/team-dry-run/worktrees/lane-1",
+      "runner_adapter_kind": "codex",
+      "worktree_receipt": "lane-1/worktree-receipt.json"
+    },
+    {
+      "adapter_available": false,
+      "availability_required": false,
+      "boundary": {
+        "creates_worktrees": false,
+        "executes_commands": false,
+        "launches_agents": false
+      },
+      "evidence_dir": "docs-artifacts",
+      "lane_id": "docs-artifacts",
+      "planned_worktree": "worktrees/docs-artifacts",
+      "runner_adapter_kind": "codex",
+      "worktree_receipt": "docs-artifacts/worktree-receipt.json"
+    }
+  ],
+  "launch_intent": "plan-only",
+  "leader_objective": "Prepare a planning-only Depone native team dry-run without launching workers",
+  "repo_root": ".",
+  "schema_version": "0.1",
+  "source_hashes": {
+    "team_dry_run": "66f691b1f863f041412c166b21c7de5e0b2a5b529df9fadf71659e9499a29e48"
+  }
+}

@@ -69,21 +69,6 @@ Run model: a `slice` is one atomic worker task, a `wave` is a gated group of
 one or more slices, and a `run` is one or more waves verified by receipts and
 evidence gates.
 
-## System Map
-
-```mermaid
-flowchart LR
-    Agent["Codex / Claude session"] --> CLI["Depone CLI JSON surface"]
-    CLI --> Plan["Design plane"]
-    CLI --> Evidence["Evidence plane"]
-    Plan --> Contract["plan.json"]
-    Contract --> Compile["compile artifacts"]
-    Evidence --> Run["evidence-run"]
-    Run --> Capture["observer capture"]
-    Capture --> Bundle["in-toto / DSSE / OTel"]
-    Bundle --> Verdict["pass / blocked / inconclusive"]
-```
-
 ## Command Reference
 
 | Command | Description |
@@ -99,6 +84,7 @@ flowchart LR
 | `depone evidence-chain` | Verify an ordered append-only capture manifest chain |
 | `depone evidence-run` | Run the common observe -> substrate -> ingest -> verify loop |
 | `depone run` | Native-runner convenience alias for `evidence-run`; not a scheduler |
+| `depone team-launch-preflight` | Non-executing gate for planned team lanes |
 | `depone next` | Re-validate an evidence-run directory and recommend the next safe action without executing it |
 | `depone advance` | Re-validate with `next`, then run exactly one existing evidence-run continuation when unblocked |
 | `depone mcp` | Serve the same evidence/verify capabilities over MCP stdio |
@@ -109,22 +95,10 @@ Internal compatibility commands remain available for existing automation:
 
 ## Normal Loop
 
-```mermaid
-sequenceDiagram
-    participant A as Agent session
-    participant R as Runner sandbox
-    participant D as Depone
-    participant O as Observer-owned output
-    A->>R: perform task
-    A->>D: depone run --json
-    D->>R: run verifier command
-    D->>O: observer-capture.json
-    D->>O: capture-manifest.json
-    D->>O: evidence-bundle.json
-    D->>O: ingest-verdict.json
-    D->>O: verify-report.json
-    D-->>A: one JSON verdict
-```
+Agent sessions perform work in a runner sandbox, then call `depone run --json`.
+Depone writes observer-owned evidence such as `observer-capture.json`,
+`capture-manifest.json`, `evidence-bundle.json`, `ingest-verdict.json`, and
+`verify-report.json`, then returns one JSON verdict.
 
 ## Product Thesis
 
@@ -149,7 +123,12 @@ production deployment, and history rewrite require explicit gates.
 ## Roadmap
 
 Depone is moving from agent-safe CLI and evidence substrate toward stronger
-session receipt adapters, operator signing policy, and A2 isolation paths.
+session receipt adapters, operator signing policy, and A2 isolation paths. The
+next team-runtime bridge is `team-launch-preflight`, a non-executing gate that
+checks planned lane launchability without launching agents or creating
+worktrees. Its committed fixture directory is
+[`docs/team-launch-preflight/`](docs/team-launch-preflight/), with generated JSON
+artifacts created from source inputs rather than copied from older fixtures.
 
 ## What Is Still Honest
 Depone claims **no direct-agent superiority** - it is a design + verification layer, not an agent runtime.
