@@ -1,263 +1,309 @@
 # Depone Next Work Plan
 
-Status: native-team-runtime progress note refreshed after PR #51 merge
-Date: 2026-06-30
-Base: `origin/main` at `7d28e02` (`Add shell lane launch receipt (#51)`)
+Status: refreshed native-team and evidence backlog after PR #54 merge and PR #55 draft.
+Date: 2026-06-30.
+Base: `origin/main` at `6ad42af` (`Document agent team wave backlog (#54)`).
+Current draft follow-up: PR #55, `codex/codex-capability-pass-readiness`.
 
 ## Purpose
 
-This note records the next work order after the first A2 captures, signed
-evidence bundle path, `evidence-next`/`advance`, and Team Ledger v0 fan-in
-slice. It is intentionally not a public benchmark claim. The goal is to keep
-Depone pointed at the missing product layers while preserving its current
-evidence-first discipline.
+This note is the current operator-facing work order for Depone. It consolidates
+the first A2 captures, signed evidence path, `evidence-next` / `advance`, Team
+Ledger v0, local team lane preparation, shell lane launch, cloud lane artifact
+validation, and the new Codex local capability PR into one sequence.
 
-## Benchmark Read
+It is not a public benchmark claim and it is not a new assurance rung. The goal
+is to keep the next agents moving through small, reviewable waves that improve
+real evidence, local usability, and team execution without drifting into
+source-only scaffolding.
 
-The current external direction is clear enough to plan against:
+The executable wave checklist lives in:
 
-- cloud-first coding agents run work away from the user's local machine;
-- useful outputs are PRs, commits, logs, run records, and reviewable artifacts;
-- teams need isolated workspaces, permissions, setup hooks, secrets boundaries,
-  and resumable state;
-- operators want less manual prompting between safe steps, but still need hard
-  stops for destructive, credentialed, or unverified actions.
-
-Depone should not try to beat those systems as a raw execution harness first.
-Codex cloud, GitHub Copilot coding agent sessions, Claude Code, Cursor Cloud
-Agents, OpenCode, OMX, and LazyCodex-style teams are adapter surfaces. Depone's
-defensible role is the control and evidence layer that can say what happened,
-what artifacts prove it, whether the next step is allowed, and where the claim
-must stop.
+- `docs/superpowers/plans/2026-06-30-depone-wave-execution-backlog.md`
 
 ## Current Position
 
-### Strong Layers
+### Completed Strong Layers
 
 - A0/A1/A2 assurance is implemented around capture manifests, observer capture,
   isolation facts, and fail-closed validation.
-- Real A2 artifacts exist for uid isolation and container isolation. The
-  container path records observer-launched Docker facts and revalidatable
-  machine JSON under `docs/container-isolated-a2/`.
-- Evidence bundles can be represented as in-toto/DSSE-shaped artifacts, and the
-  key-based signing path has tests and a committed signed evidence example under
+- Real A2 artifacts exist for uid isolation:
+  `docs/a2-first-isolated-evidence/`.
+- Real container-isolated A2 artifacts exist:
+  `docs/container-isolated-a2/`.
+- Evidence bundles can be represented as in-toto/DSSE-shaped artifacts and
+  OTel-shaped spans.
+- The key-based signing path has tests and committed evidence under
   `docs/evidence-run-signing/`.
-- `evidence-next` and `advance` prevent continuation until previous evidence is
-  revalidated. `advance` runs exactly one continuation and stops.
-- Team Ledger v0 validates externally run lanes. A passed lane needs
-  machine-verifiable evidence, a passing `evidence-next` verdict, non-empty
-  touched files, and a merge receipt when passed lanes overlap.
+- `evidence-next` revalidates evidence before continuation.
+- `advance` runs exactly one continuation after a passing `next` decision and
+  then stops.
+- Team Ledger v0 validates externally run lanes. Passed lanes need machine
+  evidence, a passing `evidence-next` verdict, non-empty touched files, and a
+  merge receipt when passed lanes overlap.
+- Local team preparation is now staged:
+  - `team-dry-run` writes planning artifacts without launching workers.
+  - `team-launch-preflight` validates planned lanes without creating worktrees.
+  - `team-worktree-prep` creates or selects local worktrees only behind an
+    explicit flag.
+  - `team-shell-lane-launch` runs exactly one allowlisted shell command and
+    writes a receipt plus transcript.
+- Cloud lanes can be represented as observed external facts through
+  `cloud_artifact`, without claiming provider runtime attestation.
+- Source install readiness is covered by `scripts/install_smoke.py` in the
+  changed-tier contract.
+
+### Active Draft Work
+
+PR #55 adds the next Codex local capability hardening slice:
+
+- PR: <https://github.com/Moonweave-Systems/Depone/pull/55>
+- Branch: `codex/codex-capability-pass-readiness`
+- State: draft, mergeable at refresh time.
+- Scope: records `codex --version` readiness facts, validates
+  `readiness.version_probe`, blocks on unproven local capability, and keeps the
+  claim explicitly capability-only.
+- Non-claim: it does not launch a live model, execute a coding task, schedule a
+  team, prove auth, or raise assurance.
 
 ### Weak Or Missing Layers
 
-- Depone can produce a planning-only native team dry-run artifact, validate
-  observed cloud lane artifacts, validate launch preflight, prepare/select local
-  worktrees, and run one shell-only lane command with a machine receipt. It does
-  not yet launch and manage a durable multi-agent coding team by itself.
-- Depone can now smoke-test source installation in a clean virtualenv through
-  `scripts/install_smoke.py`, and that smoke is part of the changed-tier
-  contract. This proves source install readiness in the observed environment; it
-  does not claim PyPI readiness.
-- Depone can prepare per-lane worktrees and capture one allowlisted shell command
-  receipt, but it does not yet assign coding tasks to Codex/Claude/OpenCode
-  adapters or collect full lane evidence end-to-end.
-- Depone does not yet own a cloud runner backend or remote workspace lifecycle.
-  Cloud lanes are currently observed external facts, not runtime attestations.
-- Depone does not yet ingest GitHub PR/check status as first-class evidence for
-  Team Ledger lanes.
-- Merge receipts are produced by command input, but not yet derived from actual
-  git merge/rebase/conflict evidence.
-- Signing is key-based and useful, but not yet a keyless identity or
-  transparency-log assurance rung.
+- Depone does not yet launch and manage a durable multi-agent coding team by
+  itself.
+- Depone does not yet assign coding tasks to Codex, Claude Code, OpenCode, OMX,
+  or cloud adapters and collect full lane evidence end to end.
+- Cloud lanes are observed external facts, not provider runtime isolation
+  attestations.
+- PR and check status are validated as local artifacts in Team Ledger, but
+  Depone does not yet have a first-class `gh pr view` receipt producer.
+- Merge receipts are still command-input artifacts, not derived from real git
+  merge or conflict attempts.
+- Key-based signing is useful, but keyless identity and transparency-log
+  inclusion remain future work.
+- The local `/home/ubuntu/depone` `main` branch may contain old OMX
+  auto-checkpoint history. New work must start from `origin/main`, not local
+  `main`, unless the maintainer explicitly chooses a cleanup path.
+- Older stacked PRs (#9 through #27, plus #7) remain open and need a separate
+  close-or-rescue audit. Do not merge them blindly.
 
 ## Product Ladder
 
-This is the honest ordering from here:
+The next useful order is:
 
-1. Make external PR lanes revalidatable.
-2. Make local worktree lanes launchable.
-3. Make a small Depone-native team command over local lanes.
-4. Add cloud lanes as observed external adapters before owning cloud execution.
-5. Add stronger signing and identity only after the evidence and team flow are
-   useful enough to sign.
+1. Finish PR #55 or close it with evidence if superseded.
+2. Audit and resolve stale PR stack state without force operations.
+3. Add a first-class PR artifact producer so external PR lanes can be captured
+   deterministically.
+4. Add a real git merge attempt receipt so fan-in can bind conflict evidence.
+5. Build a minimal local `depone team` loop over existing dry-run, preflight,
+   worktree, shell-lane, ledger, and `next` commands.
+6. Add coding-adapter launch receipts one adapter at a time, starting with
+   Codex only after capability readiness passes.
+7. Add cloud adapter receipts from observed provider artifacts before owning
+   cloud runtime provisioning.
+8. Tighten A3 signing ergonomics and keyless feasibility after evidence and team
+   flows are useful enough to sign.
+9. Build a small benchmark harness only after the run, team, and receipt layers
+   can produce re-runnable artifacts.
 
-The reason for this order is practical: PR-oriented cloud systems are already
-where the market is going, but Depone's first missing seam is not cloud
-provisioning. It is binding a lane's code changes, evidence directory, touched
-files, merge receipt, and PR/check state into one deterministic verdict.
+## Wave Order
 
-## Next PR Slices
+### Wave 0: Repository Hygiene
 
-### Slice 1: Team Ledger PR Artifact Checks
+Goal: make the repo safe for continued work without destructive history edits.
 
-Goal: let a Team Ledger lane point at a PR/check artifact that can be
-revalidated without trusting prose.
+Actions:
 
-Small implementation shape:
+- Revalidate PR #55 from a clean checkout.
+- Decide whether PR #55 is still the next merge candidate.
+- Inventory stale PRs and mark each as keep, close, or rebuild.
+- Do not reset local `main`; use fresh branches from `origin/main`.
 
-- add optional lane fields for `pr_url` plus a local `pr_artifact` JSON path;
-- validate that the artifact contains PR number, head SHA, base SHA, state,
-  mergeability/check summary, and captured time;
-- require the artifact head SHA to match the lane's `end_commit` when present;
-- fail closed on missing, malformed, stale, or contradictory PR artifacts;
-- add a CLI producer only if it can run from `gh pr view` output and write
-  deterministic JSON;
-- keep network access optional by validating committed/local JSON artifacts.
+Acceptance:
 
-Non-goals:
+- PR #55 has fresh verification output or a clear close reason.
+- The stale PR stack has a written decision table.
+- No branch deletion, force push, hard reset, or broad cleanup occurs.
 
-- no GitHub App;
-- no automatic PR merge;
-- no cloud runner;
-- no public benchmark claim.
+### Wave 1: PR Artifact Producer
 
-Acceptance evidence:
+Goal: turn GitHub PR state into a local JSON artifact consumable by Team Ledger.
 
-- unit tests for pass, missing artifact, head SHA mismatch, failed checks, and
-  blocked lane behavior;
-- `python3 -m depone team-ledger --self-test`;
-- `python3 scripts/check_contract.py --tier changed`;
-- `python3 scripts/dwm.py doctor`;
-- a committed sample PR artifact fixture or docs example that validates without
-  live network.
+Actions:
 
-### Slice 2: Local Worktree Lane Receipt
+- Add `team-pr-artifact` core and CLI.
+- Read `gh pr view --json` output or a saved JSON input.
+- Write `docs/team-pr-artifact/pr-artifact.json`.
+- Validate head SHA, base SHA, state, mergeability, check summary, PR URL, and
+  captured timestamp.
 
-Goal: record a lane's local workspace boundary before Depone launches any team.
+Acceptance:
 
-Small implementation shape:
+- `team-ledger` accepts a matching PR artifact.
+- Head SHA mismatch, stale artifact, failed checks, and malformed input block.
+- Network access is optional because committed JSON fixtures can revalidate.
 
-- add a receipt producer for repo-relative worktree path, branch, base commit,
-  head commit, dirty state, changed files, command receipts, and evidence dir;
-- require dirty or untracked files to be explicit, never silently ignored;
-- connect the receipt to Team Ledger as an optional artifact for local lanes;
-- keep the command non-destructive and read-only unless an explicit future
-  launcher uses it.
+### Wave 2: Git Merge Attempt Receipt
 
-Non-goals:
+Goal: derive merge evidence from git instead of trusting operator-entered merge
+receipt fields.
 
-- no worker spawning;
-- no branch deletion or cleanup;
-- no automatic merge.
+Actions:
 
-Acceptance evidence:
+- Add `team-merge-attempt` core and CLI.
+- Run a no-commit merge attempt in a temporary or explicit throwaway worktree.
+- Record base, heads, files, conflict events, exit code, and cleanup state.
+- Feed the result into Team Ledger as the merge receipt source.
 
-- unit tests for clean worktree, dirty worktree, path traversal, missing repo,
-  and changed-file extraction;
-- CLI self-test;
-- changed-tier contract and DWM doctor.
+Acceptance:
 
-### Slice 3: Minimal `depone team-dry-run`
+- Clean non-overlap passes.
+- Overlap without conflicts records the exact files.
+- Conflict blocks fan-in with machine evidence.
+- The command refuses to run on a dirty target worktree unless explicitly told
+  to use a disposable worktree.
 
-Goal: convert a leader objective and lane specs into planned local worktree lane
-receipts without launching workers yet.
+### Wave 3: Minimal Local Depone Team Loop
 
-Small implementation shape:
+Goal: coordinate local lanes using existing primitives before adding live model
+adapters.
 
-- accept a small team plan JSON through `python3 -m depone team-dry-run`;
-- allocate deterministic lane ids and planned worktree paths;
-- emit a Team Ledger skeleton with blocked lanes until evidence exists;
-- write exact next commands for an operator or external team runtime.
+Actions:
 
-Non-goals:
+- Add a small `depone team` or `depone team-local` command only after the
+  underlying receipts are stable.
+- Sequence `team-dry-run`, `team-launch-preflight`, `team-worktree-prep`,
+  `team-shell-lane-launch`, `evidence-next`, and `team-ledger`.
+- Stop after one lane command per lane.
+- Emit `team-run-ledger.json`.
 
-- no Codex/Claude/OpenCode execution;
-- no automatic worktree mutation beyond dry-run planning;
-- no cloud backend.
+Acceptance:
 
-Acceptance evidence:
+- No live model is launched.
+- The loop stops on the first blocked lane.
+- Every passed lane has a receipt, evidence directory, touched files, and a
+  passing `evidence-next` verdict.
 
-- deterministic fixture;
-- no destructive git operations;
-- command reference update;
-- changed-tier contract and DWM doctor.
+### Wave 4: Coding Adapter Launch Receipts
 
-### Slice 4: Observed Cloud Lane Fixture
+Goal: add real coding adapter seams without pretending capability detection is
+execution.
 
-Goal: prove that Depone can represent a cloud-run lane honestly before owning
-cloud execution.
+Actions:
 
-Small implementation shape:
+- Finish the Codex capability readiness PR first.
+- Add an explicit Codex launch receipt only after capability detection passes.
+- Keep command argv allowlisted and sandbox/approval policy recorded.
+- Do not read secrets, private auth files, or token-bearing config.
 
-- define a cloud lane artifact schema with adapter kind, external run id, source
-  repo, base/head commit, PR URL, captured logs/checks, and evidence hash;
-- validate it through Team Ledger as an external lane artifact;
-- document honest residuals: Depone observes cloud facts but does not attest the
-  cloud provider's runtime boundary.
+Acceptance:
 
-Non-goals:
+- Missing binary, unsupported policy, dirty repo, unobservable instruction files,
+  or failed version probe block before launch.
+- A launched adapter writes a transcript and runner receipt that can be consumed
+  by `evidence-run` or Team Ledger.
+- The first adapter PR is Codex-only; Claude Code and OpenCode are separate PRs.
 
-- no secrets;
-- no cloud provisioning;
-- no provider-specific SDK dependency.
+### Wave 5: Cloud Adapter Receipt
 
-Acceptance evidence:
+Goal: observe cloud-first work without owning cloud provisioning.
 
-- fixture-only validation;
-- source links in docs;
-- changed-tier contract and DWM doctor.
+Actions:
 
-Status: implemented as a small validation slice. A passed `env_kind=cloud` lane
-now requires `cloud_artifact`, and the committed fixture under
-`docs/cloud-lane-artifact/` revalidates locally. Honest residual: this still
-does not prove provider runtime isolation or provision cloud workers.
+- Add a provider-neutral cloud run artifact producer.
+- Start with saved JSON or manually exported provider facts.
+- Bind external run id, repo, base/head commits, PR URL, logs/check summaries,
+  and evidence hash.
+- Keep runtime isolation attestation explicitly false unless the provider gives
+  a verifiable attestation.
 
-## GitFlow Rules For The Next Work
+Acceptance:
 
-- Do not repair the diverged local `/home/ubuntu/depone` `main` with reset or
-  force operations.
-- Create clean worktrees from `origin/main` for each PR branch.
-- Keep one PR to one slice.
-- For code slices, commit only source, tests, docs, and intentionally committed
-  revalidatable artifacts. Do not stage ignored `out/` repair copies.
+- Cloud lane artifacts validate locally.
+- Team Ledger blocks passed cloud lanes without matching evidence hash.
+- No provider SDK dependency is introduced in the first slice.
+
+### Wave 6: A3 Signing And Attestation Ergonomics
+
+Goal: make signed evidence easy to verify without overclaiming keyless identity.
+
+Actions:
+
+- Keep the existing operator-key signing path.
+- Add a friendlier verify command or documented `attest verify` alias only if it
+  reduces operator friction.
+- Add committed revalidation output for `docs/evidence-run-signing/`.
+- Probe cosign/keyless feasibility separately.
+
+Acceptance:
+
+- Verified signed bundles pass.
+- Tampered manifest, observer capture, DSSE payload, or signature metadata
+  blocks.
+- Unsigned evidence remains honest and does not claim A3.
+
+### Wave 7: Bounded Loop
+
+Goal: allow repeated `advance` with a hard budget and chain validation.
+
+Actions:
+
+- Add `loop` over repeated `advance`.
+- Require `--max-steps`.
+- Validate `capture-manifest.prev_capture_hash` before every step.
+- Emit `loop-ledger.json`.
+
+Acceptance:
+
+- Missing intermediate steps block.
+- A blocked `next` stops before execution.
+- Resume cannot skip, overwrite, or reorder prior artifacts.
+
+### Wave 8: Benchmark Harness
+
+Goal: measure whether Depone governance helps real work.
+
+Actions:
+
+- Create a small local task corpus with direct and governed runs.
+- Track correctness, command count, elapsed time, touched files, review findings,
+  blocked recovery, and artifact completeness.
+- Keep LLM review advisory and deterministic checks authoritative.
+
+Acceptance:
+
+- At least six task classes have re-runnable artifacts before any public
+  superiority claim.
+- Reports separate deterministic pass/fail from advisory review.
+- Public claims remain blocked below the declared sample threshold.
+
+## GitFlow Rules
+
+- Start every new PR branch from `origin/main`.
+- Keep one PR to one wave slice.
 - Use draft PRs until unit tests, CLI self-tests, `check_contract.py --tier
   changed`, and `scripts/dwm.py doctor` have fresh passing output.
-- Merge only after the PR's machine evidence can be revalidated from a clean
-  checkout.
+- Commit only source, tests, docs, and intentionally committed revalidatable
+  artifacts.
+- Do not stage ignored `out/` repair copies.
+- Do not use `git reset --hard`, force push, branch deletion, or stale PR merge
+  without explicit maintainer approval.
+- Merge only when the committed artifacts revalidate from a clean checkout.
 
-## Recommended Immediate Next Step
+## Immediate Next Action
 
-Start Wave 4 with Codex local capability detection. The contract-hash slice
-landed in PR #51: `packaging/depone-agent-operating-contract.json` is minimal,
-the committed shell-lane receipt records `agent_contract_hash`, and
-`scripts/check_contract.py --tier changed` revalidates those facts.
+Finish Wave 0 first:
 
-The next PR must stay narrower than a launcher. It should detect whether a local
-Codex adapter can be launched safely and emit a blocked/pass capability receipt.
-Missing binary, missing auth/config, unsupported repo state, denied
-sandbox/approval mode, or unobservable instruction state must return a blocked
-artifact, not a human gate and not a best-effort launch.
+```bash
+git fetch -q origin
+gh pr view 55 --json number,title,isDraft,mergeable,headRefName,baseRefName,url
+git switch --detach origin/codex/codex-capability-pass-readiness
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.test_agent_fabric_codex_local_capability tests.test_codex_local_capability_cli -v
+PYTHONDONTWRITEBYTECODE=1 python3 -m depone codex-local-capability --self-test
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_contract.py --tier changed
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/dwm.py doctor
+```
 
-The executable planning basis is now:
-
-- `docs/depone-native-team-runtime-spec.md`
-- `docs/depone-native-team-runtime-wave-plan.md`
-- `docs/depone-agent-team-system-operating-contract.md`
-
-Wave 1 from that plan has a first implementation slice:
-`team-launch-preflight` validates planned lanes and writes re-validatable
-machine artifacts without launching workers, creating worktrees, executing lane
-commands, or raising assurance.
-
-Wave 2 now has a first implementation slice:
-`team-worktree-prep` consumes that preflight and can create/select local git
-worktrees with an explicit `--create-worktree` flag. It writes
-`docs/team-worktree-prep/team-worktree-prep.json` and still does not launch
-agents, execute lane commands, delete worktrees, call live models, or raise
-assurance.
-
-Wave 3 is merged in PR #51:
-`team-shell-lane-launch` runs exactly one shell adapter command selected by
-`command_id` from an explicit argv allowlist and writes a hash-bound command
-receipt plus transcript fixture under `docs/team-shell-lane-launch/`. It is
-shell-only A1-style evidence: no Codex, Claude Code, OpenCode, OMX, live model,
-team worker, scheduler, assurance upgrade, or A2/container claim.
-
-Wave 4 starts with the first real coding-adapter surface, one PR per adapter,
-starting with Codex local capability detection. Capability detection is not a
-launch: it records whether the environment is ready and blocks honestly when it
-is not.
-
-The latest handoff document for this next slice is
-`docs/depone-latest-next-work.md`. The task-by-task implementation plan is
-`docs/superpowers/plans/2026-06-30-codex-local-capability-detection.md`.
+If PR #55 remains green, mark it ready or request review. If it is superseded by
+origin/main, close it with the exact duplicate evidence. After that, run the
+stale PR inventory before starting Wave 1.
