@@ -22,6 +22,7 @@ python -m depone observe --runner-sandbox ./runner-worktree --source-fixture-has
 python -m depone evidence-substrate --capture-manifest capture-manifest.json --out evidence-bundle.json --json
 python -m depone evidence-ingest --dsse evidence-bundle.json:dsse_envelope --artifact depone-capture-manifest=capture-manifest.json:json --out ingest-verdict.json --json
 python -m depone evidence-chain --capture capture-0.json --capture capture-1.json --out evidence-chain-verdict.json --json
+python -m depone team-ledger-merge-receipt --lane worker-1 --lane worker-2 --file depone/agent_fabric/team_ledger.py --out team-merge-receipt.json --json
 python -m depone run --runner-sandbox ./runner-worktree --source-fixture depone/fixtures/agent_fabric/reference_adapter_shell.json --out ../observer/evidence-run --allow-touched-file sample.txt --json -- python -m unittest
 python -m depone next --evidence-dir ../observer/evidence-run --previous-capture ../observer/previous/capture-manifest.json --out evidence-next.json --json
 python -m depone advance --evidence-dir ../observer/evidence-run --runner-sandbox ./runner-worktree --source-fixture depone/fixtures/agent_fabric/reference_adapter_shell.json --out ../observer/evidence-run-next --advance-out advance-decision.json --json -- python -m unittest
@@ -50,6 +51,10 @@ previous evidence-run directory and refuses before execution unless the decision
 is `continue` and blockers are empty. Only then does it invoke one existing
 `evidence-run` continuation, write `advance-decision.json`, and stop; it is not
 a queue, scheduler, or agent runtime.
+
+`team-ledger-merge-receipt` writes the machine JSON merge receipt consumed by
+`team-ledger` when passed lanes touch the same file. It normalizes lane ids and
+repo-relative file paths, but it does not perform git merges or approve fan-in.
 
 When the observer launches a uid runner through `--runner-user`, the output
 directory also contains `runner-receipt.json`. The evidence bundle binds that

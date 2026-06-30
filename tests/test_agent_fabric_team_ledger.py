@@ -406,6 +406,71 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
         self.assertEqual(verdict["merge_receipt"]["decision"], "pass")
         self.assertEqual(verdict["merge_receipt"]["overlap_count"], 1)
 
+    def test_cli_writes_merge_receipt_that_validates_overlap(self) -> None:
+        receipt_path = self.root / "team-merge-receipt.json"
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "depone",
+                "team-ledger-merge-receipt",
+                "--lane",
+                "lane-tests",
+                "--lane",
+                "lane-docs",
+                "--file",
+                "depone/agent_fabric/team_ledger.py",
+                "--out",
+                str(receipt_path),
+                "--json",
+            ],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+
+        stdout = json.loads(completed.stdout)
+        receipt = json.loads(receipt_path.read_text(encoding="utf-8"))
+        self.assertEqual(stdout["command"], "team-ledger-merge-receipt")
+        self.assertEqual(stdout["decision"], "pass")
+        self.assertEqual(receipt["lanes"], ["lane-docs", "lane-tests"])
+        self.assertEqual(receipt["files"], ["depone/agent_fabric/team_ledger.py"])
+
+        ledger = self._ledger_with_evidence_next()
+        self._add_second_passing_lane(ledger)
+        ledger["merge_receipt"] = "team-merge-receipt.json"
+        for lane in ledger["lanes"]:
+            lane["touched_files"] = ["depone/agent_fabric/team_ledger.py"]
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["decision"], "pass")
+
+    def test_cli_merge_receipt_rejects_non_relative_files(self) -> None:
+        completed = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "depone",
+                "team-ledger-merge-receipt",
+                "--lane",
+                "lane-docs",
+                "--file",
+                "../escape.py",
+                "--json",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+
+        self.assertEqual(completed.returncode, 3)
+        payload = json.loads(completed.stdout)
+        self.assertEqual(
+            payload["error"]["code"],
+            "ERR_TEAM_LEDGER_MERGE_RECEIPT_FILES_INVALID",
+        )
+
     def test_blocked_merge_receipt_blocks_overlapping_passed_lanes(self) -> None:
         ledger = self._ledger_with_evidence_next()
         self._add_second_passing_lane(ledger)

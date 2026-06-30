@@ -363,6 +363,42 @@ def _add_team_ledger_args(parser: argparse.ArgumentParser) -> None:
     _add_json_arg(parser)
 
 
+def _add_team_ledger_merge_receipt_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--lane",
+        action="append",
+        default=[],
+        help="Lane id covered by the merge receipt; repeat for each lane",
+    )
+    parser.add_argument(
+        "--file",
+        action="append",
+        default=[],
+        help="Repo-relative touched file covered by the merge receipt; repeat for each file",
+    )
+    parser.add_argument(
+        "--conflict-event",
+        action="append",
+        default=[],
+        help="Optional JSON object describing a merge conflict/resolution event; repeatable",
+    )
+    parser.add_argument(
+        "--decision",
+        choices=["pass", "blocked"],
+        default="pass",
+        help="Merge receipt decision",
+    )
+    parser.add_argument(
+        "--out",
+        default="",
+        help="Optional output path for the merge receipt JSON",
+    )
+    parser.add_argument(
+        "--self-test", action="store_true", help="Run self-test and exit"
+    )
+    _add_json_arg(parser)
+
+
 def _add_evidence_next_args(parser: argparse.ArgumentParser) -> None:
     parser.add_argument(
         "--evidence-dir",
@@ -967,6 +1003,12 @@ def main() -> None:
     )
     _add_team_ledger_args(team_ledger_alias_parser)
 
+    team_ledger_merge_receipt_parser = sub.add_parser(
+        "team-ledger-merge-receipt",
+        help="Write a Team Ledger merge receipt JSON artifact",
+    )
+    _add_team_ledger_merge_receipt_args(team_ledger_merge_receipt_parser)
+
     # agent-fabric-claim-gate
     claim_gate_parser = sub.add_parser(
         "agent-fabric-claim-gate",
@@ -1055,6 +1097,8 @@ def main() -> None:
             agent_fabric_evidence_chain.run(args)
         elif args.command in ("team-ledger", "agent-fabric-team-ledger"):
             agent_fabric_team_ledger.run(args)
+        elif args.command == "team-ledger-merge-receipt":
+            agent_fabric_team_ledger.run_merge_receipt(args)
         elif args.command in ("evidence-run", "run"):
             evidence_run.run(args)
         elif args.command in ("evidence-next", "next"):

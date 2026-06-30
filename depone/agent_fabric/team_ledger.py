@@ -130,6 +130,37 @@ def validate_team_ledger(ledger: dict[str, Any], *, base_dir: Path | None = None
     return list(build_team_ledger_verdict(ledger, base_dir=base_dir)["errors"])
 
 
+def build_team_ledger_merge_receipt(
+    *,
+    lanes: list[str],
+    files: list[str],
+    conflict_events: list[Any] | None = None,
+    decision: str = "pass",
+) -> dict[str, Any]:
+    """Return a deterministic Team Ledger merge receipt JSON object."""
+
+    normalized_lanes = _normalize_merge_receipt_lanes(lanes)
+    normalized_files = _normalize_repo_relative_files(files)
+    if decision not in {"pass", "blocked"}:
+        raise TeamLedgerError(
+            "ERR_TEAM_LEDGER_MERGE_RECEIPT_DECISION_INVALID",
+            "decision must be pass or blocked",
+        )
+    if conflict_events is not None and not isinstance(conflict_events, list):
+        raise TeamLedgerError(
+            "ERR_TEAM_LEDGER_MERGE_RECEIPT_CONFLICT_EVENTS_INVALID",
+            "conflict_events must be a list",
+        )
+    return {
+        "command": "team-ledger-merge-receipt",
+        "schema_version": "1.0",
+        "decision": decision,
+        "lanes": normalized_lanes,
+        "files": normalized_files,
+        "conflict_events": conflict_events or [],
+    }
+
+
 def _validate_ledger_header(ledger: dict[str, Any], errors: list[dict[str, str]]) -> None:
     if ledger.get("kind") != TEAM_LEDGER_KIND:
         errors.append(
@@ -471,6 +502,46 @@ def _validate_touched_files(
     return sorted(set(normalized))
 
 
+def _normalize_merge_receipt_lanes(lanes: list[str]) -> list[str]:
+    if not isinstance(lanes, list) or not lanes:
+        raise TeamLedgerError(
+            "ERR_TEAM_LEDGER_MERGE_RECEIPT_LANES_INVALID",
+            "lanes must be a non-empty list of lane ids",
+        )
+    normalized: list[str] = []
+    for lane in lanes:
+        if not isinstance(lane, str) or not lane.strip():
+            raise TeamLedgerError(
+                "ERR_TEAM_LEDGER_MERGE_RECEIPT_LANES_INVALID",
+                "lanes must contain non-empty lane ids",
+            )
+        normalized.append(lane.strip())
+    return sorted(set(normalized))
+
+
+def _normalize_repo_relative_files(files: list[str]) -> list[str]:
+    if not isinstance(files, list) or not files:
+        raise TeamLedgerError(
+            "ERR_TEAM_LEDGER_MERGE_RECEIPT_FILES_INVALID",
+            "files must be a non-empty list of repo-relative paths",
+        )
+    normalized: list[str] = []
+    for value in files:
+        if not isinstance(value, str) or not value.strip():
+            raise TeamLedgerError(
+                "ERR_TEAM_LEDGER_MERGE_RECEIPT_FILES_INVALID",
+                "files must contain non-empty repo-relative paths",
+            )
+        path = PurePosixPath(value)
+        if path.is_absolute() or ".." in path.parts:
+            raise TeamLedgerError(
+                "ERR_TEAM_LEDGER_MERGE_RECEIPT_FILES_INVALID",
+                "files must stay repo-relative",
+            )
+        normalized.append(path.as_posix())
+    return sorted(set(normalized))
+
+
 def _find_overlapping_touched_files(lane_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
     owners_by_file: dict[str, list[str]] = {}
     for lane in lane_results:
@@ -685,14 +756,10 @@ def _self_test() -> None:
         receipt = root / "team-merge-receipt.json"
         receipt.write_text(
             json.dumps(
-                {
-                    "command": "team-ledger-merge-receipt",
-                    "schema_version": "1.0",
-                    "decision": "pass",
-                    "lanes": ["lane-docs", "lane-tests"],
-                    "files": ["depone/agent_fabric/team_ledger.py"],
-                    "conflict_events": [],
-                },
+                build_team_ledger_merge_receipt(
+                    lanes=["lane-docs", "lane-tests"],
+                    files=["depone/agent_fabric/team_ledger.py"],
+                ),
                 indent=2,
                 sort_keys=True,
             )

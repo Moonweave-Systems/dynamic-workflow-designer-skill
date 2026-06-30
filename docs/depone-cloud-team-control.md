@@ -170,6 +170,7 @@ closed instead of treating the lane as non-overlapping.
 Validate with:
 
 ```bash
+python3 -m depone team-ledger-merge-receipt --lane worker-1 --lane worker-2 --file depone/agent_fabric/team_ledger.py --out out/team/team-merge-receipt.json --json
 python3 -m depone team-ledger --ledger team-ledger.json --out team-ledger-verdict.json
 python3 -m depone team-ledger --self-test
 ```
@@ -186,7 +187,6 @@ python3 -m depone team-ledger --self-test
 
 ## Next slices
 
-1. Add optional PR artifact checks for cloud adapters.
-2. Add a first-class merge receipt producer after the validator shape has settled.
-3. Only after the ledger is useful, consider a minimal `depone team` command that
+1. Add optional PR artifact checks for cloud Team Ledger lanes.
+2. Only after the ledger is useful, consider a minimal `depone team` command that
    coordinates lanes under explicit budgets and stop rules.
