@@ -1,12 +1,23 @@
 {
   "agent_contract": {
-    "contract_id": "depone-agent-operating-contract.common-engineering.v0.1",
-    "path": "docs/team-shell-lane-launch/agent-operating-contract.json",
-    "sha256": "842eeff250fb0f9233ef8d02122d17bebdc0ecd0eb23eb5f1601b2e2f986c8fe",
-    "v22_role_id": "worker",
-    "version": "0.1"
+    "clause_ids": [
+      "common.planned_vs_executed",
+      "common.evidence_first",
+      "common.no_assurance_upgrade",
+      "common.stdlib_only",
+      "common.fail_closed"
+    ],
+    "common_contract_hash": "a5357c180d7930f2e8f23d7d90aaf1fab554e15e9bd02c5988990c90d66ad635",
+    "contract_id": "depone-agent-operating-contract",
+    "contract_path": "packaging/depone-agent-operating-contract.json",
+    "contract_version": "0.1.0",
+    "resolved_contract_hash": "7ca944b66207f758683b515a209d09324e265e2a0a29cd1285ab3e6b849e0d99",
+    "role_hash": "36a641ae73824b75910b9a22e3261f1126eeeece1bde5770c7bcbcdac207ab6d",
+    "role_id": "operator",
+    "role_registry_path": "packaging/dwm-roles.json",
+    "schema_version": "0.1"
   },
-  "agent_contract_hash": "842eeff250fb0f9233ef8d02122d17bebdc0ecd0eb23eb5f1601b2e2f986c8fe",
+  "agent_contract_hash": "7ca944b66207f758683b515a209d09324e265e2a0a29cd1285ab3e6b849e0d99",
   "allowlist_sha256": "25ef8465868514beaa13d3dcfde07b8e7c0691c4f8590d4d879485ba73e0045f",
   "argv": [
     "python3",
@@ -23,7 +34,7 @@
     "uses_shell": false
   },
   "command_id": "fixture-echo",
-  "cwd": "/tmp/depone-install-readiness",
+  "cwd": "/tmp/depone-install-readiness/.omx/team/implement-depone-cont-74805df1/worktrees/worker-2",
   "decision": "pass",
   "exit_code": 0,
   "kind": "depone-team-shell-lane-launch",
@@ -31,5 +42,5 @@
   "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   "stdout_sha256": "67d800906931d7e374f0a96e4f40469f9f1a4de90ec72fe3690079b244f71573",
   "transcript_path": "docs/team-shell-lane-launch/transcript.json",
-  "transcript_sha256": "9c62ddbf01852a0f62bb0eb38c5251cf8c25d7cdbda52303d5f3cb9084c4f456"
+  "transcript_sha256": "97e0ca191df48f54a08fc5509a88f31ffd1f986e08930623147256af2a573fe8"
 }
