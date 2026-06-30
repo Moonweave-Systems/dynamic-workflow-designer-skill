@@ -105,6 +105,44 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
             self.assertEqual(receipt["agent_contract"]["role_hash"], _canonical_hash(role))
             self.assertEqual(receipt["agent_contract"]["clause_ids"], ["common.fail_closed"])
 
+    def test_invalid_agent_contract_is_blocked_before_execution(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            contract_path = root / "contract.json"
+            registry_path = root / "roles.json"
+            contract_path.write_text(json.dumps({"contract_id": "missing clauses"}), encoding="utf-8")
+            registry_path.write_text(
+                json.dumps(
+                    {
+                        "roles": [
+                            {
+                                "id": "worker",
+                                "purpose": "test worker",
+                                "allowed_tools": ["read"],
+                                "output_schema": "worker-result-v1",
+                                "evidence_obligations": ["files", "commands", "tests"],
+                                "trust_boundary": "untrusted until reviewed",
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
+
+            with self.assertRaises(TeamShellLaneLaunchError) as raised:
+                run_shell_lane_command(
+                    allowlist={"commands": [{"id": "hello", "argv": [sys.executable, "--version"]}]},
+                    command_id="hello",
+                    cwd=root,
+                    transcript_path=root / "transcript.json",
+                    agent_role_id="worker",
+                    agent_contract_path=contract_path,
+                    role_registry_path=registry_path,
+                )
+
+            self.assertEqual(raised.exception.code, "ERR_TEAM_SHELL_LANE_AGENT_CONTRACT_INVALID")
+            self.assertFalse((root / "transcript.json").exists())
+
     def test_unknown_agent_role_is_blocked_before_execution(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -126,7 +164,23 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
                 ),
                 encoding="utf-8",
             )
-            registry_path.write_text(json.dumps({"roles": []}), encoding="utf-8")
+            registry_path.write_text(
+                json.dumps(
+                    {
+                        "roles": [
+                            {
+                                "id": "operator",
+                                "purpose": "test operator",
+                                "allowed_tools": ["read"],
+                                "output_schema": "operator-result-v1",
+                                "evidence_obligations": ["files", "commands", "tests"],
+                                "trust_boundary": "operator cannot bypass gates",
+                            }
+                        ]
+                    }
+                ),
+                encoding="utf-8",
+            )
 
             with self.assertRaises(TeamShellLaneLaunchError) as raised:
                 run_shell_lane_command(
@@ -139,7 +193,7 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
                     role_registry_path=registry_path,
                 )
 
-            self.assertEqual(raised.exception.code, "ERR_TEAM_SHELL_LANE_ROLE_REGISTRY_INVALID")
+            self.assertEqual(raised.exception.code, "ERR_TEAM_SHELL_LANE_AGENT_ROLE_INVALID")
             self.assertFalse((root / "transcript.json").exists())
 
     def test_unknown_command_id_is_blocked_before_execution(self) -> None:
