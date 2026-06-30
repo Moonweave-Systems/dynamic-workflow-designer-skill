@@ -31,6 +31,7 @@ from depone.cli import (
     evidence_run,
     team_dry_run,
     team_launch_preflight,
+    team_worktree_prep,
     validate,
     validate_contracts,
 )
@@ -418,6 +419,38 @@ def _add_team_launch_preflight_args(parser: argparse.ArgumentParser) -> None:
         "--team-ledger-out",
         default="",
         help="Optional output path for Team Ledger JSON generated from the preflight lanes",
+    )
+    parser.add_argument(
+        "--self-test", action="store_true", help="Run self-test and exit"
+    )
+    _add_json_arg(parser)
+
+
+def _add_team_worktree_prep_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--team-launch-preflight",
+        default="",
+        help="Team launch preflight JSON path",
+    )
+    parser.add_argument(
+        "--repo",
+        default=".",
+        help="Source repository root used for git worktree add/select",
+    )
+    parser.add_argument(
+        "--worktree-root",
+        default=".",
+        help="Root directory under which planned_worktree paths are resolved",
+    )
+    parser.add_argument(
+        "--create-worktree",
+        action="store_true",
+        help="Allow git worktree add for missing planned worktrees",
+    )
+    parser.add_argument(
+        "--out",
+        default="",
+        help="Optional output path for the team worktree prep JSON",
     )
     parser.add_argument(
         "--self-test", action="store_true", help="Run self-test and exit"
@@ -1125,6 +1158,12 @@ def main() -> None:
     )
     _add_team_launch_preflight_args(team_launch_preflight_parser)
 
+    team_worktree_prep_parser = sub.add_parser(
+        "team-worktree-prep",
+        help="Create/select local lane worktrees without launching workers",
+    )
+    _add_team_worktree_prep_args(team_worktree_prep_parser)
+
     # agent-fabric-claim-gate
     claim_gate_parser = sub.add_parser(
         "agent-fabric-claim-gate",
@@ -1221,6 +1260,8 @@ def main() -> None:
             team_dry_run.run(args)
         elif args.command == "team-launch-preflight":
             team_launch_preflight.run(args)
+        elif args.command == "team-worktree-prep":
+            team_worktree_prep.run(args)
         elif args.command in ("evidence-run", "run"):
             evidence_run.run(args)
         elif args.command in ("evidence-next", "next"):

@@ -229,9 +229,18 @@ The executable planning basis is now:
 - `docs/depone-native-team-runtime-spec.md`
 - `docs/depone-native-team-runtime-wave-plan.md`
 
-Wave 1 from that plan now has a first implementation slice:
+Wave 1 from that plan has a first implementation slice:
 `team-launch-preflight` validates planned lanes and writes re-validatable
 machine artifacts without launching workers, creating worktrees, executing lane
-commands, or raising assurance. Do not skip straight to launching Codex, Claude
-Code, OMX, or cloud workers; after this PR is reviewed, the next implementation
-rung is Wave 2's explicit local worktree creation receipt.
+commands, or raising assurance.
+
+Wave 2 now has a first implementation slice:
+`team-worktree-prep` consumes that preflight and can create/select local git
+worktrees with an explicit `--create-worktree` flag. It writes
+`docs/team-worktree-prep/team-worktree-prep.json` and still does not launch
+agents, execute lane commands, delete worktrees, call live models, or raise
+assurance.
+
+Do not skip straight to launching Codex, Claude Code, OMX, or cloud workers.
+After this PR is reviewed, the next implementation rung is Wave 3's single-lane
+shell adapter launch with explicit command allowlists and command receipts.

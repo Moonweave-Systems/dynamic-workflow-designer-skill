@@ -85,6 +85,7 @@ evidence gates.
 | `depone evidence-run` | Run the common observe -> substrate -> ingest -> verify loop |
 | `depone run` | Native-runner convenience alias for `evidence-run`; not a scheduler |
 | `depone team-launch-preflight` | Non-executing gate for planned team lanes |
+| `depone team-worktree-prep` | Create/select local lane worktrees without launching agents |
 | `depone next` | Re-validate an evidence-run directory and recommend the next safe action without executing it |
 | `depone advance` | Re-validate with `next`, then run exactly one existing evidence-run continuation when unblocked |
 | `depone mcp` | Serve the same evidence/verify capabilities over MCP stdio |
@@ -124,11 +125,12 @@ production deployment, and history rewrite require explicit gates.
 
 Depone is moving from agent-safe CLI and evidence substrate toward stronger
 session receipt adapters, operator signing policy, and A2 isolation paths. The
-next team-runtime bridge is `team-launch-preflight`, a non-executing gate that
-checks planned lane launchability without launching agents or creating
-worktrees. Its committed fixture directory is
-[`docs/team-launch-preflight/`](docs/team-launch-preflight/), with generated JSON
-artifacts created from source inputs rather than copied from older fixtures.
+team-runtime bridge now has a non-executing launch preflight and a local
+worktree preparation receipt. The committed fixture directories are
+[`docs/team-launch-preflight/`](docs/team-launch-preflight/) and
+[`docs/team-worktree-prep/`](docs/team-worktree-prep/). These artifacts do not
+launch agents or prove task completion; they bind the next local team-runtime
+rung to machine JSON.
 
 ## What Is Still Honest
 Depone claims **no direct-agent superiority** - it is a design + verification layer, not an agent runtime.

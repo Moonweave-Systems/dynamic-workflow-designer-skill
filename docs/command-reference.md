@@ -24,6 +24,7 @@ python -m depone evidence-ingest --dsse evidence-bundle.json:dsse_envelope --art
 python -m depone evidence-chain --capture capture-0.json --capture capture-1.json --out evidence-chain-verdict.json --json
 python -m depone team-dry-run --plan team-plan.json --out-dir out/team-dry-run --json
 python -m depone team-launch-preflight --team-dry-run docs/team-dry-run/team-dry-run.json --repo . --base-commit <base_commit> --launch-intent plan-only --out docs/team-launch-preflight/team-launch-preflight.json --team-ledger-out docs/team-launch-preflight/team-ledger.json --json
+python -m depone team-worktree-prep --team-launch-preflight docs/team-launch-preflight/team-launch-preflight.json --repo . --worktree-root /tmp/depone-worktrees --create-worktree --out docs/team-worktree-prep/team-worktree-prep.json --json
 python -m depone team-ledger-merge-receipt --lane worker-1 --lane worker-2 --file depone/agent_fabric/team_ledger.py --out team-merge-receipt.json --json
 python -m depone worktree-lane-receipt --worktree ./worker-1 --base-commit <sha> --evidence-dir out/team/worker-1 --out out/team/worker-1/worktree-receipt.json --json
 python -m depone run --runner-sandbox ./runner-worktree --source-fixture depone/fixtures/agent_fabric/reference_adapter_shell.json --out ../observer/evidence-run --allow-touched-file sample.txt --json -- python -m unittest
@@ -66,8 +67,14 @@ non-executing launch preflight. It validates planned lanes, base commit, adapter
 availability for `launch-ready`, and the same fail-closed boundary while still
 not launching agents, not creating worktrees, not executing commands, not
 calling live models, and not raising assurance. Optional `--team-ledger-out`
-only copies the dry-run Team Ledger machine artifact for downstream validation;
-it is not worker launch or fan-in approval.
+generates a Team Ledger machine artifact from the preflight lane records for
+downstream validation; it is not worker launch or fan-in approval.
+
+`team-worktree-prep` consumes a passing `team-launch-preflight.json` and creates
+or selects local git worktrees for each planned lane. It runs
+`git worktree add --detach` only when `--create-worktree` is present, writes a
+machine receipt, and still does not launch agents, execute lane commands, call
+live models, delete worktrees, raise assurance, or prove task completion.
 
 `team-ledger-merge-receipt` writes the machine JSON merge receipt consumed by
 `team-ledger` when passed lanes touch the same file. It normalizes lane ids and

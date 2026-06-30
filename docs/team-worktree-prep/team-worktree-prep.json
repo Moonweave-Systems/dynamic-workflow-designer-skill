@@ -1,0 +1,52 @@
+{
+  "base_commit": "b0416e69c6ac7f155db66af8cbff3edacd4350d3",
+  "boundary": {
+    "calls_live_models": false,
+    "create_worktree_requested": true,
+    "deletes_worktrees": false,
+    "executes_lane_commands": false,
+    "launches_agents": false,
+    "raises_assurance": false,
+    "runs_git_worktree_add": true
+  },
+  "decision": "pass",
+  "errors": [],
+  "kind": "depone-team-worktree-prep",
+  "lane_count": 2,
+  "lanes": [
+    {
+      "action": "created",
+      "base_commit": "b0416e69c6ac7f155db66af8cbff3edacd4350d3",
+      "branch": "HEAD",
+      "errors": [],
+      "evidence_dir": "lane-1",
+      "exists_after": true,
+      "exists_before": false,
+      "head_commit": "b0416e69c6ac7f155db66af8cbff3edacd4350d3",
+      "lane_id": "lane-1",
+      "planned_worktree": "docs/team-dry-run/worktrees/lane-1",
+      "worktree_path": "/tmp/depone-team-worktree-prep-fixture/docs/team-dry-run/worktrees/lane-1",
+      "worktree_receipt": "lane-1/worktree-receipt.json"
+    },
+    {
+      "action": "created",
+      "base_commit": "b0416e69c6ac7f155db66af8cbff3edacd4350d3",
+      "branch": "HEAD",
+      "errors": [],
+      "evidence_dir": "docs-artifacts",
+      "exists_after": true,
+      "exists_before": false,
+      "head_commit": "b0416e69c6ac7f155db66af8cbff3edacd4350d3",
+      "lane_id": "docs-artifacts",
+      "planned_worktree": "worktrees/docs-artifacts",
+      "worktree_path": "/tmp/depone-team-worktree-prep-fixture/worktrees/docs-artifacts",
+      "worktree_receipt": "docs-artifacts/worktree-receipt.json"
+    }
+  ],
+  "repo_root": "/tmp/depone-install-readiness",
+  "schema_version": "0.1",
+  "source_hashes": {
+    "team_launch_preflight": "d08404025bfcc0e207ee5264126f47100c2f2247d00b0db68b4c76fae8488d77"
+  },
+  "worktree_root": "/tmp/depone-team-worktree-prep-fixture"
+}

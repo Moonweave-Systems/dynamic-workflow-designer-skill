@@ -2545,6 +2545,9 @@ def require_agent_surface_contract_pass() -> None:
             [sys.executable, "-m", "depone", "team-ledger-merge-receipt", "--self-test"]
         )
         run_contract_command(
+            [sys.executable, "-m", "depone", "team-worktree-prep", "--self-test"]
+        )
+        run_contract_command(
             [sys.executable, "-m", "depone", "evidence-next", "--self-test"]
         )
         run_contract_command(
@@ -2759,6 +2762,67 @@ def require_team_launch_preflight_docs_contract() -> None:
         raise SystemExit("team-ledger-verdict.json must be re-validatable")
 
 
+def require_team_worktree_prep_docs_contract() -> None:
+    readme_path = ROOT / "docs" / "team-worktree-prep" / "README.md"
+    if not readme_path.exists():
+        raise SystemExit("docs/team-worktree-prep/README.md is required")
+    require_terms(
+        "docs/team-worktree-prep/README.md",
+        [
+            "python3 -m depone team-worktree-prep",
+            "team-worktree-prep.json",
+            "--create-worktree",
+            "git worktree add --detach",
+            "does not launch agents",
+            "does not execute lane commands",
+            "does not call live models",
+            "does not delete worktrees",
+            "does not raise assurance",
+            "does not prove task completion",
+            "validate errors",
+            "host paths",
+        ],
+    )
+    artifact_path = ROOT / "docs" / "team-worktree-prep" / "team-worktree-prep.json"
+    if not artifact_path.exists():
+        raise SystemExit("docs/team-worktree-prep/team-worktree-prep.json is required")
+    artifact = json.loads(artifact_path.read_text(encoding="utf-8"))
+    if artifact.get("kind") != "depone-team-worktree-prep":
+        raise SystemExit("team-worktree-prep.json kind mismatch")
+    if artifact.get("decision") != "pass":
+        raise SystemExit("team-worktree-prep.json must record decision pass")
+    boundary = artifact.get("boundary")
+    if not isinstance(boundary, dict):
+        raise SystemExit("team-worktree-prep.json boundary must be an object")
+    if boundary.get("runs_git_worktree_add") is not True:
+        raise SystemExit("team-worktree-prep fixture must record git worktree add")
+    for key in (
+        "launches_agents",
+        "executes_lane_commands",
+        "calls_live_models",
+        "raises_assurance",
+        "deletes_worktrees",
+    ):
+        if boundary.get(key) is not False:
+            raise SystemExit(f"team-worktree-prep boundary.{key} must be false")
+    completed = run_contract_command(
+        [
+            sys.executable,
+            "-c",
+            (
+                "import json;"
+                "from depone.agent_fabric.team_worktree_prep import validate_team_worktree_prep;"
+                "m=json.load(open('docs/team-worktree-prep/team-worktree-prep.json'));"
+                "errors=validate_team_worktree_prep(m);"
+                "print(errors);"
+                "raise SystemExit(1 if errors else 0)"
+            ),
+        ]
+    )
+    if completed.stdout.strip() != "[]":
+        raise SystemExit("team-worktree-prep artifact validator did not print []")
+
+
 def contract_steps_for_tier(tier: str) -> list[tuple[str, object, int]]:
     if tier == "smoke":
         return [
@@ -2772,6 +2836,7 @@ def contract_steps_for_tier(tier: str) -> list[tuple[str, object, int]]:
             ("agent-facing CLI contract", require_agent_surface_contract_pass, 300),
             ("install-readiness smoke", require_install_readiness_contract_pass, 600),
             ("team-launch-preflight docs contract", require_team_launch_preflight_docs_contract, 300),
+            ("team-worktree-prep docs contract", require_team_worktree_prep_docs_contract, 300),
         ]
     if tier != "full":
         raise SystemExit(f"unknown contract tier: {tier}")
@@ -2861,6 +2926,7 @@ Overclaims execution: no
         "agent-facing CLI contract",
         "install-readiness smoke",
         "team-launch-preflight docs contract",
+        "team-worktree-prep docs contract",
     ]:
         raise SystemExit("self-test failed: changed tier steps changed")
     if "release command corpus" not in [label for label, _callback, _timeout in contract_steps_for_tier("full")]:
