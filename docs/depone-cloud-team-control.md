@@ -1,6 +1,6 @@
 # Depone Cloud/Team Control Plane
 
-Status: V130 follow-up direction note and Team Ledger v0 slice.
+Status: V130 follow-up direction note and Team Ledger v0 evidence-next slice.
 Date: 2026-06-30.
 Source context: `.omx/context/cloud-team-control-20260630T043433Z.md`.
 
@@ -14,10 +14,11 @@ Depone-native lanes are adapter surfaces. Depone's job is to record what they
 claimed, what artifacts they produced, what deterministic checks passed, and
 whether the next step is allowed from verified evidence.
 
-The first implementation slice is deliberately small: Team Ledger v0 validates a
-leader ledger over lane records. It does not schedule work, launch cloud agents,
-merge pull requests, provision containers, sign evidence, or replace a team
-runtime.
+The first implementation slices are deliberately small: Team Ledger v0 validates
+a leader ledger over lane records, and passed lanes must point at a machine
+`evidence-next` verdict that revalidated their evidence directory. It does not
+schedule work, launch cloud agents, merge pull requests, provision containers,
+sign evidence, or replace a team runtime.
 
 ## External direction to interoperate with
 
@@ -88,19 +89,20 @@ Team Ledger v0 is a fan-in gate. A ledger records:
   `omx`, `lazycodex`, `opencode`, `depone-native`, `shell`, `external`, or
   a later explicitly modeled adapter),
 - start and end commits,
-- evidence directory for passed lanes,
+- evidence directory and `evidence-next` verdict for passed lanes,
 - optional PR URL,
 - verification state (`pass` or `blocked`),
 - blocked reason for blocked lanes.
 
 Fan-in passes only when every lane is either:
 
-1. `pass` with an existing evidence directory; or
+1. `pass` with an existing evidence directory and an `evidence-next` verdict
+   whose `decision` is `continue` and `blocking_reasons` is empty; or
 2. `blocked` with an explicit reason.
 
-A lane with prose only cannot pass. Missing evidence, unknown environment kind,
-unknown adapter kind, duplicate lane ids, or a blocked lane without a reason
-blocks the ledger.
+A lane with prose only cannot pass. Missing evidence, missing or blocked
+`evidence-next` verdicts, unknown environment kind, unknown adapter kind,
+duplicate lane ids, or a blocked lane without a reason blocks the ledger.
 
 ## Team Ledger v0 schema sketch
 
@@ -122,6 +124,7 @@ blocks the ledger.
       "start_commit": "abc123",
       "end_commit": "def456",
       "evidence_dir": "out/team/worker-1",
+      "evidence_next_verdict": "out/team/worker-1/evidence-next-verdict.json",
       "pr_url": "https://github.com/example/repo/pull/123",
       "verification_state": "pass",
       "verification_artifacts": ["unit-tests", "contract"]
@@ -160,10 +163,8 @@ python3 -m depone team-ledger --self-test
 
 ## Next slices
 
-1. Add ingestion for external worker evidence directories and `evidence-next`
-   verdicts, so a pass lane requires more than directory presence.
-2. Record conflict events when lanes touch overlapping files, then require a
+1. Record conflict events when lanes touch overlapping files, then require a
    merge receipt before fan-in can pass.
-3. Add optional PR artifact checks for cloud adapters.
-4. Only after the ledger is useful, consider a minimal `depone team` command that
+2. Add optional PR artifact checks for cloud adapters.
+3. Only after the ledger is useful, consider a minimal `depone team` command that
    coordinates lanes under explicit budgets and stop rules.
