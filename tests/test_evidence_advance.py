@@ -66,7 +66,7 @@ class EvidenceAdvanceTests(unittest.TestCase):
             root = Path(tmp)
             args = self._args(root)
             args.previous_source_fixture = str(root / "previous-source.json")
-            self._write_previous_manifest(root)
+            previous_manifest = self._write_previous_manifest(root)
             calls = []
 
             def fake_evaluate(path: Path, *, source_fixture: Path | None = None) -> dict[str, object]:
