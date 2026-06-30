@@ -77,20 +77,91 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
         self.assertEqual(verdict["blocked_lane_count"], 1)
         self.assertEqual(verdict["errors"], [])
 
-    def test_duplicate_lane_ids_block(self) -> None:
-        ledger = build_sample_team_ledger("lane-evidence")
-        second = dict(ledger["lanes"][0])
-        ledger["lanes"].append(second)
+
+    def test_invalid_adapter_and_verification_choices_block(self) -> None:
+        for field, value in (
+            ("runner_adapter_kind", "unknown-runner"),
+            ("team_adapter_kind", "unknown-team"),
+            ("verification_state", "pending"),
+        ):
+            with self.subTest(field=field):
+                ledger = build_sample_team_ledger("lane-evidence")
+                ledger["lanes"][0][field] = value
+
+                verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+                self.assertEqual(verdict["decision"], "blocked")
+                self.assertIn(
+                    "ERR_TEAM_LEDGER_CHOICE_INVALID",
+                    {error["code"] for error in verdict["errors"]},
+                )
+
+    def test_empty_lanes_and_duplicate_lane_ids_block(self) -> None:
+        empty = build_sample_team_ledger("lane-evidence")
+        empty["lanes"] = []
+
+        empty_verdict = build_team_ledger_verdict(empty, base_dir=self.root)
+
+        self.assertEqual(empty_verdict["decision"], "blocked")
+        self.assertIn(
+            "ERR_TEAM_LEDGER_LANES_REQUIRED",
+            {error["code"] for error in empty_verdict["errors"]},
+        )
+
+        duplicate = build_sample_team_ledger("lane-evidence")
+        duplicate["lanes"].append(dict(duplicate["lanes"][0]))
+
+        duplicate_verdict = build_team_ledger_verdict(duplicate, base_dir=self.root)
+
+        self.assertEqual(duplicate_verdict["decision"], "blocked")
+        self.assertIn(
+            "ERR_TEAM_LEDGER_LANE_ID_DUPLICATE",
+            {error["code"] for error in duplicate_verdict["errors"]},
+        )
+
+    def test_whitespace_blocked_reason_blocks(self) -> None:
+        ledger = build_sample_team_ledger("missing-evidence")
+        ledger["lanes"][0]["verification_state"] = "blocked"
+        ledger["lanes"][0]["blocked_reason"] = "   "
 
         verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
 
         self.assertEqual(verdict["decision"], "blocked")
         self.assertIn(
-            "ERR_TEAM_LEDGER_LANE_ID_DUPLICATE",
+            "ERR_TEAM_LEDGER_BLOCKED_REASON_REQUIRED",
             {error["code"] for error in verdict["errors"]},
         )
 
-    def test_cli_self_test_and_validate(self) -> None:
+    def test_cli_base_dir_resolves_relative_evidence_dir(self) -> None:
+        ledger_root = self.root / "ledger"
+        evidence_root = self.root / "evidence-root"
+        ledger_root.mkdir()
+        (evidence_root / "lane-evidence").mkdir(parents=True)
+        ledger = build_sample_team_ledger("lane-evidence")
+        ledger_path = ledger_root / "team-ledger.json"
+        ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "depone",
+                "team-ledger",
+                "--ledger",
+                str(ledger_path),
+                "--base-dir",
+                str(evidence_root),
+                "--json",
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(json.loads(result.stdout)["decision"], "pass")
+
+    def test_cli_writes_verdict(self) -> None:
         ledger = build_sample_team_ledger("lane-evidence")
         ledger_path = self.root / "team-ledger.json"
         verdict_path = self.root / "team-ledger-verdict.json"
