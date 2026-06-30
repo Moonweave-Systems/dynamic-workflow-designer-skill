@@ -84,8 +84,9 @@ Team Ledger v0 is a fan-in gate. A ledger records:
 
 - leader objective, optional leader/budget/stop-rule metadata,
 - lanes with environment kind (`local`, `container`, or `cloud`),
-- adapter kind (`codex`, `claude-code`, `cursor`, `github-copilot`, `omx`,
-  `lazycodex`, `opencode`, `depone-native`, `shell`, or `other`),
+- runner and team adapter kind (`codex`, `claude-code`, `github-copilot`,
+  `omx`, `lazycodex`, `opencode`, `depone-native`, `shell`, `external`, or
+  a later explicitly modeled adapter),
 - start and end commits,
 - evidence directory for passed lanes,
 - optional PR URL,
@@ -107,29 +108,33 @@ blocks the ledger.
 {
   "kind": "depone-team-ledger",
   "schema_version": "0.1",
-  "objective": "ship one reviewed control-plane slice",
-  "leader": "leader-fixed",
-  "budget": "one small branch",
+  "leader_objective": "ship one reviewed control-plane slice",
+  "leader_id": "leader-fixed",
+  "start_commit": "abc123",
   "stop_rule": "stop after deterministic verification",
   "lanes": [
     {
       "lane_id": "worker-1",
-      "role": "executor",
-      "environment_kind": "local",
-      "adapter_kind": "omx",
+      "objective": "implement the ledger validator",
+      "env_kind": "local",
+      "runner_adapter_kind": "codex",
+      "team_adapter_kind": "omx",
       "start_commit": "abc123",
       "end_commit": "def456",
       "evidence_dir": "out/team/worker-1",
       "pr_url": "https://github.com/example/repo/pull/123",
       "verification_state": "pass",
-      "next_decision": "pass"
+      "verification_artifacts": ["unit-tests", "contract"]
     },
     {
       "lane_id": "worker-2",
-      "environment_kind": "cloud",
-      "adapter_kind": "codex",
+      "objective": "run a cloud adapter lane",
+      "env_kind": "cloud",
+      "runner_adapter_kind": "codex",
+      "team_adapter_kind": "external",
       "start_commit": "abc123",
       "end_commit": "abc123",
+      "evidence_dir": "out/team/worker-2",
       "verification_state": "blocked",
       "blocked_reason": "required cloud setup secret unavailable"
     }
