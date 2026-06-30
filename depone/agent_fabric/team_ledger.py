@@ -9,6 +9,7 @@ honest, present evidence before fan-in.
 from __future__ import annotations
 
 import json
+from datetime import datetime
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -17,6 +18,7 @@ from depone.agent_fabric.claim_gate import canonical_hash
 TEAM_LEDGER_KIND = "depone-team-ledger"
 TEAM_LEDGER_SCHEMA_VERSION = "0.1"
 TEAM_LEDGER_VERDICT_KIND = "depone-team-ledger-verdict"
+TEAM_LEDGER_PR_ARTIFACT_KIND = "depone-team-ledger-pr-artifact"
 VALID_ENV_KINDS = frozenset({"local", "container", "cloud"})
 VALID_ADAPTER_KINDS = frozenset(
     {
@@ -32,6 +34,7 @@ VALID_ADAPTER_KINDS = frozenset(
     }
 )
 VALID_LANE_VERIFICATION_STATES = frozenset({"pass", "blocked"})
+VALID_PASSING_PR_MERGE_STATES = frozenset({"CLEAN", "HAS_HOOKS"})
 
 
 class TeamLedgerError(ValueError):
@@ -289,6 +292,14 @@ def _validate_lane(
             }
         )
 
+    pr_artifact_summary = _validate_pr_artifact(
+        lane.get("pr_artifact"),
+        lane,
+        base_dir,
+        errors,
+        lane_id=lane_error_id,
+    )
+
     touched_files = _validate_touched_files(lane.get("touched_files"), errors, lane_id=lane_error_id)
     if state == "pass" and not touched_files:
         errors.append(
@@ -310,6 +321,7 @@ def _validate_lane(
         "evidence_dir_exists": evidence_dir_exists,
         "evidence_next_verdict": evidence_next_verdict,
         "evidence_next": evidence_next_summary,
+        "pr_artifact": pr_artifact_summary,
         "verification_artifact_count": len(verification_artifacts),
         "touched_files": touched_files,
         "touched_file_count": len(touched_files),
@@ -457,6 +469,284 @@ def _validate_evidence_next_verdict(
             }
         )
     return summary
+
+
+def _validate_pr_artifact(
+    pr_artifact: Any,
+    lane: dict[str, Any],
+    base_dir: Path,
+    errors: list[dict[str, str]],
+    *,
+    lane_id: str,
+) -> dict[str, Any]:
+    summary: dict[str, Any] = {
+        "path": pr_artifact if isinstance(pr_artifact, str) else None,
+        "pr_url": None,
+        "head_sha": None,
+        "base_sha": None,
+        "state": None,
+        "merge_state_status": None,
+        "check_status": None,
+        "failed_count": None,
+        "pending_count": None,
+    }
+    if pr_artifact is None:
+        return summary
+    if not isinstance(pr_artifact, str) or not pr_artifact.strip():
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_PATH_INVALID",
+                "message": "pr_artifact must be a relative JSON path when present",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+
+    artifact_path = Path(pr_artifact)
+    if artifact_path.is_absolute():
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_PATH_INVALID",
+                "message": "pr_artifact must be relative to the ledger base directory",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+
+    resolved = (base_dir / artifact_path).resolve(strict=False)
+    base_resolved = base_dir.resolve(strict=False)
+    try:
+        resolved.relative_to(base_resolved)
+    except ValueError:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_PATH_INVALID",
+                "message": "pr_artifact must stay under the ledger base directory",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+
+    if not resolved.is_file():
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_MISSING",
+                "message": "pr_artifact file must exist",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+
+    try:
+        artifact = json.loads(resolved.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_INVALID",
+                "message": f"pr_artifact must be readable JSON: {exc}",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+    if not isinstance(artifact, dict):
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_INVALID",
+                "message": "pr_artifact root must be an object",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+
+    summary["pr_url"] = artifact.get("pr_url")
+    summary["head_sha"] = artifact.get("head_sha")
+    summary["base_sha"] = artifact.get("base_sha")
+    summary["state"] = artifact.get("state")
+    summary["merge_state_status"] = artifact.get("merge_state_status")
+    summary["stale"] = artifact.get("stale")
+
+    if artifact.get("kind") != TEAM_LEDGER_PR_ARTIFACT_KIND:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_INVALID",
+                "message": f"pr_artifact kind must be {TEAM_LEDGER_PR_ARTIFACT_KIND}",
+                "lane_id": lane_id,
+            }
+        )
+    if artifact.get("schema_version") != TEAM_LEDGER_SCHEMA_VERSION:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_INVALID",
+                "message": f"pr_artifact schema_version must be {TEAM_LEDGER_SCHEMA_VERSION}",
+                "lane_id": lane_id,
+            }
+        )
+    if not isinstance(artifact.get("pr_number"), int) or artifact.get("pr_number", 0) <= 0:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_INVALID",
+                "message": "pr_artifact pr_number must be a positive integer",
+                "lane_id": lane_id,
+            }
+        )
+
+    _validate_pr_artifact_string_field(artifact, "pr_url", errors, lane_id=lane_id)
+    _validate_pr_artifact_string_field(artifact, "base_sha", errors, lane_id=lane_id)
+    _validate_pr_artifact_string_field(artifact, "head_sha", errors, lane_id=lane_id)
+    _validate_pr_artifact_string_field(artifact, "merge_state_status", errors, lane_id=lane_id)
+    _validate_pr_artifact_captured_at(artifact.get("captured_at"), errors, lane_id=lane_id)
+    if artifact.get("stale") is not False:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_STALE",
+                "message": "pr_artifact stale must be false",
+                "lane_id": lane_id,
+            }
+        )
+    merge_state_status = artifact.get("merge_state_status")
+    if (
+        not isinstance(merge_state_status, str)
+        or merge_state_status.upper() not in VALID_PASSING_PR_MERGE_STATES
+    ):
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_NOT_MERGEABLE",
+                "message": "pr_artifact merge_state_status must be CLEAN or HAS_HOOKS",
+                "lane_id": lane_id,
+            }
+        )
+
+    state = artifact.get("state")
+    if not isinstance(state, str) or state.upper() not in {"OPEN", "MERGED", "CLOSED"}:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_INVALID",
+                "message": "pr_artifact state must be OPEN, MERGED, or CLOSED",
+                "lane_id": lane_id,
+            }
+        )
+
+    lane_pr_url = lane.get("pr_url")
+    artifact_pr_url = artifact.get("pr_url")
+    if (
+        isinstance(lane_pr_url, str)
+        and lane_pr_url
+        and isinstance(artifact_pr_url, str)
+        and artifact_pr_url
+        and artifact_pr_url != lane_pr_url
+    ):
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_PR_URL_MISMATCH",
+                "message": "pr_artifact pr_url must match lane pr_url",
+                "lane_id": lane_id,
+            }
+        )
+
+    lane_end_commit = lane.get("end_commit")
+    head_sha = artifact.get("head_sha")
+    if isinstance(lane_end_commit, str) and lane_end_commit and isinstance(head_sha, str):
+        if head_sha != lane_end_commit:
+            errors.append(
+                {
+                    "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_HEAD_SHA_MISMATCH",
+                    "message": "pr_artifact head_sha must match lane end_commit",
+                    "lane_id": lane_id,
+                }
+            )
+
+    check_summary = artifact.get("check_summary")
+    if not isinstance(check_summary, dict):
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_INVALID",
+                "message": "pr_artifact check_summary must be an object",
+                "lane_id": lane_id,
+            }
+        )
+        return summary
+
+    check_status = check_summary.get("status")
+    failed_count = check_summary.get("failed_count")
+    pending_count = check_summary.get("pending_count")
+    total_count = check_summary.get("total_count")
+    summary["check_status"] = check_status
+    summary["failed_count"] = failed_count
+    summary["pending_count"] = pending_count
+    if not isinstance(check_status, str) or check_status.lower() not in {"pass", "success"}:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_CHECKS_NOT_PASSING",
+                "message": "pr_artifact check_summary status must be pass or success",
+                "lane_id": lane_id,
+            }
+        )
+    for field, raw_count in (
+        ("total_count", total_count),
+        ("failed_count", failed_count),
+        ("pending_count", pending_count),
+    ):
+        if not isinstance(raw_count, int) or raw_count < 0:
+            errors.append(
+                {
+                    "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_INVALID",
+                    "message": f"pr_artifact check_summary {field} must be a non-negative integer",
+                    "lane_id": lane_id,
+                }
+            )
+    if failed_count != 0 or pending_count != 0:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_CHECKS_NOT_PASSING",
+                "message": "pr_artifact check_summary must have zero failed and pending checks",
+                "lane_id": lane_id,
+            }
+        )
+    return summary
+
+
+def _validate_pr_artifact_string_field(
+    artifact: dict[str, Any],
+    field: str,
+    errors: list[dict[str, str]],
+    *,
+    lane_id: str,
+) -> None:
+    if not isinstance(artifact.get(field), str) or not str(artifact.get(field)).strip():
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_INVALID",
+                "message": f"pr_artifact {field} must be a non-empty string",
+                "lane_id": lane_id,
+            }
+        )
+
+
+def _validate_pr_artifact_captured_at(
+    value: Any,
+    errors: list[dict[str, str]],
+    *,
+    lane_id: str,
+) -> None:
+    if not isinstance(value, str) or not value.strip():
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_INVALID",
+                "message": "pr_artifact captured_at must be a non-empty ISO timestamp",
+                "lane_id": lane_id,
+            }
+        )
+        return
+    try:
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_INVALID",
+                "message": "pr_artifact captured_at must be parseable as an ISO timestamp",
+                "lane_id": lane_id,
+            }
+        )
 
 
 def _validate_touched_files(
@@ -745,6 +1035,49 @@ def _self_test() -> None:
         verdict = build_team_ledger_verdict(ledger, base_dir=root)
         if verdict["decision"] != "pass":
             raise AssertionError("valid ledger must pass")
+
+        pr_artifact = evidence / "pr-artifact.json"
+        pr_artifact.write_text(
+            json.dumps(
+                {
+                    "kind": TEAM_LEDGER_PR_ARTIFACT_KIND,
+                    "schema_version": TEAM_LEDGER_SCHEMA_VERSION,
+                    "provider": "github",
+                    "pr_number": 42,
+                    "pr_url": "https://github.com/Moonweave-Systems/Depone/pull/42",
+                    "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                    "state": "OPEN",
+                    "merge_state_status": "CLEAN",
+                    "check_summary": {
+                        "status": "pass",
+                        "total_count": 0,
+                        "failed_count": 0,
+                        "pending_count": 0,
+                    },
+                    "stale": False,
+                    "captured_at": "2026-06-30T06:30:00Z",
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        with_pr = build_sample_team_ledger("lane-evidence")
+        with_pr["lanes"][0]["evidence_next_verdict"] = "lane-evidence/evidence-next-verdict.json"
+        with_pr["lanes"][0]["pr_url"] = "https://github.com/Moonweave-Systems/Depone/pull/42"
+        with_pr["lanes"][0]["pr_artifact"] = "lane-evidence/pr-artifact.json"
+        with_pr_verdict = build_team_ledger_verdict(with_pr, base_dir=root)
+        if with_pr_verdict["decision"] != "pass":
+            raise AssertionError("matching PR artifact must pass")
+
+        bad_pr = build_sample_team_ledger("lane-evidence")
+        bad_pr["lanes"][0]["evidence_next_verdict"] = "lane-evidence/evidence-next-verdict.json"
+        bad_pr["lanes"][0]["pr_artifact"] = "lane-evidence/missing-pr-artifact.json"
+        bad_pr_verdict = build_team_ledger_verdict(bad_pr, base_dir=root)
+        if bad_pr_verdict["decision"] != "blocked":
+            raise AssertionError("missing PR artifact must block")
 
         second_evidence = root / "lane-evidence-2"
         second_evidence.mkdir()

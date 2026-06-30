@@ -131,6 +131,7 @@ lane ids, or a blocked lane without a reason blocks the ledger.
       "evidence_next_verdict": "out/team/worker-1/evidence-next-verdict.json",
       "touched_files": ["depone/agent_fabric/team_ledger.py"],
       "pr_url": "https://github.com/example/repo/pull/123",
+      "pr_artifact": "out/team/worker-1/pr-artifact.json",
       "verification_state": "pass",
       "verification_artifacts": ["unit-tests", "contract"]
     },
@@ -166,6 +167,33 @@ When `merge_receipt` is required, it points at a machine JSON receipt:
 Passed lanes must include non-empty `touched_files` so the ledger can decide
 whether a merge receipt is required. Omitted or empty `touched_files` fails
 closed instead of treating the lane as non-overlapping.
+
+When a lane includes `pr_artifact`, it points at a local JSON artifact captured
+from a PR surface rather than trusting the `pr_url` as prose. The artifact is
+optional, but once present it must validate and its `head_sha` must match the
+lane `end_commit`:
+
+```json
+{
+  "kind": "depone-team-ledger-pr-artifact",
+  "schema_version": "0.1",
+  "provider": "github",
+  "pr_number": 123,
+  "pr_url": "https://github.com/example/repo/pull/123",
+  "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "state": "OPEN",
+  "merge_state_status": "CLEAN",
+  "check_summary": {
+    "status": "pass",
+    "total_count": 3,
+    "failed_count": 0,
+    "pending_count": 0
+  },
+  "stale": false,
+  "captured_at": "2026-06-30T06:30:00Z"
+}
+```
 
 Validate with:
 

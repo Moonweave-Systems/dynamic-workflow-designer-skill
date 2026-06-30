@@ -89,6 +89,49 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
         )
         return relative_path
 
+    def _write_pr_artifact(
+        self,
+        relative_path: str = "lane-evidence/pr-artifact.json",
+        *,
+        pr_url: str = "https://github.com/Moonweave-Systems/Depone/pull/42",
+        head_sha: str = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        merge_state_status: str = "CLEAN",
+        check_status: str = "pass",
+        failed_count: int = 0,
+        pending_count: int = 0,
+        stale: bool = False,
+    ) -> str:
+        artifact_path = self.root / relative_path
+        artifact_path.parent.mkdir(parents=True, exist_ok=True)
+        artifact_path.write_text(
+            json.dumps(
+                {
+                    "kind": "depone-team-ledger-pr-artifact",
+                    "schema_version": "0.1",
+                    "provider": "github",
+                    "pr_number": 42,
+                    "pr_url": pr_url,
+                    "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                    "head_sha": head_sha,
+                    "state": "OPEN",
+                    "merge_state_status": merge_state_status,
+                    "check_summary": {
+                        "status": check_status,
+                        "total_count": 1,
+                        "failed_count": failed_count,
+                        "pending_count": pending_count,
+                    },
+                    "stale": stale,
+                    "captured_at": "2026-06-30T06:30:00Z",
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        return relative_path
+
     def test_valid_ledger_passes(self) -> None:
         ledger = self._ledger_with_evidence_next()
 
@@ -392,6 +435,127 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
                     "ERR_TEAM_LEDGER_TOUCHED_FILES_REQUIRED",
                     {error["code"] for error in verdict["errors"]},
                 )
+
+    def test_pr_artifact_allows_passed_lane_with_matching_sha_and_checks(self) -> None:
+        ledger = self._ledger_with_evidence_next()
+        ledger["lanes"][0]["pr_url"] = "https://github.com/Moonweave-Systems/Depone/pull/42"
+        ledger["lanes"][0]["pr_artifact"] = self._write_pr_artifact()
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["decision"], "pass")
+        self.assertEqual(
+            verdict["lane_results"][0]["pr_artifact"]["head_sha"],
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        )
+        self.assertEqual(verdict["lane_results"][0]["pr_artifact"]["check_status"], "pass")
+
+    def test_missing_pr_artifact_blocks_passed_lane(self) -> None:
+        ledger = self._ledger_with_evidence_next()
+        ledger["lanes"][0]["pr_artifact"] = "lane-evidence/missing-pr-artifact.json"
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertIn(
+            "ERR_TEAM_LEDGER_PR_ARTIFACT_MISSING",
+            {error["code"] for error in verdict["errors"]},
+        )
+
+    def test_pr_artifact_head_sha_must_match_lane_end_commit(self) -> None:
+        ledger = self._ledger_with_evidence_next()
+        ledger["lanes"][0]["pr_artifact"] = self._write_pr_artifact(
+            head_sha="cccccccccccccccccccccccccccccccccccccccc"
+        )
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertIn(
+            "ERR_TEAM_LEDGER_PR_ARTIFACT_HEAD_SHA_MISMATCH",
+            {error["code"] for error in verdict["errors"]},
+        )
+
+    def test_pr_artifact_failed_checks_block_passed_lane(self) -> None:
+        ledger = self._ledger_with_evidence_next()
+        ledger["lanes"][0]["pr_artifact"] = self._write_pr_artifact(
+            check_status="fail",
+            failed_count=1,
+        )
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertIn(
+            "ERR_TEAM_LEDGER_PR_ARTIFACT_CHECKS_NOT_PASSING",
+            {error["code"] for error in verdict["errors"]},
+        )
+
+    def test_pr_artifact_unmergeable_status_blocks_passed_lane(self) -> None:
+        ledger = self._ledger_with_evidence_next()
+        ledger["lanes"][0]["pr_artifact"] = self._write_pr_artifact(
+            merge_state_status="DIRTY"
+        )
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertIn(
+            "ERR_TEAM_LEDGER_PR_ARTIFACT_NOT_MERGEABLE",
+            {error["code"] for error in verdict["errors"]},
+        )
+
+    def test_stale_pr_artifact_blocks_passed_lane(self) -> None:
+        ledger = self._ledger_with_evidence_next()
+        ledger["lanes"][0]["pr_artifact"] = self._write_pr_artifact(stale=True)
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertIn(
+            "ERR_TEAM_LEDGER_PR_ARTIFACT_STALE",
+            {error["code"] for error in verdict["errors"]},
+        )
+
+    def test_malformed_pr_artifact_blocks_passed_lane(self) -> None:
+        artifact_path = self.root / "lane-evidence" / "malformed-pr-artifact.json"
+        artifact_path.write_text("{", encoding="utf-8")
+        ledger = self._ledger_with_evidence_next()
+        ledger["lanes"][0]["pr_artifact"] = "lane-evidence/malformed-pr-artifact.json"
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertIn(
+            "ERR_TEAM_LEDGER_PR_ARTIFACT_INVALID",
+            {error["code"] for error in verdict["errors"]},
+        )
+
+    def test_pr_artifact_pr_url_mismatch_blocks_passed_lane(self) -> None:
+        ledger = self._ledger_with_evidence_next()
+        ledger["lanes"][0]["pr_url"] = "https://github.com/Moonweave-Systems/Depone/pull/41"
+        ledger["lanes"][0]["pr_artifact"] = self._write_pr_artifact(
+            pr_url="https://github.com/Moonweave-Systems/Depone/pull/42"
+        )
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertIn(
+            "ERR_TEAM_LEDGER_PR_ARTIFACT_PR_URL_MISMATCH",
+            {error["code"] for error in verdict["errors"]},
+        )
+
+    def test_blocked_lane_with_pr_url_does_not_require_pr_artifact(self) -> None:
+        ledger = build_sample_team_ledger("missing-evidence")
+        ledger["lanes"][0]["verification_state"] = "blocked"
+        ledger["lanes"][0]["blocked_reason"] = "PR lane is still waiting on review"
+        ledger["lanes"][0]["pr_url"] = "https://github.com/Moonweave-Systems/Depone/pull/42"
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["decision"], "blocked-explicit")
+        self.assertEqual(verdict["errors"], [])
 
     def test_merge_receipt_allows_overlapping_passed_lanes(self) -> None:
         ledger = self._ledger_with_evidence_next()
