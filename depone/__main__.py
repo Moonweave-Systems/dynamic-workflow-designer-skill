@@ -349,8 +349,7 @@ def _add_evidence_next_args(parser: argparse.ArgumentParser) -> None:
         "--source-fixture",
         default="",
         help=(
-            "Source fixture JSON path for the source_fixture subject; defaults "
-            "to the committed reference adapter fixture"
+            "Optional source fixture JSON path override for the source_fixture subject"
         ),
     )
     parser.add_argument(

@@ -26,7 +26,6 @@ Re-validate the committed A2 runner-receipt evidence:
 ```bash
 python3 -m depone next \
   --evidence-dir docs/depone-run-receipt-frontdoor \
-  --source-fixture depone/fixtures/agent_fabric/reference_adapter_shell.json \
   --out docs/depone-next-frontdoor/evidence-next-decision.json \
   --json
 ```

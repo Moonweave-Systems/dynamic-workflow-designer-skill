@@ -23,7 +23,7 @@ python -m depone evidence-substrate --capture-manifest capture-manifest.json --o
 python -m depone evidence-ingest --dsse evidence-bundle.json:dsse_envelope --artifact depone-capture-manifest=capture-manifest.json:json --out ingest-verdict.json --json
 python -m depone evidence-chain --capture capture-0.json --capture capture-1.json --out evidence-chain-verdict.json --json
 python -m depone run --runner-sandbox ./runner-worktree --source-fixture depone/fixtures/agent_fabric/reference_adapter_shell.json --out ../observer/evidence-run --allow-touched-file sample.txt --json -- python -m unittest
-python -m depone next --evidence-dir ../observer/evidence-run --source-fixture depone/fixtures/agent_fabric/reference_adapter_shell.json --out evidence-next.json --json
+python -m depone next --evidence-dir ../observer/evidence-run --out evidence-next.json --json
 python -m depone mcp
 python -m depone demo --out out/depone-quickstart --json
 ```

@@ -111,7 +111,6 @@ python -m depone run --runner-sandbox ./runner-worktree \
   --verify-plan plan.json --verify-evidence ./evidence \
   --json -- python -m unittest
 python -m depone next --evidence-dir ../observer/evidence-run \
-  --source-fixture depone/fixtures/agent_fabric/reference_adapter_shell.json \
   --out ../observer/evidence-next.json --json
 ```
 

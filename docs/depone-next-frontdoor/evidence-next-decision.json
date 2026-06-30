@@ -19,15 +19,15 @@
   },
   "capture": {
     "errors": [],
-    "path": "/home/ubuntu/depone/docs/depone-run-receipt-frontdoor/capture-manifest.json"
+    "path": "docs/depone-run-receipt-frontdoor/capture-manifest.json"
   },
   "command": "evidence-next",
   "decision": "continue",
   "evidence_bundle": {
-    "path": "/home/ubuntu/depone/docs/depone-run-receipt-frontdoor/evidence-bundle.json",
+    "path": "docs/depone-run-receipt-frontdoor/evidence-bundle.json",
     "statement_errors": []
   },
-  "evidence_dir": "/home/ubuntu/depone/docs/depone-run-receipt-frontdoor",
+  "evidence_dir": "docs/depone-run-receipt-frontdoor",
   "evidence_ingest": {
     "decision": "pass",
     "reasons": [],
@@ -63,15 +63,20 @@
   "out": "docs/depone-next-frontdoor/evidence-next-decision.json",
   "recorded_ingest": {
     "decision": "pass",
-    "path": "/home/ubuntu/depone/docs/depone-run-receipt-frontdoor/ingest-verdict.json"
+    "path": "docs/depone-run-receipt-frontdoor/ingest-verdict.json"
   },
   "runner_receipt": {
     "errors": [],
-    "path": "/home/ubuntu/depone/docs/depone-run-receipt-frontdoor/runner-receipt.json"
+    "path": "docs/depone-run-receipt-frontdoor/runner-receipt.json"
   },
   "schema_version": "1.0",
   "verified_artifacts": {
     "subject_count": 4,
     "verified_subject_count": 4
+  },
+  "verify": {
+    "errors": [],
+    "report_decision": null,
+    "summary_decision": "skipped"
   }
 }

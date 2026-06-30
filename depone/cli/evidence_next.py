@@ -28,13 +28,14 @@ def run(args: argparse.Namespace) -> None:
         _self_test()
         return
 
-    evidence_dir = Path(str(getattr(args, "evidence_dir", "") or ""))
-    if not str(evidence_dir):
+    evidence_dir_arg = str(getattr(args, "evidence_dir", "") or "")
+    if not evidence_dir_arg:
         emit_error(
             args,
             code="ERR_EVIDENCE_NEXT_INPUT_REQUIRED",
             message="--evidence-dir is required",
         )
+    evidence_dir = Path(evidence_dir_arg)
     try:
         source_fixture_arg = str(getattr(args, "source_fixture", "") or "")
         decision = evaluate_evidence_dir(
@@ -78,7 +79,7 @@ def evaluate_evidence_dir(
 ) -> dict[str, Any]:
     """Re-validate an evidence-run directory and recommend the next safe action."""
 
-    root = evidence_dir.resolve(strict=False)
+    root = evidence_dir
     missing = [
         name for name in REQUIRED_ARTIFACTS if not (root / name).is_file()
     ]
@@ -86,6 +87,8 @@ def evaluate_evidence_dir(
     bundle = _read_optional_json_object(root / "evidence-bundle.json") or {}
     runner_receipt = _read_optional_json_object(root / "runner-receipt.json")
     recorded_ingest = _read_optional_json_object(root / "ingest-verdict.json")
+    summary = _read_optional_json_object(root / "evidence-run-summary.json")
+    verify_report = _read_optional_json_object(root / "verify-report.json")
 
     capture_errors = validate_capture_manifest(capture) if capture else []
     runner_errors = (
@@ -100,39 +103,49 @@ def evaluate_evidence_dir(
         runner_receipt=runner_receipt if isinstance(runner_receipt, dict) else None,
     )
 
-    artifact_paths = {
-        "depone-capture-manifest": str(root / "capture-manifest.json"),
-        "source_fixture": _source_fixture_path(capture, source_fixture),
-        "observer_capture": str(root / "observer-capture.json"),
-    }
-    artifact_digest_modes = {
-        "depone-capture-manifest": DIGEST_MODE_CANONICAL_JSON,
-        "source_fixture": DIGEST_MODE_CANONICAL_JSON,
-        "observer_capture": DIGEST_MODE_CANONICAL_JSON,
-    }
-    if (root / "runner-receipt.json").is_file():
-        artifact_paths["runner_receipt"] = str(root / "runner-receipt.json")
-        artifact_digest_modes["runner_receipt"] = DIGEST_MODE_CANONICAL_JSON
-
-    if "capture-manifest.json" in missing or "evidence-bundle.json" in missing:
-        ingest = {
-            "decision": "blocked",
-            "reasons": [f"missing required artifact: {name}" for name in missing],
-            "subject_results": [],
-            "verified_subject_count": 0,
+    temp_dir = tempfile.TemporaryDirectory(prefix="depone-evidence-next-")
+    try:
+        artifact_paths = {
+            "depone-capture-manifest": str(root / "capture-manifest.json"),
+            "source_fixture": _source_fixture_path(
+                capture,
+                source_fixture,
+                Path(temp_dir.name),
+            ),
+            "observer_capture": str(root / "observer-capture.json"),
         }
-    else:
-        envelope = (
-            bundle.get("dsse_envelope")
-            if isinstance(bundle.get("dsse_envelope"), dict)
-            else {}
-        )
-        ingest = ingest_external_evidence(
-            envelope,
-            artifact_paths,
-            artifact_digest_modes=artifact_digest_modes,
-            otel_spans=bundle.get("otel_spans"),
-        )
+        artifact_digest_modes = {
+            "depone-capture-manifest": DIGEST_MODE_CANONICAL_JSON,
+            "source_fixture": DIGEST_MODE_CANONICAL_JSON,
+            "observer_capture": DIGEST_MODE_CANONICAL_JSON,
+        }
+        if (root / "runner-receipt.json").is_file():
+            artifact_paths["runner_receipt"] = str(root / "runner-receipt.json")
+            artifact_digest_modes["runner_receipt"] = DIGEST_MODE_CANONICAL_JSON
+
+        if "capture-manifest.json" in missing or "evidence-bundle.json" in missing:
+            ingest = {
+                "decision": "blocked",
+                "reasons": [f"missing required artifact: {name}" for name in missing],
+                "subject_results": [],
+                "verified_subject_count": 0,
+            }
+        else:
+            envelope = (
+                bundle.get("dsse_envelope")
+                if isinstance(bundle.get("dsse_envelope"), dict)
+                else {}
+            )
+            ingest = ingest_external_evidence(
+                envelope,
+                artifact_paths,
+                artifact_digest_modes=artifact_digest_modes,
+                otel_spans=bundle.get("otel_spans"),
+            )
+    finally:
+        temp_dir.cleanup()
+
+    verify_errors = _verify_errors(summary, verify_report)
 
     blocking_reasons = _blocking_reasons(
         missing=missing,
@@ -140,6 +153,7 @@ def evaluate_evidence_dir(
         runner_errors=runner_errors,
         statement_errors=statement_errors,
         ingest_decision=str(ingest.get("decision", "blocked")),
+        verify_errors=verify_errors,
     )
     decision = "blocked" if blocking_reasons else "continue"
     next_action = (
@@ -184,6 +198,11 @@ def evaluate_evidence_dir(
             if isinstance(recorded_ingest, dict)
             else None,
         },
+        "verify": {
+            "summary_decision": _summary_verify_decision(summary),
+            "report_decision": _verify_report_decision(verify_report),
+            "errors": verify_errors,
+        },
         "verified_artifacts": {
             "subject_count": len(subject_results)
             if isinstance(subject_results, list)
@@ -211,6 +230,7 @@ def _blocking_reasons(
     runner_errors: list[str],
     statement_errors: list[str],
     ingest_decision: str,
+    verify_errors: list[str],
 ) -> list[str]:
     reasons: list[str] = []
     for name in missing:
@@ -223,19 +243,66 @@ def _blocking_reasons(
         reasons.append("evidence-bundle.json statement failed validation")
     if ingest_decision != "pass":
         reasons.append(f"evidence ingest decision is {ingest_decision}")
+    reasons.extend(verify_errors)
     return reasons
 
 
-def _source_fixture_path(capture: dict[str, Any], source_fixture: Path | None) -> str:
+def _source_fixture_path(
+    capture: dict[str, Any],
+    source_fixture: Path | None,
+    temp_root: Path,
+) -> str:
     if source_fixture is not None:
         return str(source_fixture)
-    # evidence-run bundles commit the full fixture into the manifest, but the
-    # portable statement subjects the source fixture separately. Keep the current
-    # reference fixture as the default for committed dogfood artifacts; callers
-    # can pass --source-fixture for other captures.
-    if isinstance(capture.get("fixture"), dict):
-        return "depone/fixtures/agent_fabric/reference_adapter_shell.json"
+    fixture = capture.get("fixture")
+    if isinstance(fixture, dict):
+        fixture_path = temp_root / "source-fixture.json"
+        fixture_path.write_text(
+            json.dumps(fixture, indent=2, sort_keys=True) + "\n",
+            encoding="utf-8",
+        )
+        return str(fixture_path)
     return ""
+
+
+def _verify_errors(
+    summary: dict[str, Any] | None,
+    verify_report: dict[str, Any] | None,
+) -> list[str]:
+    errors: list[str] = []
+    summary_decision = _summary_verify_decision(summary)
+    report_decision = _verify_report_decision(verify_report)
+    if summary_decision and summary_decision not in {"pass", "skipped"}:
+        errors.append(f"evidence-run summary verify decision is {summary_decision}")
+    if report_decision and report_decision not in {"pass", "skipped"}:
+        errors.append(f"verify-report decision is {report_decision}")
+    if (
+        summary_decision
+        and report_decision
+        and summary_decision != report_decision
+        and summary_decision != "skipped"
+    ):
+        errors.append(
+            f"verify decision mismatch: summary={summary_decision} report={report_decision}"
+        )
+    return errors
+
+
+def _summary_verify_decision(summary: dict[str, Any] | None) -> str | None:
+    if not isinstance(summary, dict):
+        return None
+    verify = summary.get("verify")
+    if not isinstance(verify, dict):
+        return None
+    decision = verify.get("decision")
+    return str(decision) if isinstance(decision, str) and decision else None
+
+
+def _verify_report_decision(verify_report: dict[str, Any] | None) -> str | None:
+    if not isinstance(verify_report, dict):
+        return None
+    decision = verify_report.get("decision")
+    return str(decision) if isinstance(decision, str) and decision else None
 
 
 def _read_json_object(path: Path) -> dict[str, Any]:
