@@ -1,0 +1,24 @@
+{
+  "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "captured_at": "2026-06-30T15:30:00Z",
+  "check_summary": {
+    "failed_count": 0,
+    "pending_count": 0,
+    "status": "pass",
+    "total_count": 2
+  },
+  "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "kind": "depone-team-ledger-pr-artifact",
+  "merge_state_status": "CLEAN",
+  "pr_number": 42,
+  "pr_url": "https://github.com/Moonweave-Systems/Depone/pull/42",
+  "provider": "github",
+  "repo": "Moonweave-Systems/Depone",
+  "schema_version": "0.1",
+  "source_command": [
+    "saved-json",
+    "/tmp/depone-pr-saved.json"
+  ],
+  "stale": false,
+  "state": "OPEN"
+}

@@ -90,7 +90,7 @@ def run(args: argparse.Namespace) -> None:
 
 def _build_artifact_from_args(args: argparse.Namespace) -> dict[str, Any]:
     source_command: list[str]
-    if _optional_arg(args, "live_gh"):
+    if bool(getattr(args, "live_gh", False)):
         repo = _optional_arg(args, "repo")
         pr_number = _optional_arg(args, "pr_number")
         if not repo or not pr_number:
