@@ -1,90 +1,110 @@
 from __future__ import annotations
 
 import json
+import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 
-from depone.agent_fabric.team_ledger import validate_team_ledger
+from depone.agent_fabric.team_ledger import (
+    build_sample_team_ledger,
+    build_team_ledger_verdict,
+)
 
 
 class AgentFabricTeamLedgerTests(unittest.TestCase):
-    def _ledger(self, root: Path) -> dict[str, object]:
-        evidence_dir = root / "lane-a-evidence"
-        evidence_dir.mkdir()
-        return {
-            "kind": "depone-team-ledger",
-            "schema_version": "0.1",
-            "objective": "audit a small team run",
-            "leader": "leader-fixed",
-            "lanes": [
-                {
-                    "lane_id": "lane-a",
-                    "role": "executor",
-                    "environment_kind": "local",
-                    "adapter_kind": "omx",
-                    "start_commit": "1111111",
-                    "end_commit": "2222222",
-                    "evidence_dir": "lane-a-evidence",
-                    "pr_url": "https://github.com/example/repo/pull/1",
-                    "verification_state": "pass",
-                    "next_decision": "pass",
-                },
-                {
-                    "lane_id": "lane-b",
-                    "role": "reviewer",
-                    "environment_kind": "cloud",
-                    "adapter_kind": "codex",
-                    "start_commit": "1111111",
-                    "end_commit": "1111111",
-                    "verification_state": "blocked",
-                    "blocked_reason": "no lane changes to verify",
-                },
-            ],
-        }
+    def setUp(self) -> None:
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.root = Path(self._tmp.name)
+        (self.root / "lane-evidence").mkdir()
 
-    def test_valid_ledger_allows_pass_and_explicit_blocked_lanes(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            verdict = validate_team_ledger(self._ledger(root), base_dir=root)
+    def test_valid_ledger_passes(self) -> None:
+        ledger = build_sample_team_ledger("lane-evidence")
 
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["kind"], "depone-team-ledger-verdict")
         self.assertEqual(verdict["decision"], "pass")
-        self.assertEqual(verdict["passed_lanes"], 1)
-        self.assertEqual(verdict["blocked_lanes"], 1)
-        self.assertEqual(verdict["errors"], [])
+        self.assertEqual(verdict["passed_lane_count"], 1)
+        self.assertFalse(verdict["boundary"]["executes_commands"])
+        self.assertFalse(verdict["boundary"]["raises_assurance"])
 
-    def test_pass_lane_with_missing_evidence_dir_blocks_fan_in(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            ledger = self._ledger(root)
-            ledger["lanes"][0]["evidence_dir"] = "missing-evidence"
-            verdict = validate_team_ledger(ledger, base_dir=root)
+    def test_missing_evidence_dir_blocks_passed_lane(self) -> None:
+        ledger = build_sample_team_ledger("missing-evidence")
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
 
         self.assertEqual(verdict["decision"], "blocked")
-        self.assertIn("evidence_dir does not exist", "\n".join(verdict["errors"]))
+        self.assertIn(
+            "ERR_TEAM_LEDGER_EVIDENCE_DIR_MISSING",
+            {error["code"] for error in verdict["errors"]},
+        )
 
-    def test_invalid_environment_or_adapter_kind_blocks(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            ledger = self._ledger(root)
-            ledger["lanes"][0]["environment_kind"] = "bare-metal"
-            ledger["lanes"][1]["adapter_kind"] = "unknown-agent"
-            verdict = validate_team_ledger(ledger, base_dir=root)
+    def test_invalid_environment_kind_blocks(self) -> None:
+        ledger = build_sample_team_ledger("lane-evidence")
+        ledger["lanes"][0]["env_kind"] = "bare-metal"
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
 
         self.assertEqual(verdict["decision"], "blocked")
-        joined = "\n".join(verdict["errors"])
-        self.assertIn("environment_kind", joined)
-        self.assertIn("adapter_kind", joined)
+        self.assertIn(
+            "ERR_TEAM_LEDGER_CHOICE_INVALID",
+            {error["code"] for error in verdict["errors"]},
+        )
 
     def test_blocked_lane_requires_explicit_reason(self) -> None:
-        with tempfile.TemporaryDirectory() as temp_dir:
-            root = Path(temp_dir)
-            ledger = json.loads(json.dumps(self._ledger(root)))
-            del ledger["lanes"][1]["blocked_reason"]
-            verdict = validate_team_ledger(ledger, base_dir=root)
+        ledger = build_sample_team_ledger("missing-evidence")
+        ledger["lanes"][0]["verification_state"] = "blocked"
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
 
         self.assertEqual(verdict["decision"], "blocked")
-        self.assertIn("blocked_reason", "\n".join(verdict["errors"]))
+        self.assertIn(
+            "ERR_TEAM_LEDGER_BLOCKED_REASON_REQUIRED",
+            {error["code"] for error in verdict["errors"]},
+        )
+
+    def test_blocked_lane_with_reason_fans_in_as_explicit_block(self) -> None:
+        ledger = build_sample_team_ledger("missing-evidence")
+        ledger["lanes"][0]["verification_state"] = "blocked"
+        ledger["lanes"][0]["blocked_reason"] = "lane hit a merge conflict"
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["decision"], "blocked-explicit")
+        self.assertEqual(verdict["blocked_lane_count"], 1)
+        self.assertFalse(verdict["errors"])
+
+    def test_cli_writes_verdict(self) -> None:
+        ledger = build_sample_team_ledger("lane-evidence")
+        ledger_path = self.root / "team-ledger.json"
+        verdict_path = self.root / "team-ledger-verdict.json"
+        ledger_path.write_text(json.dumps(ledger), encoding="utf-8")
+
+        result = subprocess.run(
+            [
+                sys.executable,
+                "-m",
+                "depone",
+                "team-ledger",
+                "--ledger",
+                str(ledger_path),
+                "--out",
+                str(verdict_path),
+                "--json",
+            ],
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        summary = json.loads(result.stdout)
+        verdict = json.loads(verdict_path.read_text(encoding="utf-8"))
+        self.assertEqual(summary["decision"], "pass")
+        self.assertEqual(verdict["decision"], "pass")
 
 
 if __name__ == "__main__":

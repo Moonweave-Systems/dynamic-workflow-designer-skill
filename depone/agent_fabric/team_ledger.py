@@ -1,268 +1,357 @@
-"""Team Ledger v0 validation for external agent-team evidence.
+"""Team Ledger v0 validation for Depone-observed team lanes.
 
-The ledger is an audit artifact, not a scheduler. It records one leader
-objective and a set of lane records from local, container, or cloud agent runs.
-Fan-in is conservative: each lane must be either verified as ``pass`` with an
-existing evidence directory, or explicitly ``blocked`` with a reason.
+This module records and validates evidence about externally-run team lanes. It
+is deliberately non-executing: it does not launch agents, inspect cloud state,
+or raise assurance. It only checks that a leader ledger and lane receipts have
+honest, present evidence before fan-in.
 """
 
 from __future__ import annotations
 
 import json
-import tempfile
 from pathlib import Path
 from typing import Any
 
+from depone.agent_fabric.claim_gate import canonical_hash
+
 TEAM_LEDGER_KIND = "depone-team-ledger"
 TEAM_LEDGER_SCHEMA_VERSION = "0.1"
-
-ENVIRONMENT_KINDS = {"local", "container", "cloud"}
-ADAPTER_KINDS = {
-    "codex",
-    "claude-code",
-    "cursor",
-    "depone-native",
-    "github-copilot",
-    "lazycodex",
-    "omx",
-    "opencode",
-    "shell",
-    "other",
-}
-LANE_VERIFICATION_STATES = {"pass", "blocked"}
-
-_REQUIRED_LEDGER_FIELDS = ("objective", "lanes")
-_REQUIRED_LANE_FIELDS = (
-    "lane_id",
-    "environment_kind",
-    "adapter_kind",
-    "start_commit",
-    "end_commit",
-    "verification_state",
+TEAM_LEDGER_VERDICT_KIND = "depone-team-ledger-verdict"
+VALID_ENV_KINDS = frozenset({"local", "container", "cloud"})
+VALID_ADAPTER_KINDS = frozenset(
+    {
+        "codex",
+        "claude-code",
+        "opencode",
+        "omx",
+        "lazycodex",
+        "github-copilot",
+        "depone-native",
+        "shell",
+        "external",
+    }
 )
-_OPTIONAL_TEXT_FIELDS = ("leader", "budget", "stop_rule", "conflict_state", "pr_url")
-_OPTIONAL_LANE_TEXT_FIELDS = ("role", "worker", "pr_url", "next_decision")
+VALID_LANE_VERIFICATION_STATES = frozenset({"pass", "blocked"})
 
 
-def validate_team_ledger(
-    ledger: dict[str, Any], *, base_dir: str | Path = "."
-) -> dict[str, Any]:
-    """Validate a Team Ledger v0 object and return a fan-in verdict."""
+class TeamLedgerError(ValueError):
+    """Structured Team Ledger v0 validation error."""
 
-    base_path = Path(base_dir)
-    errors: list[str] = []
+    def __init__(self, code: str, message: str, *, lane_id: str | None = None) -> None:
+        super().__init__(f"{code}: {message}")
+        self.code = code
+        self.message = message
+        self.lane_id = lane_id
+
+    def to_record(self) -> dict[str, str]:
+        record = {"code": self.code, "message": self.message}
+        if self.lane_id is not None:
+            record["lane_id"] = self.lane_id
+        return record
+
+
+def build_team_ledger_verdict(ledger: dict[str, Any], *, base_dir: Path | None = None) -> dict[str, Any]:
+    """Return a fail-closed validation verdict for a Team Ledger v0 object."""
+
+    root = base_dir or Path.cwd()
+    errors: list[dict[str, str]] = []
     lane_results: list[dict[str, Any]] = []
 
-    kind = ledger.get("kind")
-    if kind not in (None, TEAM_LEDGER_KIND):
-        errors.append(f"kind must be {TEAM_LEDGER_KIND!r}")
-
-    schema_version = ledger.get("schema_version")
-    if schema_version not in (None, TEAM_LEDGER_SCHEMA_VERSION):
-        errors.append(f"schema_version must be {TEAM_LEDGER_SCHEMA_VERSION!r}")
-
-    for field in _REQUIRED_LEDGER_FIELDS:
-        if field not in ledger:
-            errors.append(f"missing ledger field: {field}")
-
-    objective = ledger.get("objective")
-    if not isinstance(objective, str) or not objective.strip():
-        errors.append("objective must be a non-empty string")
-
-    for field in _OPTIONAL_TEXT_FIELDS:
-        if field in ledger and not _is_optional_text(ledger[field]):
-            errors.append(f"{field} must be a string when present")
-
+    _validate_ledger_header(ledger, errors)
     lanes = ledger.get("lanes")
-    if not isinstance(lanes, list):
-        errors.append("lanes must be a list")
+    if not isinstance(lanes, list) or not lanes:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_LANES_REQUIRED",
+                "message": "lanes must be a non-empty list",
+            }
+        )
         lanes = []
-    elif not lanes:
-        errors.append("lanes must contain at least one lane")
 
-    seen_lane_ids: set[str] = set()
-    passed_lanes = 0
-    blocked_lanes = 0
+    lane_ids: set[str] = set()
+    passed = 0
+    blocked = 0
     for index, lane in enumerate(lanes):
         if not isinstance(lane, dict):
-            errors.append(f"lanes[{index}] must be an object")
-            lane_results.append(
+            errors.append(
                 {
-                    "lane_index": index,
-                    "lane_id": None,
-                    "status": "blocked",
-                    "errors": ["lane must be an object"],
+                    "code": "ERR_TEAM_LEDGER_LANE_OBJECT_REQUIRED",
+                    "message": "lane record must be an object",
+                    "lane_id": f"index:{index}",
                 }
             )
             continue
-
-        result = _validate_lane(lane, index=index, base_dir=base_path)
+        result = _validate_lane(lane, root, lane_ids)
         lane_results.append(result)
         errors.extend(result["errors"])
+        if result["verification_state"] == "pass" and not result["errors"]:
+            passed += 1
+        if result["verification_state"] == "blocked" and not result["errors"]:
+            blocked += 1
 
-        lane_id = result.get("lane_id")
-        if isinstance(lane_id, str):
-            if lane_id in seen_lane_ids:
-                errors.append(f"duplicate lane_id: {lane_id}")
-                result["errors"].append("duplicate lane_id")
-                result["status"] = "blocked"
-            seen_lane_ids.add(lane_id)
+    if errors:
+        decision = "blocked"
+    elif blocked:
+        decision = "blocked-explicit"
+    else:
+        decision = "pass"
 
-        if result["status"] == "pass":
-            passed_lanes += 1
-        elif result.get("verification_state") == "blocked" and not result["errors"]:
-            blocked_lanes += 1
-
-    decision = "pass" if not errors else "blocked"
     return {
-        "kind": "depone-team-ledger-verdict",
-        "schema_version": "0.1",
+        "kind": TEAM_LEDGER_VERDICT_KIND,
+        "schema_version": TEAM_LEDGER_SCHEMA_VERSION,
         "decision": decision,
+        "leader_objective": ledger.get("leader_objective"),
         "lane_count": len(lane_results),
-        "passed_lanes": passed_lanes,
-        "blocked_lanes": blocked_lanes,
-        "errors": errors,
+        "passed_lane_count": passed,
+        "blocked_lane_count": blocked,
         "lane_results": lane_results,
+        "errors": errors,
+        "source_hashes": {"team_ledger": canonical_hash(ledger)},
+        "boundary": {
+            "executes_commands": False,
+            "launches_agents": False,
+            "calls_live_models": False,
+            "inspects_cloud_runtime": False,
+            "raises_assurance": False,
+            "approves_merge": False,
+        },
     }
 
 
-def _validate_lane(
-    lane: dict[str, Any], *, index: int, base_dir: Path
-) -> dict[str, Any]:
-    errors: list[str] = []
+def validate_team_ledger(ledger: dict[str, Any], *, base_dir: Path | None = None) -> list[dict[str, str]]:
+    """Return validation errors for a Team Ledger v0 object."""
 
-    for field in _REQUIRED_LANE_FIELDS:
-        if field not in lane:
-            errors.append(f"lanes[{index}] missing field: {field}")
+    return list(build_team_ledger_verdict(ledger, base_dir=base_dir)["errors"])
 
-    lane_id = lane.get("lane_id")
-    if not isinstance(lane_id, str) or not lane_id.strip():
-        errors.append(f"lanes[{index}].lane_id must be a non-empty string")
 
-    for field in ("start_commit", "end_commit"):
-        value = lane.get(field)
-        if not isinstance(value, str) or not value.strip():
-            errors.append(f"lanes[{index}].{field} must be a non-empty string")
-
-    for field in _OPTIONAL_LANE_TEXT_FIELDS:
-        if field in lane and not _is_optional_text(lane[field]):
-            errors.append(f"lanes[{index}].{field} must be a string when present")
-
-    environment_kind = lane.get("environment_kind")
-    if environment_kind not in ENVIRONMENT_KINDS:
+def _validate_ledger_header(ledger: dict[str, Any], errors: list[dict[str, str]]) -> None:
+    if ledger.get("kind") != TEAM_LEDGER_KIND:
         errors.append(
-            f"lanes[{index}].environment_kind must be one of "
-            f"{sorted(ENVIRONMENT_KINDS)}"
+            {
+                "code": "ERR_TEAM_LEDGER_KIND_INVALID",
+                "message": f"kind must be {TEAM_LEDGER_KIND}",
+            }
         )
-
-    adapter_kind = lane.get("adapter_kind")
-    if adapter_kind not in ADAPTER_KINDS:
+    if ledger.get("schema_version") != TEAM_LEDGER_SCHEMA_VERSION:
         errors.append(
-            f"lanes[{index}].adapter_kind must be one of {sorted(ADAPTER_KINDS)}"
+            {
+                "code": "ERR_TEAM_LEDGER_SCHEMA_VERSION_INVALID",
+                "message": f"schema_version must be {TEAM_LEDGER_SCHEMA_VERSION}",
+            }
         )
+    _require_non_empty_string(ledger, "leader_objective", errors)
+    _require_non_empty_string(ledger, "leader_id", errors)
+    _require_non_empty_string(ledger, "start_commit", errors)
+    _require_non_empty_string(ledger, "stop_rule", errors)
 
-    verification_state = lane.get("verification_state")
-    if verification_state not in LANE_VERIFICATION_STATES:
-        errors.append(
-            f"lanes[{index}].verification_state must be one of "
-            f"{sorted(LANE_VERIFICATION_STATES)}"
-        )
+
+def _validate_lane(lane: dict[str, Any], base_dir: Path, seen_lane_ids: set[str]) -> dict[str, Any]:
+    errors: list[dict[str, str]] = []
+    lane_id = lane.get("lane_id") if isinstance(lane.get("lane_id"), str) else ""
+    lane_error_id = lane_id or "<missing>"
+
+    _require_non_empty_string(lane, "lane_id", errors, lane_id=lane_error_id)
+    if lane_id:
+        if lane_id in seen_lane_ids:
+            errors.append(
+                {
+                    "code": "ERR_TEAM_LEDGER_LANE_ID_DUPLICATE",
+                    "message": "lane_id must be unique",
+                    "lane_id": lane_id,
+                }
+            )
+        seen_lane_ids.add(lane_id)
+
+    _require_non_empty_string(lane, "objective", errors, lane_id=lane_error_id)
+    _require_non_empty_string(lane, "start_commit", errors, lane_id=lane_error_id)
+    _require_non_empty_string(lane, "end_commit", errors, lane_id=lane_error_id)
+    _require_non_empty_string(lane, "evidence_dir", errors, lane_id=lane_error_id)
+
+    _validate_choice(lane, "env_kind", VALID_ENV_KINDS, errors, lane_id=lane_error_id)
+    _validate_choice(
+        lane,
+        "runner_adapter_kind",
+        VALID_ADAPTER_KINDS,
+        errors,
+        lane_id=lane_error_id,
+    )
+    _validate_choice(
+        lane,
+        "team_adapter_kind",
+        VALID_ADAPTER_KINDS,
+        errors,
+        lane_id=lane_error_id,
+    )
+    state = _validate_choice(
+        lane,
+        "verification_state",
+        VALID_LANE_VERIFICATION_STATES,
+        errors,
+        lane_id=lane_error_id,
+    )
 
     evidence_dir = lane.get("evidence_dir")
-    evidence_dir_status = "not-required"
-    if verification_state == "pass":
-        if not isinstance(evidence_dir, str) or not evidence_dir.strip():
-            errors.append(f"lanes[{index}].evidence_dir is required for pass lanes")
-            evidence_dir_status = "missing"
-        else:
-            path = _resolve_path(base_dir, evidence_dir)
-            if not path.is_dir():
-                errors.append(f"lanes[{index}].evidence_dir does not exist: {evidence_dir}")
-                evidence_dir_status = "missing"
-            else:
-                evidence_dir_status = "present"
-    elif verification_state == "blocked":
-        reason = lane.get("blocked_reason")
-        if not isinstance(reason, str) or not reason.strip():
-            errors.append(f"lanes[{index}].blocked_reason is required for blocked lanes")
+    evidence_dir_exists = False
+    if isinstance(evidence_dir, str) and evidence_dir:
+        evidence_path = (base_dir / evidence_dir).resolve(strict=False)
+        evidence_dir_exists = evidence_path.is_dir()
+        if state == "pass" and not evidence_dir_exists:
+            errors.append(
+                {
+                    "code": "ERR_TEAM_LEDGER_EVIDENCE_DIR_MISSING",
+                    "message": "passed lane evidence_dir must exist",
+                    "lane_id": lane_error_id,
+                }
+            )
 
-    status = "pass" if not errors and verification_state == "pass" else "blocked"
+    blocked_reason = lane.get("blocked_reason")
+    if state == "blocked" and (not isinstance(blocked_reason, str) or not blocked_reason.strip()):
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_BLOCKED_REASON_REQUIRED",
+                "message": "blocked lane must include a non-empty blocked_reason",
+                "lane_id": lane_error_id,
+            }
+        )
+
+    verification_artifacts = lane.get("verification_artifacts", [])
+    if verification_artifacts is None:
+        verification_artifacts = []
+    if not isinstance(verification_artifacts, list) or not all(
+        isinstance(item, str) and item for item in verification_artifacts
+    ):
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_VERIFICATION_ARTIFACTS_INVALID",
+                "message": "verification_artifacts must be a list of non-empty strings",
+                "lane_id": lane_error_id,
+            }
+        )
+        verification_artifacts = []
+
+    pr_url = lane.get("pr_url")
+    if pr_url is not None and not isinstance(pr_url, str):
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_PR_URL_INVALID",
+                "message": "pr_url must be a string when present",
+                "lane_id": lane_error_id,
+            }
+        )
+
     return {
-        "lane_index": index,
-        "lane_id": lane_id if isinstance(lane_id, str) else None,
-        "verification_state": verification_state,
-        "status": status,
-        "evidence_dir_status": evidence_dir_status,
+        "lane_id": lane_error_id,
+        "env_kind": lane.get("env_kind"),
+        "runner_adapter_kind": lane.get("runner_adapter_kind"),
+        "team_adapter_kind": lane.get("team_adapter_kind"),
+        "verification_state": state,
+        "evidence_dir": evidence_dir,
+        "evidence_dir_exists": evidence_dir_exists,
+        "verification_artifact_count": len(verification_artifacts),
         "errors": errors,
     }
 
 
-def _resolve_path(base_dir: Path, path_text: str) -> Path:
-    path = Path(path_text)
-    if path.is_absolute():
-        return path
-    return base_dir / path
+def _require_non_empty_string(
+    value: dict[str, Any],
+    field: str,
+    errors: list[dict[str, str]],
+    *,
+    lane_id: str | None = None,
+) -> None:
+    if not isinstance(value.get(field), str) or not str(value.get(field)).strip():
+        record = {
+            "code": "ERR_TEAM_LEDGER_REQUIRED_FIELD_MISSING",
+            "message": f"{field} must be a non-empty string",
+        }
+        if lane_id is not None:
+            record["lane_id"] = lane_id
+        errors.append(record)
 
 
-def _is_optional_text(value: Any) -> bool:
-    return value is None or isinstance(value, str)
+def _validate_choice(
+    value: dict[str, Any],
+    field: str,
+    valid: frozenset[str],
+    errors: list[dict[str, str]],
+    *,
+    lane_id: str,
+) -> str | None:
+    raw = value.get(field)
+    if isinstance(raw, str) and raw in valid:
+        return raw
+    errors.append(
+        {
+            "code": "ERR_TEAM_LEDGER_CHOICE_INVALID",
+            "message": f"{field} must be one of {sorted(valid)}",
+            "lane_id": lane_id,
+        }
+    )
+    return raw if isinstance(raw, str) else None
 
 
-def read_team_ledger(path: str | Path) -> dict[str, Any]:
-    value = json.loads(Path(path).read_text(encoding="utf-8"))
-    if not isinstance(value, dict):
-        raise ValueError("Team ledger JSON root must be an object")
-    return value
+def build_sample_team_ledger(evidence_dir: str) -> dict[str, Any]:
+    """Return a minimal valid Team Ledger v0 object for tests and examples."""
+
+    return {
+        "kind": TEAM_LEDGER_KIND,
+        "schema_version": TEAM_LEDGER_SCHEMA_VERSION,
+        "leader_objective": "Validate a small team fan-in before integration",
+        "leader_id": "leader-fixed",
+        "start_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "end_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "stop_rule": "fan-in only after every lane passes or is explicitly blocked",
+        "lanes": [
+            {
+                "lane_id": "lane-docs",
+                "objective": "Document the control plane direction",
+                "env_kind": "local",
+                "runner_adapter_kind": "codex",
+                "team_adapter_kind": "omx",
+                "start_commit": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                "end_commit": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+                "evidence_dir": evidence_dir,
+                "pr_url": "",
+                "verification_state": "pass",
+                "verification_artifacts": ["unittest"],
+            }
+        ],
+    }
 
 
 def _self_test() -> None:
-    with tempfile.TemporaryDirectory(prefix="depone-team-ledger-") as temp_dir:
-        root = Path(temp_dir)
-        evidence_dir = root / "lane-1-evidence"
-        evidence_dir.mkdir()
-        ledger = {
-            "kind": TEAM_LEDGER_KIND,
-            "schema_version": TEAM_LEDGER_SCHEMA_VERSION,
-            "objective": "verify a two-lane team",
-            "leader": "leader-fixed",
-            "lanes": [
-                {
-                    "lane_id": "lane-1",
-                    "environment_kind": "local",
-                    "adapter_kind": "omx",
-                    "start_commit": "abc123",
-                    "end_commit": "def456",
-                    "evidence_dir": "lane-1-evidence",
-                    "verification_state": "pass",
-                    "next_decision": "pass",
-                },
-                {
-                    "lane_id": "lane-2",
-                    "environment_kind": "cloud",
-                    "adapter_kind": "codex",
-                    "start_commit": "abc123",
-                    "end_commit": "abc123",
-                    "verification_state": "blocked",
-                    "blocked_reason": "upstream CI unavailable",
-                },
-            ],
-        }
+    import tempfile
 
-        verdict = validate_team_ledger(ledger, base_dir=root)
+    with tempfile.TemporaryDirectory() as temp_text:
+        root = Path(temp_text)
+        evidence = root / "lane-evidence"
+        evidence.mkdir()
+        ledger = build_sample_team_ledger("lane-evidence")
+        verdict = build_team_ledger_verdict(ledger, base_dir=root)
         if verdict["decision"] != "pass":
-            raise AssertionError(f"valid mixed pass/blocked ledger failed: {verdict}")
+            raise AssertionError("valid ledger must pass")
 
-        missing_evidence = json.loads(json.dumps(ledger))
-        missing_evidence["lanes"][0]["evidence_dir"] = "missing"
-        if validate_team_ledger(missing_evidence, base_dir=root)["decision"] != "blocked":
-            raise AssertionError("pass lane with missing evidence_dir must block")
+        missing = build_sample_team_ledger("missing")
+        missing_verdict = build_team_ledger_verdict(missing, base_dir=root)
+        if missing_verdict["decision"] != "blocked":
+            raise AssertionError("passed lane with missing evidence must block")
 
-        bad_environment = json.loads(json.dumps(ledger))
-        bad_environment["lanes"][0]["environment_kind"] = "prod"
-        if validate_team_ledger(bad_environment, base_dir=root)["decision"] != "blocked":
-            raise AssertionError("invalid environment kind must block")
+        blocked = build_sample_team_ledger("missing")
+        blocked["lanes"][0]["verification_state"] = "blocked"
+        blocked["lanes"][0]["blocked_reason"] = "lane waiting on peer merge"
+        blocked_verdict = build_team_ledger_verdict(blocked, base_dir=root)
+        if blocked_verdict["decision"] != "blocked-explicit":
+            raise AssertionError("explicitly blocked lane must fan in as blocked-explicit")
 
-        bad_blocked = json.loads(json.dumps(ledger))
-        del bad_blocked["lanes"][1]["blocked_reason"]
-        if validate_team_ledger(bad_blocked, base_dir=root)["decision"] != "blocked":
-            raise AssertionError("blocked lane without blocked_reason must block")
+        invalid = build_sample_team_ledger("lane-evidence")
+        invalid["lanes"][0]["env_kind"] = "bare-metal"
+        invalid_verdict = build_team_ledger_verdict(invalid, base_dir=root)
+        if invalid_verdict["decision"] != "blocked":
+            raise AssertionError("invalid env kind must block")
+
+
+def read_team_ledger(path: Path) -> dict[str, Any]:
+    value = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(value, dict):
+        raise ValueError(f"Team Ledger root must be an object: {path}")
+    return value
