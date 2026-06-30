@@ -307,6 +307,7 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
         ledger = self._ledger_with_evidence_next()
         second = dict(ledger["lanes"][0])
         second["lane_id"] = "lane-tests"
+        second["touched_files"] = ["tests/test_agent_fabric_team_ledger.py"]
         ledger["lanes"].append(second)
         ledger_path = self.root / "team-ledger.json"
         out_path = self.root / "team-ledger-verdict.json"
@@ -374,6 +375,23 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
             "ERR_TEAM_LEDGER_MERGE_RECEIPT_REQUIRED",
             {error["code"] for error in verdict["errors"]},
         )
+
+    def test_passed_lane_requires_touched_files(self) -> None:
+        for value in (None, []):
+            with self.subTest(value=value):
+                ledger = self._ledger_with_evidence_next()
+                if value is None:
+                    ledger["lanes"][0].pop("touched_files", None)
+                else:
+                    ledger["lanes"][0]["touched_files"] = value
+
+                verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+                self.assertEqual(verdict["decision"], "blocked")
+                self.assertIn(
+                    "ERR_TEAM_LEDGER_TOUCHED_FILES_REQUIRED",
+                    {error["code"] for error in verdict["errors"]},
+                )
 
     def test_merge_receipt_allows_overlapping_passed_lanes(self) -> None:
         ledger = self._ledger_with_evidence_next()

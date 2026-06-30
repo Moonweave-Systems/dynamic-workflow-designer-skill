@@ -163,6 +163,10 @@ When `merge_receipt` is required, it points at a machine JSON receipt:
 }
 ```
 
+Passed lanes must include non-empty `touched_files` so the ledger can decide
+whether a merge receipt is required. Omitted or empty `touched_files` fails
+closed instead of treating the lane as non-overlapping.
+
 Validate with:
 
 ```bash

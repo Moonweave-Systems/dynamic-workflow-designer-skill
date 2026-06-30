@@ -258,7 +258,15 @@ def _validate_lane(
             }
         )
 
-    touched_files = _validate_touched_files(lane.get("touched_files", []), errors, lane_id=lane_error_id)
+    touched_files = _validate_touched_files(lane.get("touched_files"), errors, lane_id=lane_error_id)
+    if state == "pass" and not touched_files:
+        errors.append(
+            {
+                "code": "ERR_TEAM_LEDGER_TOUCHED_FILES_REQUIRED",
+                "message": "passed lane must include at least one touched_files entry",
+                "lane_id": lane_error_id,
+            }
+        )
 
     return {
         "lane_id": lane_error_id,
@@ -633,6 +641,7 @@ def build_sample_team_ledger(evidence_dir: str) -> dict[str, Any]:
                 "pr_url": "",
                 "verification_state": "pass",
                 "verification_artifacts": ["unittest"],
+                "touched_files": ["docs/depone-cloud-team-control.md"],
             }
         ],
     }
