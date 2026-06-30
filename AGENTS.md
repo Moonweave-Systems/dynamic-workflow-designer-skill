@@ -23,11 +23,17 @@ Current state:
 - V127 made claim evaluation honest: required unevaluated claims are
   `inconclusive`, not `pass`; "hash-signed" wording was corrected.
 - V128 emits the first stdlib-only in-toto/DSSE plus OTel GenAI evidence bundle.
+- V129 through PR #37 added `depone advance`, a revalidating one-step gate over
+  `next` plus one evidence-producing continuation.
 
-Next work: harden the V128 ingest path and run another real dogfood loop through
-the installed `depone` command. Do not revive the V124 Agent OS draft as a
-product milestone now; it is a source-only meta layer and remains parked unless
-it directly helps capture, ingest, verify, or trust real evidence.
+Next work: `docs/v125-direction-check-roadmap.md` remains the source of truth.
+Use `docs/depone-agent-execution-roadmap.md` as its agent-facing execution plan:
+first close the V128 ingest/dogfood gap and stabilize the canonical
+`capture-manifest.prev_capture_hash` / `evidence-chain` continuity seam before
+adding container isolation, signing, loops, or team ledgers. Do not revive the
+V124 Agent OS draft as a product milestone now; it is a source-only meta layer
+and remains parked unless it directly helps capture, ingest, verify, or trust
+real evidence.
 
 ## Verify after any change
 
