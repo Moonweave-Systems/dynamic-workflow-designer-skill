@@ -1,0 +1,38 @@
+{
+  "end_commit": "c8179cb9270f717a7fa69e09469771938d164ea2",
+  "kind": "depone-team-ledger",
+  "lanes": [
+    {
+      "end_commit": "c8179cb9270f717a7fa69e09469771938d164ea2",
+      "env_kind": "local",
+      "evidence_dir": "docs/worktree-lane-receipt",
+      "evidence_next_verdict": "docs/worktree-lane-receipt/evidence-next-verdict.json",
+      "lane_id": "lane-worktree-receipt",
+      "objective": "Add local worktree lane receipt producer and Team Ledger validation",
+      "runner_adapter_kind": "codex",
+      "start_commit": "4ad527d9ee233e3f6a465a5a2399b5a9bcb353d4",
+      "team_adapter_kind": "depone-native",
+      "touched_files": [
+        "depone/__main__.py",
+        "depone/agent_fabric/team_ledger.py",
+        "depone/agent_fabric/worktree_receipt.py",
+        "depone/cli/agent_fabric_team_ledger.py",
+        "docs/command-reference.md",
+        "docs/depone-cloud-team-control.md",
+        "tests/test_agent_fabric_worktree_receipt.py"
+      ],
+      "verification_artifacts": [
+        "python3 -m unittest tests.test_agent_fabric_team_ledger tests.test_agent_fabric_worktree_receipt -v",
+        "python3 scripts/check_contract.py --tier changed",
+        "python3 scripts/dwm.py doctor"
+      ],
+      "verification_state": "pass",
+      "worktree_receipt": "docs/worktree-lane-receipt/worktree-receipt.json"
+    }
+  ],
+  "leader_id": "codex-worktree-lane-receipt",
+  "leader_objective": "Revalidate the local worktree lane receipt implementation slice",
+  "schema_version": "0.1",
+  "start_commit": "4ad527d9ee233e3f6a465a5a2399b5a9bcb353d4",
+  "stop_rule": "fan-in only after worktree receipt and evidence-next artifacts validate"
+}

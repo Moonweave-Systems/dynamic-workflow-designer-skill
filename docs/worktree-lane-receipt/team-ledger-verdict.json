@@ -1,0 +1,86 @@
+{
+  "blocked_lane_count": 0,
+  "boundary": {
+    "approves_merge": false,
+    "calls_live_models": false,
+    "executes_commands": false,
+    "inspects_cloud_runtime": false,
+    "launches_agents": false,
+    "raises_assurance": false
+  },
+  "decision": "pass",
+  "errors": [],
+  "kind": "depone-team-ledger-verdict",
+  "lane_count": 1,
+  "lane_results": [
+    {
+      "decision": "pass",
+      "env_kind": "local",
+      "errors": [],
+      "evidence_dir": "docs/worktree-lane-receipt",
+      "evidence_dir_exists": true,
+      "evidence_next": {
+        "blocking_reason_count": 0,
+        "decision": "continue",
+        "path": "docs/worktree-lane-receipt/evidence-next-verdict.json"
+      },
+      "evidence_next_verdict": "docs/worktree-lane-receipt/evidence-next-verdict.json",
+      "lane_id": "lane-worktree-receipt",
+      "pr_artifact": {
+        "base_sha": null,
+        "check_status": null,
+        "failed_count": null,
+        "head_sha": null,
+        "merge_state_status": null,
+        "path": null,
+        "pending_count": null,
+        "pr_url": null,
+        "state": null
+      },
+      "runner_adapter_kind": "codex",
+      "team_adapter_kind": "depone-native",
+      "touched_file_count": 7,
+      "touched_files": [
+        "depone/__main__.py",
+        "depone/agent_fabric/team_ledger.py",
+        "depone/agent_fabric/worktree_receipt.py",
+        "depone/cli/agent_fabric_team_ledger.py",
+        "docs/command-reference.md",
+        "docs/depone-cloud-team-control.md",
+        "tests/test_agent_fabric_worktree_receipt.py"
+      ],
+      "verification_artifact_count": 3,
+      "verification_state": "pass",
+      "worktree_receipt": {
+        "base_commit": "4ad527d9ee233e3f6a465a5a2399b5a9bcb353d4",
+        "branch": "codex/worktree-lane-receipt",
+        "changed_files": [
+          "depone/__main__.py",
+          "depone/agent_fabric/team_ledger.py",
+          "depone/agent_fabric/worktree_receipt.py",
+          "depone/cli/agent_fabric_team_ledger.py",
+          "docs/command-reference.md",
+          "docs/depone-cloud-team-control.md",
+          "tests/test_agent_fabric_worktree_receipt.py"
+        ],
+        "dirty": false,
+        "dirty_file_count": 0,
+        "head_commit": "c8179cb9270f717a7fa69e09469771938d164ea2",
+        "path": "docs/worktree-lane-receipt/worktree-receipt.json"
+      }
+    }
+  ],
+  "leader_objective": "Revalidate the local worktree lane receipt implementation slice",
+  "merge_receipt": {
+    "decision": null,
+    "overlap_count": 0,
+    "path": null,
+    "required": false
+  },
+  "overlapping_touched_files": [],
+  "passed_lane_count": 1,
+  "schema_version": "0.1",
+  "source_hashes": {
+    "team_ledger": "b9d420a650d48bd83dbca152ae48bd0584a0eab7809d7d1af24e9746db251be8"
+  }
+}
