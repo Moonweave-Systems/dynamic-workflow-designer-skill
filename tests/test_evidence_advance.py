@@ -11,7 +11,10 @@ from pathlib import Path
 from unittest.mock import patch
 
 import depone.__main__ as depone_main
+from depone.agent_fabric.capture_bridge import validate_capture_manifest
+from depone.agent_fabric.paired_run import validate_runner_receipt
 from depone.cli import advance
+from depone.cli.evidence_next import evaluate_evidence_dir
 
 
 class EvidenceAdvanceTests(unittest.TestCase):
@@ -200,6 +203,66 @@ class EvidenceAdvanceTests(unittest.TestCase):
         self.assertEqual(raised.exception.code, 3)
         payload = json.loads(stdout.getvalue())
         self.assertEqual(payload["error"]["code"], "ERR_ADVANCE_INPUT_REQUIRED")
+
+    def test_cli_reports_continuation_input_errors_as_usage(self) -> None:
+        cases = [
+            (
+                "verification_command",
+                ["--"],
+                "verification command is required after --",
+            ),
+            ("runner_sandbox", "", "--runner-sandbox is required"),
+            ("source_fixture", "", "--source-fixture is required"),
+            ("verify_plan", "plan.json", "--verify-plan and --verify-evidence"),
+            ("sign_private_key", "key.pem", "--sign-private-key and --sign-key-id"),
+            ("sign_public_key", "pub.pem", "--sign-public-key requires"),
+        ]
+
+        for attr, value, message in cases:
+            with self.subTest(attr=attr):
+                with tempfile.TemporaryDirectory() as tmp:
+                    root = Path(tmp)
+                    args = self._args(root)
+                    setattr(args, attr, value)
+                    stdout = io.StringIO()
+
+                    with patch.object(
+                        advance,
+                        "evaluate_evidence_dir",
+                        return_value={"decision": "continue", "blocking_reasons": []},
+                    ):
+                        with contextlib.redirect_stdout(stdout):
+                            with self.assertRaises(SystemExit) as raised:
+                                advance.run(args)
+
+                self.assertEqual(raised.exception.code, 3)
+                payload = json.loads(stdout.getvalue())
+                self.assertEqual(payload["error"]["code"], "ERR_ADVANCE_INPUT_INVALID")
+                self.assertIn(message, payload["error"]["message"])
+
+    def test_committed_advance_artifacts_revalidate(self) -> None:
+        root = Path("docs/depone-advance-one-step")
+        evidence_dir = root / "evidence-run-next"
+        advance_payload = json.loads(
+            (root / "advance-decision.json").read_text(encoding="utf-8")
+        )
+        manifest = json.loads(
+            (evidence_dir / "capture-manifest.json").read_text(encoding="utf-8")
+        )
+        receipt = json.loads(
+            (evidence_dir / "runner-receipt.json").read_text(encoding="utf-8")
+        )
+        next_decision = evaluate_evidence_dir(evidence_dir)
+
+        self.assertEqual(advance_payload["decision"], "pass")
+        self.assertEqual(advance_payload["executed_continuations"], 1)
+        self.assertFalse(advance_payload["automation_boundary"]["full_scheduler"])
+        self.assertEqual(validate_capture_manifest(manifest), [])
+        self.assertEqual(validate_runner_receipt(receipt), [])
+        self.assertEqual(next_decision["decision"], "continue")
+        self.assertEqual(next_decision["blocking_reasons"], [])
+        self.assertEqual(next_decision["assurance"], "A2-isolated-observed")
+        self.assertTrue(next_decision["boundary"]["privilege_isolated"])
 
 
 if __name__ == "__main__":

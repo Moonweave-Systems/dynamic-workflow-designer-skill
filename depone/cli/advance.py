@@ -8,7 +8,13 @@ from pathlib import Path
 from typing import Any
 
 from depone._resources import resource_text
-from depone.cli._response import EXIT_FAILED, EXIT_INTERNAL, emit_error, emit_result
+from depone.cli._response import (
+    EXIT_FAILED,
+    EXIT_INTERNAL,
+    EXIT_USAGE,
+    emit_error,
+    emit_result,
+)
 from depone.cli.evidence_next import evaluate_evidence_dir
 from depone.cli.evidence_run import run_evidence_loop
 
@@ -31,9 +37,9 @@ def run(args: argparse.Namespace) -> None:
     except (OSError, json.JSONDecodeError, ValueError, NotADirectoryError) as exc:
         emit_error(
             args,
-            code="ERR_ADVANCE_FAILED",
+            code="ERR_ADVANCE_INPUT_INVALID",
             message=str(exc),
-            exit_code=EXIT_FAILED,
+            exit_code=EXIT_USAGE,
         )
     except Exception as exc:
         emit_error(
@@ -91,6 +97,7 @@ def advance_once(args: argparse.Namespace) -> dict[str, Any]:
         _write_artifact(args, artifact)
         return artifact
 
+    _validate_continuation_request(args)
     continuation = run_evidence_loop(args)
     artifact.update(
         {
@@ -146,6 +153,31 @@ def _base_artifact(
         },
         "out": "",
     }
+
+
+def _validate_continuation_request(args: argparse.Namespace) -> None:
+    command = list(getattr(args, "verification_command", []) or [])
+    if command and command[0] == "--":
+        command = command[1:]
+    if not command:
+        raise ValueError(
+            "verification command is required after --, for example -- python -m unittest"
+        )
+    if not str(getattr(args, "runner_sandbox", "") or ""):
+        raise ValueError("--runner-sandbox is required")
+    if not str(getattr(args, "source_fixture", "") or ""):
+        raise ValueError("--source-fixture is required")
+    verify_plan = str(getattr(args, "verify_plan", "") or "")
+    verify_evidence = str(getattr(args, "verify_evidence", "") or "")
+    if bool(verify_plan) != bool(verify_evidence):
+        raise ValueError("--verify-plan and --verify-evidence must be provided together")
+    sign_private_key = str(getattr(args, "sign_private_key", "") or "")
+    sign_key_id = str(getattr(args, "sign_key_id", "") or "")
+    sign_public_key = str(getattr(args, "sign_public_key", "") or "")
+    if bool(sign_private_key) != bool(sign_key_id):
+        raise ValueError("--sign-private-key and --sign-key-id must be provided together")
+    if sign_public_key and not sign_private_key:
+        raise ValueError("--sign-public-key requires --sign-private-key")
 
 
 def _artifact_path(args: argparse.Namespace) -> Path:
