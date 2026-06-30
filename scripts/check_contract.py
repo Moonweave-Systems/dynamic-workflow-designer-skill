@@ -2302,6 +2302,7 @@ def require_changed_surface_commands_pass() -> None:
         [sys.executable, "-m", "depone", "team-ledger", "--self-test"],
         [sys.executable, "-m", "depone", "team-ledger-merge-receipt", "--self-test"],
         [sys.executable, "-m", "depone", "team-shell-lane-launch", "--self-test"],
+        [sys.executable, "-m", "depone", "codex-local-capability", "--self-test"],
         [sys.executable, "-m", "depone", "mcp", "--self-test"],
         [sys.executable, "-m", "depone", "agent-fabric-observe", "--self-test"],
         [sys.executable, "-m", "depone", "agent-fabric-verify-seal", "--self-test"],
@@ -2553,6 +2554,9 @@ def require_agent_surface_contract_pass() -> None:
         )
         run_contract_command(
             [sys.executable, "-m", "depone", "team-shell-lane-launch", "--self-test"]
+        )
+        run_contract_command(
+            [sys.executable, "-m", "depone", "codex-local-capability", "--self-test"]
         )
         run_contract_command(
             [sys.executable, "-m", "depone", "evidence-next", "--self-test"]
@@ -2940,6 +2944,88 @@ def require_team_shell_lane_launch_docs_contract() -> None:
         raise SystemExit("team-shell-lane-launch receipt agent_contract facts mismatch")
 
 
+def require_codex_local_capability_docs_contract() -> None:
+    readme_path = ROOT / "docs" / "codex-local-capability" / "README.md"
+    capability_path = ROOT / "docs" / "codex-local-capability" / "capability.json"
+    if not readme_path.exists():
+        raise SystemExit("docs/codex-local-capability/README.md is required")
+    if not capability_path.exists():
+        raise SystemExit("docs/codex-local-capability/capability.json is required")
+    require_terms(
+        "docs/codex-local-capability/README.md",
+        [
+            "python3 -m depone codex-local-capability",
+            "without launching a live model",
+            "does not execute a coding task",
+            "agent_contract_hash",
+            "decision: blocked",
+            "does not launch a codex model session",
+            "does not prove a2/container isolation",
+            "does not raise assurance",
+        ],
+    )
+
+    from depone.agent_fabric.codex_local_capability import (
+        CODEX_LOCAL_CAPABILITY_KIND,
+        validate_codex_local_capability,
+    )
+
+    receipt = json.loads(capability_path.read_text(encoding="utf-8"))
+    errors = validate_codex_local_capability(receipt)
+    if errors:
+        raise SystemExit(f"codex-local-capability receipt invalid: {errors}")
+    if receipt.get("kind") != CODEX_LOCAL_CAPABILITY_KIND:
+        raise SystemExit("codex-local-capability receipt kind mismatch")
+    if receipt.get("decision") != "blocked":
+        raise SystemExit("codex-local-capability fixture must record decision blocked")
+    blocked_reasons = receipt.get("blocked_reasons")
+    if not isinstance(blocked_reasons, list) or "codex binary not found" not in blocked_reasons:
+        raise SystemExit("codex-local-capability fixture must block on missing codex binary")
+
+    boundary = receipt.get("boundary")
+    if not isinstance(boundary, dict):
+        raise SystemExit("codex-local-capability boundary must be an object")
+    expected_boundary = {
+        "launches_live_model": False,
+        "executes_coding_task": False,
+        "captures_capability_only": True,
+        "raises_assurance": False,
+    }
+    for key, expected in expected_boundary.items():
+        if boundary.get(key) is not expected:
+            raise SystemExit(f"codex-local-capability boundary.{key} must be {expected}")
+
+    agent_contract = receipt.get("agent_contract")
+    if not isinstance(agent_contract, dict):
+        raise SystemExit("codex-local-capability agent_contract must be an object")
+    if receipt.get("agent_contract_hash") != agent_contract.get("agent_contract_hash"):
+        raise SystemExit("codex-local-capability agent_contract_hash mismatch")
+
+    instruction_files = receipt.get("instruction_files")
+    if not isinstance(instruction_files, list) or not instruction_files:
+        raise SystemExit("codex-local-capability instruction_files must be non-empty")
+    for item in instruction_files:
+        if not isinstance(item, dict):
+            raise SystemExit("codex-local-capability instruction_files entries must be objects")
+        rel_path = item.get("path")
+        if not isinstance(rel_path, str) or not rel_path:
+            raise SystemExit("codex-local-capability instruction path must be a non-empty string")
+        rel_parts = Path(rel_path).parts
+        if Path(rel_path).is_absolute() or ".." in rel_parts:
+            raise SystemExit("codex-local-capability instruction path must be repo-relative")
+        source_path = ROOT / rel_path
+        if item.get("present") is True:
+            if not source_path.is_file():
+                raise SystemExit("codex-local-capability recorded instruction file is missing")
+            if item.get("sha256") != hashlib.sha256(source_path.read_bytes()).hexdigest():
+                raise SystemExit("codex-local-capability instruction sha256 mismatch")
+        elif item.get("present") is False:
+            if item.get("sha256") is not None:
+                raise SystemExit("codex-local-capability absent instruction sha256 must be null")
+        else:
+            raise SystemExit("codex-local-capability instruction present must be boolean")
+
+
 def contract_steps_for_tier(tier: str) -> list[tuple[str, object, int]]:
     if tier == "smoke":
         return [
@@ -2955,6 +3041,7 @@ def contract_steps_for_tier(tier: str) -> list[tuple[str, object, int]]:
             ("team-launch-preflight docs contract", require_team_launch_preflight_docs_contract, 300),
             ("team-worktree-prep docs contract", require_team_worktree_prep_docs_contract, 300),
             ("team-shell-lane-launch docs contract", require_team_shell_lane_launch_docs_contract, 300),
+            ("codex-local-capability docs contract", require_codex_local_capability_docs_contract, 300),
         ]
     if tier != "full":
         raise SystemExit(f"unknown contract tier: {tier}")
@@ -3046,6 +3133,7 @@ Overclaims execution: no
         "team-launch-preflight docs contract",
         "team-worktree-prep docs contract",
         "team-shell-lane-launch docs contract",
+        "codex-local-capability docs contract",
     ]:
         raise SystemExit("self-test failed: changed tier steps changed")
     if "release command corpus" not in [label for label, _callback, _timeout in contract_steps_for_tier("full")]:

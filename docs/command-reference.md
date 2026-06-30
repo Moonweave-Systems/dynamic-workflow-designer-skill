@@ -26,6 +26,7 @@ python -m depone team-dry-run --plan team-plan.json --out-dir out/team-dry-run -
 python -m depone team-launch-preflight --team-dry-run docs/team-dry-run/team-dry-run.json --repo . --base-commit <base_commit> --launch-intent plan-only --out docs/team-launch-preflight/team-launch-preflight.json --team-ledger-out docs/team-launch-preflight/team-ledger.json --json
 python -m depone team-worktree-prep --team-launch-preflight docs/team-launch-preflight/team-launch-preflight.json --repo . --worktree-root /tmp/depone-worktrees --create-worktree --out docs/team-worktree-prep/team-worktree-prep.json --json
 python -m depone team-shell-lane-launch --allowlist docs/team-shell-lane-launch/allowlist.json --command-id fixture-echo --cwd . --out docs/team-shell-lane-launch/receipt.json --transcript docs/team-shell-lane-launch/transcript.json --agent-role-id worker --json
+python -m depone codex-local-capability --repo . --codex-binary definitely-missing-codex-for-committed-fixture --instruction-file AGENTS.md --instruction-file CLAUDE.md --out docs/codex-local-capability/capability.json --json
 python -m depone team-ledger-merge-receipt --lane worker-1 --lane worker-2 --file depone/agent_fabric/team_ledger.py --out team-merge-receipt.json --json
 python -m depone worktree-lane-receipt --worktree ./worker-1 --base-commit <sha> --evidence-dir out/team/worker-1 --out out/team/worker-1/worktree-receipt.json --json
 python -m depone run --runner-sandbox ./runner-worktree --source-fixture depone/fixtures/agent_fabric/reference_adapter_shell.json --out ../observer/evidence-run --allow-touched-file sample.txt --json -- python -m unittest
@@ -86,6 +87,14 @@ it does not accept arbitrary shell strings, concatenate shell commands, launch
 Codex/Claude/OpenCode, call live models, schedule teams, or raise assurance to
 A2.
 
+`codex-local-capability` detects whether a local Codex adapter is available for
+future lane launch work and writes a capability receipt. It records binary
+lookup/version, git worktree facts, requested sandbox/approval policy,
+instruction file hashes, `agent_contract_hash`, and explicit boundary flags. It
+does not launch a Codex model session, call live models, execute a coding task,
+schedule teams, prove A2/container isolation, or raise assurance. A blocked-safe
+capability receipt exits `2`.
+
 `team-ledger-merge-receipt` writes the machine JSON merge receipt consumed by
 `team-ledger` when passed lanes touch the same file. It normalizes lane ids and
 repo-relative file paths, but it does not perform git merges or approve fan-in.
@@ -117,8 +126,8 @@ directory also contains `runner-receipt.json`. The evidence bundle binds that
 receipt as a rehashable statement subject and uses it to label the OTel
 GenAI-shaped root span.
 
-Exit codes: `0` pass/success, `1` fail/blocked/refuted, `2`
-inconclusive/insufficient evidence, `3` usage/config/input error, and `4`
+Exit codes: `0` pass/success, `1` fail/refuted, `2`
+inconclusive/insufficient evidence/blocked-safe readiness, `3` usage/config/input error, and `4`
 internal/runtime error.
 
 JSON errors use `{"error":{"code":"ERR_EXAMPLE","message":"what failed","path":null}}`.

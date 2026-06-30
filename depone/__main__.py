@@ -24,6 +24,7 @@ from depone.cli import (
     agent_fabric_verify_seal,
     agent_fabric_verify_signature,
     advance,
+    codex_local_capability,
     demo,
     design,
     doctor,
@@ -495,6 +496,44 @@ def _add_team_worktree_prep_args(parser: argparse.ArgumentParser) -> None:
         "--out",
         default="",
         help="Optional output path for the team worktree prep JSON",
+    )
+    parser.add_argument(
+        "--self-test", action="store_true", help="Run self-test and exit"
+    )
+    _add_json_arg(parser)
+
+
+def _add_codex_local_capability_args(parser: argparse.ArgumentParser) -> None:
+    parser.add_argument(
+        "--repo",
+        default=".",
+        help="Repository root or worktree to inspect",
+    )
+    parser.add_argument(
+        "--codex-binary",
+        default="codex",
+        help="Codex executable name or path",
+    )
+    parser.add_argument(
+        "--sandbox-mode",
+        default="workspace-write",
+        help="Requested Codex sandbox mode",
+    )
+    parser.add_argument(
+        "--approval-policy",
+        default="on-request",
+        help="Requested Codex approval policy",
+    )
+    parser.add_argument(
+        "--instruction-file",
+        action="append",
+        default=[],
+        help="Instruction file path, relative to --repo; repeatable",
+    )
+    parser.add_argument(
+        "--out",
+        default="codex-local-capability.json",
+        help="Output receipt JSON",
     )
     parser.add_argument(
         "--self-test", action="store_true", help="Run self-test and exit"
@@ -1214,6 +1253,12 @@ def main() -> None:
     )
     _add_team_shell_lane_launch_args(team_shell_lane_launch_parser)
 
+    codex_local_capability_parser = sub.add_parser(
+        "codex-local-capability",
+        help="Detect local Codex adapter capability without launching a task",
+    )
+    _add_codex_local_capability_args(codex_local_capability_parser)
+
     # agent-fabric-claim-gate
     claim_gate_parser = sub.add_parser(
         "agent-fabric-claim-gate",
@@ -1314,6 +1359,8 @@ def main() -> None:
             team_worktree_prep.run(args)
         elif args.command == "team-shell-lane-launch":
             team_shell_lane_launch.run(args)
+        elif args.command == "codex-local-capability":
+            codex_local_capability.run(args)
         elif args.command in ("evidence-run", "run"):
             evidence_run.run(args)
         elif args.command in ("evidence-next", "next"):
