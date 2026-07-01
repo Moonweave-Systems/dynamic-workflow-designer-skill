@@ -6,10 +6,11 @@
 for finishing Depone's evidence-first team and adapter layers.
 
 **Refresh note, 2026-07-01:** This plan is rebased on `origin/main` at
-`a3b9db5` after PR #57 (`team-pr-artifact`) and PR #55
-(`codex-local-capability`) landed. Wave 0 and Wave 1 are historical/completed
-context. New implementation PRs should start at Wave 2 or Wave 4 and should not
-remove the PR #57 or PR #55 files and tests.
+`9c7001e` after PR #55 (`codex-local-capability`), PR #56 (wave backlog
+refresh), PR #57 (`team-pr-artifact`), and PR #58 (post-merge doc status)
+landed. Wave 0 and Wave 1 are historical/completed context. New implementation
+PRs should start at Wave 2 or Wave 4 and should not remove landed files,
+tests, or committed evidence artifacts.
 
 **Architecture:** Keep `docs/v125-direction-check-roadmap.md` as product-direction authority, `docs/depone-next-work-plan.md` as the operator backlog, and this file as the executable agent plan. Each wave is one PR-sized slice with exact files, commands, acceptance evidence, and stop rules.
 
@@ -33,6 +34,30 @@ remove the PR #57 or PR #55 files and tests.
   - `scripts/check_contract.py`
   - `docs/command-reference.md`
   - `docs/depone-cloud-team-control.md`
+- Runtime substrate policy:
+  - `docs/depone-runtime-substrate.md`
+
+## Runtime Guardrails For All Waves
+
+Depone's runtime truth must be receipt-first. tmux/OMX panes are acceptable for
+operator supervision and temporary team execution, but pane state, scrollback,
+and chat summaries are not canonical evidence. A wave can use tmux operationally
+only if the committed result is still proven by Depone-owned JSON artifacts,
+transcripts, git facts, validation hashes, and deterministic command output.
+
+Near-term implementation rules:
+
+- Use Python standard-library subprocesses for bounded local commands.
+- Use non-interactive subprocess execution by default; use PTY behavior only
+  when an adapter cannot run correctly without a terminal.
+- Record argv, cwd, environment policy, exit code, transcript path or hash,
+  git base/head, touched files, and validation result in receipts.
+- Do not add Rust, a daemon, or a terminal emulator dependency in Waves 2
+  through 4. If a future Rust runner is proposed, it needs its own small PR,
+  replayable receipts, and a clear failure that the Python stdlib runner cannot
+  handle.
+- Do not let runtime substrate work raise assurance. Assurance only rises when
+  the boundary is independently verifiable by existing validators.
 
 ## Wave 0: Repository Hygiene And PR Decision
 
@@ -745,3 +770,20 @@ For the next implementation wave, choose one of:
 
 Do not combine Wave 2 and Wave 4 in one PR. Do not include stale PR cleanup in
 the implementation PR; keep that as a separate audit-only branch.
+
+## Agent Start Commands
+
+Use this block when starting the next worker/team run:
+
+```bash
+git fetch -q origin
+git switch --create codex/team-merge-attempt origin/main
+PYTHONDONTWRITEBYTECODE=1 python3 -m depone team-pr-artifact --self-test
+PYTHONDONTWRITEBYTECODE=1 python3 -m depone team-ledger --self-test
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_contract.py --tier changed
+PYTHONDONTWRITEBYTECODE=1 python3 scripts/dwm.py doctor
+```
+
+Stop after the baseline check if any command fails. Fix only the failing
+precondition or report the blocker; do not start implementation on a dirty or
+unverified base.

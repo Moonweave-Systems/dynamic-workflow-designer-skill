@@ -1,10 +1,10 @@
 # Depone Next Work Plan
 
-Status: refreshed native-team and evidence backlog after PR #57 and PR #55
-merged.
+Status: refreshed native-team, evidence, adapter, and runtime-substrate backlog
+after PR #58 merged.
 Date: 2026-07-01.
-Base: `origin/main` at `a3b9db5` (`Add Codex capability readiness probe
-(#55)`), after `20caeff` (`Add Team PR artifact producer (#57)`).
+Base: `origin/main` at `9c7001e` (`Clarify next Depone implementation slice
+(#58)`), after PR #55, PR #56, and PR #57 landed.
 Current follow-up: open a new implementation PR from `origin/main` for exactly
 one of the next slices below.
 
@@ -24,6 +24,7 @@ source-only scaffolding.
 The executable wave checklist lives in:
 
 - `docs/superpowers/plans/2026-06-30-depone-wave-execution-backlog.md`
+- `docs/depone-runtime-substrate.md`
 
 ## Current Position
 
@@ -63,6 +64,9 @@ The executable wave checklist lives in:
   `depone codex-local-capability` records `codex --version` readiness facts,
   validates instruction-file hashes, and keeps the claim explicitly
   capability-only.
+- PR #56 refreshed the wave backlog after the first team and adapter slices.
+- PR #58 clarified that no implementation draft is currently active and that the
+  next branch should choose exactly one slice from fresh `origin/main`.
 
 ### Active Draft Work
 
@@ -82,6 +86,10 @@ provider/runtime claims without machine-verifiable evidence.
   itself.
 - Depone does not yet assign coding tasks to Codex, Claude Code, OpenCode, OMX,
   or cloud adapters and collect full lane evidence end to end.
+- The current OMX/tmux surface is useful for operator visibility and temporary
+  team coordination, but it is not the canonical runtime truth source for
+  Depone. Canonical truth must come from Depone receipts, transcripts, process
+  exit codes, git facts, evidence directories, and validation hashes.
 - Cloud lanes are observed external facts, not provider runtime isolation
   attestations.
 - PR and check status can be captured by `team-pr-artifact`, but Team Ledger
@@ -110,10 +118,40 @@ The next useful order is:
    Codex now that capability readiness has landed.
 6. Add cloud adapter receipts from observed provider artifacts before owning
    cloud runtime provisioning.
-7. Tighten A3 signing ergonomics and keyless feasibility after evidence and team
+7. Keep tmux/OMX as an operator adapter while moving runtime truth into
+   Depone-owned machine receipts. Do not promote tmux pane state into evidence.
+8. Tighten A3 signing ergonomics and keyless feasibility after evidence and team
    flows are useful enough to sign.
-8. Build a small benchmark harness only after the run, team, and receipt layers
+9. Build a small benchmark harness only after the run, team, and receipt layers
    can produce re-runnable artifacts.
+
+## Runtime Substrate Direction
+
+Depone should not try to become a terminal multiplexer. tmux/OMX remains useful
+for live supervision, pane persistence, and manual team operations, but precise
+runtime claims must be derived from structured artifacts Depone can revalidate.
+
+Near term:
+
+- Keep using Python stdlib subprocesses for small, bounded, allowlisted runner
+  commands.
+- Treat terminal panes, tmux buffers, and chat summaries as operator UX only.
+- Record real runtime facts in receipts: argv, cwd, env policy, start/end time,
+  pid when available, exit code, stdout/stderr transcript hashes, git base/head,
+  touched files, evidence directory, and validation result.
+- Prefer non-interactive command receipts for deterministic checks and use PTY
+  only when an adapter requires terminal behavior.
+
+Later, after Wave 2 through Wave 4 prove useful:
+
+- Consider a small Depone-owned runner daemon if Python subprocess supervision
+  becomes unreliable for concurrent lanes.
+- Consider Rust only for that runner daemon or PTY supervisor, not for the whole
+  evidence/control plane. A Rust layer would need to preserve stdlib-only Python
+  installability for the existing Depone CLI and must earn its place with tests,
+  replayable receipts, and reduced operational failure.
+- Keep cloud-first adapter work receipt-based until providers expose verifiable
+  runtime attestations Depone can validate locally.
 
 ## Wave Order
 

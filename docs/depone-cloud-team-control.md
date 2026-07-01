@@ -1,7 +1,7 @@
 # Depone Cloud/Team Control Plane
 
-Status: V130 follow-up direction note and Team Ledger v0 merge-receipt slice.
-Date: 2026-06-30.
+Status: current control-plane direction after PR #58.
+Date: 2026-07-01.
 Source context: `.omx/context/cloud-team-control-20260630T043433Z.md`.
 
 ## Position
@@ -66,6 +66,11 @@ A future `depone team` may coordinate multiple lanes, but only after the evidenc
 model is boring and useful. The near-term invariant is simpler: every lane must
 produce verifiable artifacts or be explicitly blocked. The leader cannot convert
 chat summaries into completed evidence.
+
+The runtime substrate is intentionally separate from this control-plane schema.
+tmux/OMX can remain an operator-facing team surface, but Depone's canonical
+runtime record must be a machine receipt, transcript, git fact set, and
+validation verdict. See `docs/depone-runtime-substrate.md`.
 
 ### Cloud runner
 
@@ -279,13 +284,13 @@ python3 -m depone team-dry-run --self-test
 python3 -m depone team-ledger --self-test
 ```
 
-## Non-goals for this slice
+## Non-goals for this layer
 
 - No PR #38 merge or modification.
 - No Docker A2C implementation.
 - No signing or Sigstore/keyless work.
 - No cloud runner, GitHub App, or full scheduler.
-- No automatic git merge, conflict resolution, or worktree orchestration.
+- No automatic conflict resolution or uncontrolled worktree orchestration.
 - No claim that a worktree receipt proves cloud execution, identity, or runtime
   isolation; it only binds local git facts for a lane.
 - No claim that Team Ledger v0 proves adapter correctness beyond the recorded
@@ -295,10 +300,11 @@ python3 -m depone team-ledger --self-test
 
 The current follow-up order is tracked in `docs/depone-next-work-plan.md`.
 
-1. Optional PR artifact checks for Team Ledger lanes are implemented.
-2. Local worktree lane receipts are the current slice.
-3. `team-dry-run` is the next minimal native team surface: it writes a blocked
-   Team Ledger skeleton, a dry-run artifact, and next-command suggestions, but
-   does not launch workers or mutate worktrees.
-4. Only after those artifacts are useful, consider a minimal `depone team`
-   command that coordinates lanes under explicit budgets and stop rules.
+1. Implement Wave 2, `team-merge-attempt`, so merge/fan-in evidence comes from a
+   real git merge attempt instead of operator-entered receipt fields.
+2. Implement Wave 4, Codex-only launch receipt, as the first adapter execution
+   seam after Codex capability readiness.
+3. Implement Wave 3, minimal local `depone team` loop, only after the merge
+   attempt receipt is stable enough for fan-in.
+4. Add cloud adapter receipts from observed provider artifacts before owning
+   cloud provisioning or claiming runtime attestation.
