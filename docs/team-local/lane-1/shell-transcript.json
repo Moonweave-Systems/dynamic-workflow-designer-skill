@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "python3",
+    "-c",
+    "from pathlib import Path; Path('team-local-marker.txt').write_text('ok\\n', encoding='utf-8')"
+  ],
+  "command_id": "fixture-marker",
+  "cwd": "/tmp/depone-team-local-fixture/lane-1-worktree",
+  "exit_code": 0,
+  "stderr_text": "",
+  "stdout_text": ""
+}

@@ -26,7 +26,7 @@ python -m depone team-dry-run --plan team-plan.json --out-dir out/team-dry-run -
 python -m depone team-launch-preflight --team-dry-run docs/team-dry-run/team-dry-run.json --repo . --base-commit <base_commit> --launch-intent plan-only --out docs/team-launch-preflight/team-launch-preflight.json --team-ledger-out docs/team-launch-preflight/team-ledger.json --json
 python -m depone team-worktree-prep --team-launch-preflight docs/team-launch-preflight/team-launch-preflight.json --repo . --worktree-root /tmp/depone-worktrees --create-worktree --out docs/team-worktree-prep/team-worktree-prep.json --json
 python -m depone team-shell-lane-launch --allowlist docs/team-shell-lane-launch/allowlist.json --command-id fixture-echo --cwd . --out docs/team-shell-lane-launch/receipt.json --transcript docs/team-shell-lane-launch/transcript.json --agent-role-id worker --json
-python -m depone team-local --plan team-local-plan.json --allowlist team-local-allowlist.json --repo . --worktree-root /tmp/depone-team-local --out-dir out/team-local --execute-lanes --json
+python -m depone team-local --plan team-local-plan.json --allowlist team-local-allowlist.json --repo . --worktree-root /tmp/depone-team-local --out-dir out/team-local --create-worktree --execute-lanes --json
 python -m depone team-pr-artifact --input saved-pr.json --expected-head-sha <head_sha> --out docs/team-pr-artifact/pr-artifact.json --json
 python -m depone team-merge-attempt --repo . --base <base_sha> --head <head_sha> --out docs/team-merge-attempt/merge-attempt.json --json
 python -m depone codex-local-capability --repo . --codex-binary definitely-missing-codex-for-committed-fixture --instruction-file AGENTS.md --instruction-file CLAUDE.md --out docs/codex-local-capability/capability.json --json

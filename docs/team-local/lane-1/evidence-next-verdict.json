@@ -1,0 +1,63 @@
+{
+  "assurance": null,
+  "automation_boundary": {
+    "executes_next_action": false,
+    "requires_operator_or_loop_to_execute": true
+  },
+  "blocking_reasons": [
+    "missing required artifact: capture-manifest.json",
+    "missing required artifact: observer-capture.json",
+    "missing required artifact: evidence-bundle.json",
+    "evidence-bundle.json statement failed validation",
+    "evidence ingest decision is blocked"
+  ],
+  "boundary": {
+    "isolation": null,
+    "privilege_isolated": false
+  },
+  "capture": {
+    "errors": [],
+    "path": "docs/team-local/lane-1/capture-manifest.json"
+  },
+  "command": "evidence-next",
+  "decision": "blocked",
+  "evidence_bundle": {
+    "path": "docs/team-local/lane-1/evidence-bundle.json",
+    "statement_errors": [
+      "statement._type is not in-toto Statement v1",
+      "statement.predicateType is not Depone evidence v1",
+      "statement.subject must be a list"
+    ]
+  },
+  "evidence_dir": "docs/team-local/lane-1",
+  "evidence_ingest": {
+    "decision": "blocked",
+    "reasons": [
+      "missing required artifact: capture-manifest.json",
+      "missing required artifact: observer-capture.json",
+      "missing required artifact: evidence-bundle.json"
+    ],
+    "subject_results": [],
+    "verified_subject_count": 0
+  },
+  "next_action": "repair_evidence_artifacts",
+  "previous_capture": null,
+  "recorded_ingest": {
+    "decision": null,
+    "path": null
+  },
+  "runner_receipt": {
+    "errors": [],
+    "path": null
+  },
+  "schema_version": "1.0",
+  "verified_artifacts": {
+    "subject_count": 0,
+    "verified_subject_count": 0
+  },
+  "verify": {
+    "errors": [],
+    "report_decision": null,
+    "summary_decision": null
+  }
+}

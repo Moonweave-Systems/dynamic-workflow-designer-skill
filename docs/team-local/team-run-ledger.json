@@ -1,0 +1,60 @@
+{
+  "artifacts": {
+    "team_dry_run": "docs/team-local/team-dry-run.json",
+    "team_launch_preflight": "docs/team-local/team-launch-preflight.json",
+    "team_ledger": "docs/team-local/team-ledger.json",
+    "team_ledger_verdict": "docs/team-local/team-ledger-verdict.json",
+    "team_run_ledger": "docs/team-local/team-run-ledger.json",
+    "team_worktree_prep": "docs/team-local/team-worktree-prep.json"
+  },
+  "base_commit": "c48aa8b8b50f093798e849c82f9e592d7345661d",
+  "blocked_lane_count": 1,
+  "blocking_reasons": [
+    "ERR_TEAM_LEDGER_EVIDENCE_NEXT_NOT_CONTINUE: evidence_next_verdict must have decision=continue and no blocking_reasons",
+    "missing required artifact: capture-manifest.json",
+    "missing required artifact: observer-capture.json",
+    "missing required artifact: evidence-bundle.json",
+    "evidence-bundle.json statement failed validation",
+    "evidence ingest decision is blocked"
+  ],
+  "boundary": {
+    "approves_merge": false,
+    "calls_live_models": false,
+    "creates_worktrees": true,
+    "executes_allowlisted_shell_commands": true,
+    "executes_unlisted_shell_commands": false,
+    "launches_agents": false,
+    "raises_assurance": false
+  },
+  "decision": "blocked",
+  "kind": "depone-team-local-run-ledger",
+  "lane_count": 1,
+  "lanes": [
+    {
+      "blocking_reasons": [
+        "missing required artifact: capture-manifest.json",
+        "missing required artifact: observer-capture.json",
+        "missing required artifact: evidence-bundle.json",
+        "evidence-bundle.json statement failed validation",
+        "evidence ingest decision is blocked"
+      ],
+      "decision": "blocked",
+      "evidence_next_verdict": "docs/team-local/lane-1/evidence-next-verdict.json",
+      "lane_id": "lane-1",
+      "shell_receipt": "docs/team-local/lane-1/shell-receipt.json",
+      "shell_transcript": "docs/team-local/lane-1/shell-transcript.json"
+    }
+  ],
+  "leader_objective": "Demonstrate a minimal fail-closed local Depone team loop.",
+  "out_dir": "docs/team-local",
+  "passed_lane_count": 0,
+  "schema_version": "0.1",
+  "source_hashes": {
+    "allowlist": "56e60051b077941d884283f56f0c7442f201cd6067d4cabcdfeaf3da87382074",
+    "plan": "4a35bba72fa549deec68d0f1fc8666184c1ab569a715dcd84f1fbf1c5ba69b9c",
+    "team_dry_run": "07dde2cfb5bdcd6db51ade34f6e14f09f6885059e61f402c7e7d451b2be59fbd",
+    "team_launch_preflight": "d152d4538642b2ef075b23e6971773769cdcd8f62a7a490a415b659d6a9eb430",
+    "team_ledger": "5ed16a83fd8e98e59f50f9696014bd79aa8647cee2c96deb6b273a99008a5bdb",
+    "team_worktree_prep": "27ad9074616f0855a35130b8bdef63e41f14c9055f12effdc7776db47659eb51"
+  }
+}

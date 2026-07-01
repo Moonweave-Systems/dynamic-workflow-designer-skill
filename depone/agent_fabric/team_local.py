@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import tempfile
 from pathlib import Path, PurePosixPath
@@ -252,6 +253,100 @@ def run_team_local(
     return run_ledger
 
 
+def validate_team_local_run_ledger(
+    run_ledger: dict[str, Any], *, base_dir: Path = Path(".")
+) -> list[str]:
+    """Validate a committed team-local run ledger without re-running lanes."""
+
+    errors: list[str] = []
+    if run_ledger.get("kind") != TEAM_LOCAL_RUN_LEDGER_KIND:
+        errors.append("kind must be depone-team-local-run-ledger")
+    if run_ledger.get("schema_version") != TEAM_LOCAL_SCHEMA_VERSION:
+        errors.append("schema_version must be 0.1")
+    if run_ledger.get("decision") not in {"pass", "blocked"}:
+        errors.append("decision must be pass or blocked")
+
+    boundary = run_ledger.get("boundary")
+    if not isinstance(boundary, dict):
+        errors.append("boundary must be an object")
+    else:
+        expected_false = {
+            "launches_agents",
+            "calls_live_models",
+            "executes_unlisted_shell_commands",
+            "raises_assurance",
+            "approves_merge",
+        }
+        for key in expected_false:
+            if boundary.get(key) is not False:
+                errors.append(f"boundary.{key} must be false")
+        for key in ("executes_allowlisted_shell_commands", "creates_worktrees"):
+            if not isinstance(boundary.get(key), bool):
+                errors.append(f"boundary.{key} must be boolean")
+
+    artifacts = run_ledger.get("artifacts")
+    if not isinstance(artifacts, dict):
+        errors.append("artifacts must be an object")
+        artifacts = {}
+    source_hashes = run_ledger.get("source_hashes")
+    if not isinstance(source_hashes, dict):
+        errors.append("source_hashes must be an object")
+        source_hashes = {}
+
+    hash_artifact_names = {
+        "team_dry_run",
+        "team_launch_preflight",
+        "team_worktree_prep",
+        "team_ledger",
+    }
+    for name, raw_path in artifacts.items():
+        if not isinstance(raw_path, str) or not raw_path:
+            errors.append(f"artifacts.{name} must be a non-empty string")
+            continue
+        artifact_path = _validated_artifact_path(raw_path)
+        if artifact_path is None:
+            errors.append(f"artifacts.{name} must be repo-relative")
+            continue
+        full_path = base_dir / artifact_path
+        if not full_path.is_file():
+            errors.append(f"artifacts.{name} file is missing")
+            continue
+        if name in hash_artifact_names:
+            try:
+                artifact_value = json.loads(full_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                errors.append(f"artifacts.{name} is not readable JSON: {exc}")
+                continue
+            expected_hash = source_hashes.get(name)
+            if expected_hash != canonical_hash(artifact_value):
+                errors.append(f"source_hashes.{name} mismatch")
+
+    lanes = run_ledger.get("lanes")
+    if not isinstance(lanes, list):
+        errors.append("lanes must be a list")
+    else:
+        for index, lane in enumerate(lanes, start=1):
+            if not isinstance(lane, dict):
+                errors.append(f"lanes[{index}] must be an object")
+                continue
+            if lane.get("decision") not in {"pass", "blocked"}:
+                errors.append(f"lanes[{index}].decision must be pass or blocked")
+            for key in ("shell_receipt", "shell_transcript", "evidence_next_verdict"):
+                raw_path = lane.get(key)
+                if raw_path is None:
+                    continue
+                if not isinstance(raw_path, str):
+                    errors.append(f"lanes[{index}].{key} must be a string or null")
+                    continue
+                artifact_path = _validated_artifact_path(raw_path)
+                if artifact_path is None:
+                    errors.append(f"lanes[{index}].{key} must be repo-relative")
+                elif not (base_dir / artifact_path).is_file():
+                    errors.append(f"lanes[{index}].{key} file is missing")
+
+    return errors
+
+
 def _plan_lanes_by_id(plan: dict[str, Any]) -> dict[str, dict[str, Any]]:
     lanes = plan.get("lanes")
     if not isinstance(lanes, list):
@@ -295,6 +390,14 @@ def _ensure_relative(path: Path, label: str) -> None:
     posix = PurePosixPath(path.as_posix())
     if path.is_absolute() or ".." in posix.parts:
         raise TeamLocalError("ERR_TEAM_LOCAL_PATH_INVALID", f"{label} must be repo-relative")
+
+
+def _validated_artifact_path(raw_path: str) -> Path | None:
+    path = Path(raw_path)
+    posix = PurePosixPath(raw_path)
+    if path.is_absolute() or ".." in posix.parts:
+        return None
+    return path
 
 
 def _error_messages(value: object, fallback: str) -> list[str]:
@@ -380,16 +483,24 @@ def _self_test() -> None:
             ],
         }
         allowlist = {"commands": [{"id": "ok", "argv": ["python3", "-c", "print('ok')"]}]}
-        ledger = run_team_local(
-            plan,
-            allowlist=allowlist,
-            repo_root=repo,
-            worktree_root=temp / "worktrees",
-            out_dir=Path("out/team-local"),
-            create_worktree=False,
-            execute_lanes=True,
-        )
+        current_dir = Path.cwd()
+        os.chdir(temp)
+        try:
+            ledger = run_team_local(
+                plan,
+                allowlist=allowlist,
+                repo_root=repo,
+                worktree_root=temp / "worktrees",
+                out_dir=Path("out/team-local"),
+                create_worktree=False,
+                execute_lanes=True,
+            )
+        finally:
+            os.chdir(current_dir)
         if ledger["decision"] != "blocked":
             raise AssertionError("missing worktree must block before shell execution")
         if ledger["boundary"]["launches_agents"] is not False:
             raise AssertionError("team-local must not launch agents")
+        errors = validate_team_local_run_ledger(ledger, base_dir=temp)
+        if errors:
+            raise AssertionError(f"team-local ledger validation failed: {errors}")

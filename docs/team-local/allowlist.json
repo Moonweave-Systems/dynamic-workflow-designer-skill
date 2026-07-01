@@ -1,0 +1,12 @@
+{
+  "commands": [
+    {
+      "argv": [
+        "python3",
+        "-c",
+        "from pathlib import Path; Path('team-local-marker.txt').write_text('ok\\n', encoding='utf-8')"
+      ],
+      "id": "fixture-marker"
+    }
+  ]
+}

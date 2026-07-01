@@ -1,0 +1,17 @@
+{
+  "base_commit": "c48aa8b8b50f093798e849c82f9e592d7345661d",
+  "lanes": [
+    {
+      "command_id": "fixture-marker",
+      "lane_id": "lane-1",
+      "objective": "Run one local allowlisted shell lane and fan in evidence-next.",
+      "planned_worktree": "lane-1-worktree",
+      "runner_adapter_kind": "shell",
+      "team_adapter_kind": "depone-native",
+      "touched_files": [
+        "team-local-marker.txt"
+      ]
+    }
+  ],
+  "leader_objective": "Demonstrate a minimal fail-closed local Depone team loop."
+}

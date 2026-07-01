@@ -1,0 +1,146 @@
+{
+  "base_commit": "c48aa8b8b50f093798e849c82f9e592d7345661d",
+  "boundary": {
+    "executes_commands": false,
+    "launches_agents": false,
+    "mutates_worktree": false,
+    "raises_assurance": false
+  },
+  "kind": "depone-team-dry-run",
+  "lanes": [
+    {
+      "blocked_reason": "dry-run plan only; no lane evidence has been captured and no worker was launched",
+      "evidence_dir": "lane-1",
+      "lane_id": "lane-1",
+      "objective": "Run one local allowlisted shell lane and fan in evidence-next.",
+      "planned_worktree": "lane-1-worktree"
+    }
+  ],
+  "leader_objective": "Demonstrate a minimal fail-closed local Depone team loop.",
+  "next_commands": [
+    {
+      "commands": [
+        "git worktree add lane-1-worktree c48aa8b8b50f093798e849c82f9e592d7345661d",
+        "python3 -m depone worktree-lane-receipt --worktree lane-1-worktree --base-commit c48aa8b8b50f093798e849c82f9e592d7345661d --evidence-dir lane-1 --out docs/team-local/lane-1/worktree-receipt.json --json"
+      ],
+      "lane_id": "lane-1"
+    }
+  ],
+  "out_dir": "docs/team-local",
+  "schema_version": "0.1",
+  "team_ledger": {
+    "end_commit": "c48aa8b8b50f093798e849c82f9e592d7345661d",
+    "kind": "depone-team-ledger",
+    "lanes": [
+      {
+        "blocked_reason": "dry-run plan only; no lane evidence has been captured and no worker was launched",
+        "end_commit": "c48aa8b8b50f093798e849c82f9e592d7345661d",
+        "env_kind": "local",
+        "evidence_dir": "lane-1",
+        "lane_id": "lane-1",
+        "objective": "Run one local allowlisted shell lane and fan in evidence-next.",
+        "runner_adapter_kind": "shell",
+        "start_commit": "c48aa8b8b50f093798e849c82f9e592d7345661d",
+        "team_adapter_kind": "depone-native",
+        "touched_files": [
+          "team-local-marker.txt"
+        ],
+        "verification_artifacts": [],
+        "verification_state": "blocked",
+        "worktree_receipt": "lane-1/worktree-receipt.json"
+      }
+    ],
+    "leader_id": "leader-fixed",
+    "leader_objective": "Demonstrate a minimal fail-closed local Depone team loop.",
+    "schema_version": "0.1",
+    "start_commit": "c48aa8b8b50f093798e849c82f9e592d7345661d",
+    "stop_rule": "dry-run only; fan-in remains blocked until lane evidence exists"
+  },
+  "team_ledger_verdict": {
+    "blocked_lane_count": 1,
+    "boundary": {
+      "approves_merge": false,
+      "calls_live_models": false,
+      "executes_commands": false,
+      "inspects_cloud_runtime": false,
+      "launches_agents": false,
+      "raises_assurance": false
+    },
+    "decision": "blocked-explicit",
+    "errors": [],
+    "kind": "depone-team-ledger-verdict",
+    "lane_count": 1,
+    "lane_results": [
+      {
+        "cloud_artifact": {
+          "adapter_kind": null,
+          "attests_runtime_isolation": null,
+          "base_sha": null,
+          "evidence_hash": null,
+          "external_run_id": null,
+          "head_sha": null,
+          "observed_external_facts_only": null,
+          "path": null,
+          "pr_url": null,
+          "provider": null,
+          "repo": null
+        },
+        "decision": "blocked",
+        "end_commit": "c48aa8b8b50f093798e849c82f9e592d7345661d",
+        "env_kind": "local",
+        "errors": [],
+        "evidence_dir": "lane-1",
+        "evidence_dir_exists": false,
+        "evidence_next": {
+          "blocking_reason_count": null,
+          "decision": null,
+          "path": null
+        },
+        "evidence_next_verdict": null,
+        "lane_id": "lane-1",
+        "pr_artifact": {
+          "base_sha": null,
+          "check_status": null,
+          "failed_count": null,
+          "head_sha": null,
+          "merge_state_status": null,
+          "path": null,
+          "pending_count": null,
+          "pr_url": null,
+          "state": null
+        },
+        "runner_adapter_kind": "shell",
+        "start_commit": "c48aa8b8b50f093798e849c82f9e592d7345661d",
+        "team_adapter_kind": "depone-native",
+        "touched_file_count": 1,
+        "touched_files": [
+          "team-local-marker.txt"
+        ],
+        "verification_artifact_count": 0,
+        "verification_state": "blocked",
+        "worktree_receipt": {
+          "base_commit": null,
+          "branch": null,
+          "changed_files": [],
+          "dirty": null,
+          "dirty_file_count": null,
+          "head_commit": null,
+          "path": "lane-1/worktree-receipt.json"
+        }
+      }
+    ],
+    "leader_objective": "Demonstrate a minimal fail-closed local Depone team loop.",
+    "merge_receipt": {
+      "decision": null,
+      "overlap_count": 0,
+      "path": null,
+      "required": false
+    },
+    "overlapping_touched_files": [],
+    "passed_lane_count": 0,
+    "schema_version": "0.1",
+    "source_hashes": {
+      "team_ledger": "873bf130527604be03c0c87ab91c06be3606f04b5c0e002f154ffab95c90e198"
+    }
+  }
+}

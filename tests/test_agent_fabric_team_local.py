@@ -1,11 +1,13 @@
 from __future__ import annotations
 
+import json
+import os
 import subprocess
 import tempfile
 import unittest
 from pathlib import Path
 
-from depone.agent_fabric.team_local import run_team_local
+from depone.agent_fabric.team_local import run_team_local, validate_team_local_run_ledger
 
 
 class AgentFabricTeamLocalTests(unittest.TestCase):
@@ -22,6 +24,9 @@ class AgentFabricTeamLocalTests(unittest.TestCase):
                 create_worktree=False,
                 execute_lanes=True,
             )
+            ledger_path = repo.temp / "out" / "team-local-test" / "team-run-ledger.json"
+            loaded = json.loads(ledger_path.read_text(encoding="utf-8"))
+            self.assertEqual([], validate_team_local_run_ledger(loaded, base_dir=repo.temp))
         self.assertEqual("blocked", ledger["decision"])
         self.assertFalse(ledger["boundary"]["launches_agents"])
         self.assertIn("team_worktree_prep", ledger["artifacts"])
@@ -49,6 +54,23 @@ class AgentFabricTeamLocalTests(unittest.TestCase):
             any("AGENT_EXECUTABLE_BLOCKED" in reason for reason in ledger["blocking_reasons"]),
             ledger["blocking_reasons"],
         )
+
+    def test_validator_rejects_overclaiming_boundary(self) -> None:
+        with _git_repo() as repo:
+            plan = _plan(repo.head)
+            allowlist = {"commands": [{"id": "ok", "argv": ["python3", "-c", "print('ok')"]}]}
+            ledger = run_team_local(
+                plan,
+                allowlist=allowlist,
+                repo_root=repo.path,
+                worktree_root=repo.temp / "worktrees",
+                out_dir=Path("out/team-local-test"),
+                create_worktree=False,
+                execute_lanes=True,
+            )
+            ledger["boundary"]["raises_assurance"] = True
+            errors = validate_team_local_run_ledger(ledger, base_dir=repo.temp)
+        self.assertIn("boundary.raises_assurance must be false", errors)
 
 
 def _plan(head: str) -> dict[str, object]:
@@ -80,6 +102,8 @@ class _git_repo:
     def __enter__(self) -> _Repo:
         self._tmp = tempfile.TemporaryDirectory(prefix="depone-team-local-test-")
         temp = Path(self._tmp.name)
+        self._cwd = Path.cwd()
+        os.chdir(temp)
         repo = temp / "repo"
         repo.mkdir()
         _git(repo, "init")
@@ -98,6 +122,7 @@ class _git_repo:
         return _Repo(temp=temp, path=repo, head=_git(repo, "rev-parse", "HEAD"))
 
     def __exit__(self, exc_type: object, exc: object, tb: object) -> None:
+        os.chdir(self._cwd)
         self._tmp.cleanup()
 
 

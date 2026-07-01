@@ -1,0 +1,35 @@
+{
+  "agent_contract": {
+    "agent_contract_hash": "7f8609766f1aad439050f876ea2c5261cde3715070b27fd4fbfefd81c43d71e8",
+    "agent_contract_id": "depone-agent-operating-contract.v0.1",
+    "role_id": "worker",
+    "role_registry_path": "packaging/dwm-roles.json",
+    "role_registry_sha256": "8a5ea14ff29d9f00c7b253364912f95c946f6c53616e16804ab96d5bbbdb36fc"
+  },
+  "agent_contract_hash": "7f8609766f1aad439050f876ea2c5261cde3715070b27fd4fbfefd81c43d71e8",
+  "allowlist_sha256": "56e60051b077941d884283f56f0c7442f201cd6067d4cabcdfeaf3da87382074",
+  "argv": [
+    "python3",
+    "-c",
+    "from pathlib import Path; Path('team-local-marker.txt').write_text('ok\\n', encoding='utf-8')"
+  ],
+  "boundary": {
+    "allows_arbitrary_shell_string": false,
+    "calls_live_models": false,
+    "executes_commands": true,
+    "launches_agents": false,
+    "raises_assurance": false,
+    "uses_argv_allowlist": true,
+    "uses_shell": false
+  },
+  "command_id": "fixture-marker",
+  "cwd": "/tmp/depone-team-local-fixture/lane-1-worktree",
+  "decision": "pass",
+  "exit_code": 0,
+  "kind": "depone-team-shell-lane-launch",
+  "schema_version": "0.1",
+  "stderr_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "transcript_path": "docs/team-local/lane-1/shell-transcript.json",
+  "transcript_sha256": "d76e90f40f3b733e72d47badc8419ae658f7fccb07cd4aaa6f480c340ecea6ff"
+}
