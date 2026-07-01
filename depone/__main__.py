@@ -583,6 +583,12 @@ def _add_codex_local_capability_args(parser: argparse.ArgumentParser) -> None:
         help="Requested Codex approval policy",
     )
     parser.add_argument(
+        "--version-timeout-seconds",
+        type=float,
+        default=10,
+        help="Timeout for capability-only codex --version probing",
+    )
+    parser.add_argument(
         "--instruction-file",
         action="append",
         default=[],

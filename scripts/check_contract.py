@@ -3034,7 +3034,8 @@ def require_team_pr_artifact_docs_contract() -> None:
 
 def require_codex_local_capability_docs_contract() -> None:
     readme_path = ROOT / "docs" / "codex-local-capability" / "README.md"
-    capability_path = ROOT / "docs" / "codex-local-capability" / "capability.json"
+    fixture_dir = ROOT / "docs" / "codex-local-capability"
+    capability_path = fixture_dir / "capability.json"
     if not readme_path.exists():
         raise SystemExit("docs/codex-local-capability/README.md is required")
     if not capability_path.exists():
@@ -3047,32 +3048,49 @@ def require_codex_local_capability_docs_contract() -> None:
             "does not execute a coding task",
             "agent_contract_hash",
             "decision: blocked",
+            "pass-capability.json",
             "does not launch a codex model session",
             "does not prove a2/container isolation",
             "does not raise assurance",
         ],
     )
 
+    capability_fixtures = sorted(fixture_dir.glob("*.json"))
+    if not capability_fixtures:
+        raise SystemExit("docs/codex-local-capability requires at least one JSON fixture")
+    if capability_path not in capability_fixtures:
+        raise SystemExit("docs/codex-local-capability/capability.json must be a committed fixture")
+
+    for fixture_path in capability_fixtures:
+        require_codex_local_capability_fixture_contract(fixture_path)
+
+
+def require_codex_local_capability_fixture_contract(fixture_path: Path) -> None:
     from depone.agent_fabric.codex_local_capability import (
         CODEX_LOCAL_CAPABILITY_KIND,
         validate_codex_local_capability,
     )
 
-    receipt = json.loads(capability_path.read_text(encoding="utf-8"))
+    label = fixture_path.relative_to(ROOT).as_posix()
+    receipt = json.loads(fixture_path.read_text(encoding="utf-8"))
     errors = validate_codex_local_capability(receipt)
     if errors:
-        raise SystemExit(f"codex-local-capability receipt invalid: {errors}")
+        raise SystemExit(f"{label} invalid: {errors}")
     if receipt.get("kind") != CODEX_LOCAL_CAPABILITY_KIND:
-        raise SystemExit("codex-local-capability receipt kind mismatch")
-    if receipt.get("decision") != "blocked":
-        raise SystemExit("codex-local-capability fixture must record decision blocked")
-    blocked_reasons = receipt.get("blocked_reasons")
-    if not isinstance(blocked_reasons, list) or "codex binary not found" not in blocked_reasons:
-        raise SystemExit("codex-local-capability fixture must block on missing codex binary")
+        raise SystemExit(f"{label} kind mismatch")
+    decision = receipt.get("decision")
+    if decision == "pass" and receipt.get("blocked_reasons"):
+        raise SystemExit(f"{label} pass fixture must not record blocked_reasons")
+    if fixture_path.name == "capability.json":
+        if decision != "blocked":
+            raise SystemExit("codex-local-capability capability.json fixture must record decision blocked")
+        blocked_reasons = receipt.get("blocked_reasons")
+        if not isinstance(blocked_reasons, list) or "codex binary not found" not in blocked_reasons:
+            raise SystemExit("codex-local-capability capability.json must block on missing codex binary")
 
     boundary = receipt.get("boundary")
     if not isinstance(boundary, dict):
-        raise SystemExit("codex-local-capability boundary must be an object")
+        raise SystemExit(f"{label} boundary must be an object")
     expected_boundary = {
         "launches_live_model": False,
         "executes_coding_task": False,
@@ -3081,37 +3099,66 @@ def require_codex_local_capability_docs_contract() -> None:
     }
     for key, expected in expected_boundary.items():
         if boundary.get(key) is not expected:
-            raise SystemExit(f"codex-local-capability boundary.{key} must be {expected}")
+            raise SystemExit(f"{label} boundary.{key} must be {expected}")
+
+    serialized_receipt = json.dumps(receipt, sort_keys=True).lower()
+    forbidden_fragments = [
+        "api_key",
+        "authorization",
+        "bearer ",
+        "credential",
+        "secret",
+        "token",
+        ".codex/auth",
+        ".config/codex",
+    ]
+    leaked = [fragment for fragment in forbidden_fragments if fragment in serialized_receipt]
+    if leaked:
+        raise SystemExit(f"{label} contains forbidden secret/auth fragments: {leaked}")
+
+    adapter = receipt.get("adapter")
+    if not isinstance(adapter, dict):
+        raise SystemExit(f"{label} adapter must be an object")
+    if adapter.get("id") != "codex-local":
+        raise SystemExit(f"{label} adapter.id must be codex-local")
 
     agent_contract = receipt.get("agent_contract")
     if not isinstance(agent_contract, dict):
-        raise SystemExit("codex-local-capability agent_contract must be an object")
+        raise SystemExit(f"{label} agent_contract must be an object")
     if receipt.get("agent_contract_hash") != agent_contract.get("agent_contract_hash"):
-        raise SystemExit("codex-local-capability agent_contract_hash mismatch")
+        raise SystemExit(f"{label} agent_contract_hash mismatch")
+
+    requested_runtime = receipt.get("requested_runtime")
+    if not isinstance(requested_runtime, dict):
+        raise SystemExit(f"{label} requested_runtime must be an object")
+    if requested_runtime.get("sandbox_mode") not in {"read-only", "workspace-write"}:
+        raise SystemExit(f"{label} requested_runtime.sandbox_mode is unsupported")
+    if requested_runtime.get("approval_policy") not in {"on-request", "on-failure", "never"}:
+        raise SystemExit(f"{label} requested_runtime.approval_policy is unsupported")
 
     instruction_files = receipt.get("instruction_files")
     if not isinstance(instruction_files, list) or not instruction_files:
-        raise SystemExit("codex-local-capability instruction_files must be non-empty")
+        raise SystemExit(f"{label} instruction_files must be non-empty")
     for item in instruction_files:
         if not isinstance(item, dict):
-            raise SystemExit("codex-local-capability instruction_files entries must be objects")
+            raise SystemExit(f"{label} instruction_files entries must be objects")
         rel_path = item.get("path")
         if not isinstance(rel_path, str) or not rel_path:
-            raise SystemExit("codex-local-capability instruction path must be a non-empty string")
+            raise SystemExit(f"{label} instruction path must be a non-empty string")
         rel_parts = Path(rel_path).parts
         if Path(rel_path).is_absolute() or ".." in rel_parts:
-            raise SystemExit("codex-local-capability instruction path must be repo-relative")
+            raise SystemExit(f"{label} instruction path must be repo-relative")
         source_path = ROOT / rel_path
         if item.get("present") is True:
             if not source_path.is_file():
-                raise SystemExit("codex-local-capability recorded instruction file is missing")
+                raise SystemExit(f"{label} recorded instruction file is missing")
             if item.get("sha256") != hashlib.sha256(source_path.read_bytes()).hexdigest():
-                raise SystemExit("codex-local-capability instruction sha256 mismatch")
+                raise SystemExit(f"{label} instruction sha256 mismatch")
         elif item.get("present") is False:
             if item.get("sha256") is not None:
-                raise SystemExit("codex-local-capability absent instruction sha256 must be null")
+                raise SystemExit(f"{label} absent instruction sha256 must be null")
         else:
-            raise SystemExit("codex-local-capability instruction present must be boolean")
+            raise SystemExit(f"{label} instruction present must be boolean")
 
 
 def contract_steps_for_tier(tier: str) -> list[tuple[str, object, int]]:

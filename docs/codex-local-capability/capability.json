@@ -14,8 +14,7 @@
   },
   "agent_contract_hash": "7f8609766f1aad439050f876ea2c5261cde3715070b27fd4fbfefd81c43d71e8",
   "blocked_reasons": [
-    "codex binary not found",
-    "repo working tree is dirty"
+    "codex binary not found"
   ],
   "boundary": {
     "captures_capability_only": true,
@@ -37,10 +36,26 @@
     }
   ],
   "kind": "depone-codex-local-capability",
+  "readiness": {
+    "version_probe": {
+      "argv": [
+        "codex",
+        "--version"
+      ],
+      "error": "binary_not_found",
+      "executed": false,
+      "exit_code": null,
+      "sanitized_version_text": null,
+      "stderr_present": false,
+      "stdout_present": false,
+      "timed_out": false,
+      "unexpected_output": false
+    }
+  },
   "repo": {
-    "branch": "codex/codex-local-capability",
-    "dirty": true,
-    "head": "f1239cd19fa0af56c78b0a829245bc2b01748742",
+    "branch": "main",
+    "dirty": false,
+    "head": "5749609bcbf0d39973ce0b8c044cbc4c339efddf",
     "is_git_worktree": true,
     "path": "/home/ubuntu/depone",
     "root": "/home/ubuntu/depone"

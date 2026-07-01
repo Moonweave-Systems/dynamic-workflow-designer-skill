@@ -25,6 +25,7 @@ def run(args: argparse.Namespace) -> None:
         codex_binary=str(getattr(args, "codex_binary", "") or "codex"),
         sandbox_mode=str(getattr(args, "sandbox_mode", "") or "workspace-write"),
         approval_policy=str(getattr(args, "approval_policy", "") or "on-request"),
+        version_timeout_seconds=float(getattr(args, "version_timeout_seconds", 10) or 10),
         instruction_files=[Path(value) for value in getattr(args, "instruction_file", [])],
     )
     out_arg = str(getattr(args, "out", "") or "codex-local-capability.json")

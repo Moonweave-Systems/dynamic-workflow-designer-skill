@@ -54,6 +54,54 @@ class CodexLocalCapabilityCliTests(unittest.TestCase):
         payload = json.loads(completed.stdout)
         self.assertEqual(payload["decision"], "blocked")
         self.assertEqual(receipt["decision"], "blocked")
+        self.assertFalse(receipt["readiness"]["version_probe"]["executed"])
+
+    def test_cli_writes_pass_receipt_json_for_fake_codex(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            base = Path(tmp)
+            root = base / "repo"
+            root.mkdir()
+            subprocess.run(["git", "init", "-q"], cwd=root, check=True)
+            subprocess.run(["git", "config", "user.email", "test@example.invalid"], cwd=root, check=True)
+            subprocess.run(["git", "config", "user.name", "tester"], cwd=root, check=True)
+            (root / "AGENTS.md").write_text("# contract\n", encoding="utf-8")
+            fake_codex = root / "codex"
+            fake_codex.write_text("#!/bin/sh\nprintf 'codex 0.cli\\n'\n", encoding="utf-8")
+            fake_codex.chmod(0o755)
+            subprocess.run(["git", "add", "AGENTS.md", "codex"], cwd=root, check=True)
+            subprocess.run(["git", "commit", "-qm", "seed"], cwd=root, check=True)
+            out = base / "capability.json"
+
+            completed = subprocess.run(
+                [
+                    sys.executable,
+                    "-m",
+                    "depone",
+                    "codex-local-capability",
+                    "--repo",
+                    str(root),
+                    "--codex-binary",
+                    str(fake_codex),
+                    "--instruction-file",
+                    "AGENTS.md",
+                    "--out",
+                    str(out),
+                    "--json",
+                ],
+                capture_output=True,
+                text=True,
+                check=False,
+            )
+            receipt = json.loads(out.read_text(encoding="utf-8"))
+
+        self.assertEqual(completed.returncode, 0, completed.stderr)
+        payload = json.loads(completed.stdout)
+        self.assertEqual(payload["decision"], "pass")
+        self.assertEqual(receipt["decision"], "pass")
+        self.assertEqual(receipt["adapter"]["version"], "codex 0.cli")
+        self.assertEqual(receipt["readiness"]["version_probe"]["argv"], ["codex", "--version"])
+        self.assertEqual(receipt["readiness"]["version_probe"]["exit_code"], 0)
+        self.assertEqual(receipt["readiness"]["version_probe"]["sanitized_version_text"], "codex 0.cli")
 
     def test_main_dispatches_codex_local_capability(self) -> None:
         seen = []
