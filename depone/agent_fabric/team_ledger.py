@@ -65,7 +65,9 @@ class TeamLedgerError(ValueError):
         return record
 
 
-def build_team_ledger_verdict(ledger: dict[str, Any], *, base_dir: Path | None = None) -> dict[str, Any]:
+def build_team_ledger_verdict(
+    ledger: dict[str, Any], *, base_dir: Path | None = None
+) -> dict[str, Any]:
     """Return a fail-closed validation verdict for a Team Ledger v0 object."""
 
     root = base_dir or Path.cwd()
@@ -143,7 +145,9 @@ def build_team_ledger_verdict(ledger: dict[str, Any], *, base_dir: Path | None =
     return verdict
 
 
-def validate_team_ledger(ledger: dict[str, Any], *, base_dir: Path | None = None) -> list[dict[str, str]]:
+def validate_team_ledger(
+    ledger: dict[str, Any], *, base_dir: Path | None = None
+) -> list[dict[str, str]]:
     """Return validation errors for a Team Ledger v0 object."""
 
     return list(build_team_ledger_verdict(ledger, base_dir=base_dir)["errors"])
@@ -180,7 +184,9 @@ def build_team_ledger_merge_receipt(
     }
 
 
-def _validate_ledger_header(ledger: dict[str, Any], errors: list[dict[str, str]]) -> None:
+def _validate_ledger_header(
+    ledger: dict[str, Any], errors: list[dict[str, str]]
+) -> None:
     if ledger.get("kind") != TEAM_LEDGER_KIND:
         errors.append(
             {
@@ -257,7 +263,9 @@ def _validate_commit_scope(
             }
         )
 
-    allowed_paths = _validate_commit_scope_paths(raw.get("allowed_post_subject_paths"), errors)
+    allowed_paths = _validate_commit_scope_paths(
+        raw.get("allowed_post_subject_paths"), errors
+    )
     rationale = raw.get("rationale")
     if rationale is not None and not isinstance(rationale, str):
         errors.append(
@@ -387,7 +395,9 @@ def _validate_lane(
     )
 
     blocked_reason = lane.get("blocked_reason")
-    if state == "blocked" and (not isinstance(blocked_reason, str) or not blocked_reason.strip()):
+    if state == "blocked" and (
+        not isinstance(blocked_reason, str) or not blocked_reason.strip()
+    ):
         errors.append(
             {
                 "code": "ERR_TEAM_LEDGER_BLOCKED_REASON_REQUIRED",
@@ -445,7 +455,9 @@ def _validate_lane(
         required=state == "pass",
     )
 
-    touched_files = _validate_touched_files(lane.get("touched_files"), errors, lane_id=lane_error_id)
+    touched_files = _validate_touched_files(
+        lane.get("touched_files"), errors, lane_id=lane_error_id
+    )
     if state == "pass" and not touched_files:
         errors.append(
             {
@@ -525,7 +537,9 @@ def _validate_evidence_next_verdict(
     required: bool,
 ) -> dict[str, Any]:
     summary: dict[str, Any] = {
-        "path": evidence_next_verdict if isinstance(evidence_next_verdict, str) else None,
+        "path": evidence_next_verdict
+        if isinstance(evidence_next_verdict, str)
+        else None,
         "decision": None,
         "blocking_reason_count": None,
     }
@@ -730,7 +744,10 @@ def _validate_pr_artifact(
                 "lane_id": lane_id,
             }
         )
-    if not isinstance(artifact.get("pr_number"), int) or artifact.get("pr_number", 0) <= 0:
+    if (
+        not isinstance(artifact.get("pr_number"), int)
+        or artifact.get("pr_number", 0) <= 0
+    ):
         errors.append(
             {
                 "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_INVALID",
@@ -742,8 +759,12 @@ def _validate_pr_artifact(
     _validate_pr_artifact_string_field(artifact, "pr_url", errors, lane_id=lane_id)
     _validate_pr_artifact_string_field(artifact, "base_sha", errors, lane_id=lane_id)
     _validate_pr_artifact_string_field(artifact, "head_sha", errors, lane_id=lane_id)
-    _validate_pr_artifact_string_field(artifact, "merge_state_status", errors, lane_id=lane_id)
-    _validate_pr_artifact_captured_at(artifact.get("captured_at"), errors, lane_id=lane_id)
+    _validate_pr_artifact_string_field(
+        artifact, "merge_state_status", errors, lane_id=lane_id
+    )
+    _validate_pr_artifact_captured_at(
+        artifact.get("captured_at"), errors, lane_id=lane_id
+    )
     if artifact.get("stale") is not False:
         errors.append(
             {
@@ -794,7 +815,11 @@ def _validate_pr_artifact(
 
     lane_end_commit = lane.get("end_commit")
     head_sha = artifact.get("head_sha")
-    if isinstance(lane_end_commit, str) and lane_end_commit and isinstance(head_sha, str):
+    if (
+        isinstance(lane_end_commit, str)
+        and lane_end_commit
+        and isinstance(head_sha, str)
+    ):
         if head_sha != lane_end_commit:
             errors.append(
                 {
@@ -822,7 +847,10 @@ def _validate_pr_artifact(
     summary["check_status"] = check_status
     summary["failed_count"] = failed_count
     summary["pending_count"] = pending_count
-    if not isinstance(check_status, str) or check_status.lower() not in {"pass", "success"}:
+    if not isinstance(check_status, str) or check_status.lower() not in {
+        "pass",
+        "success",
+    }:
         errors.append(
             {
                 "code": "ERR_TEAM_LEDGER_PR_ARTIFACT_CHECKS_NOT_PASSING",
@@ -1034,7 +1062,9 @@ def _validate_cloud_artifact(
         "evidence_hash",
     ):
         _validate_cloud_artifact_string_field(artifact, field, errors, lane_id=lane_id)
-    _validate_cloud_artifact_captured_at(artifact.get("captured_at"), errors, lane_id=lane_id)
+    _validate_cloud_artifact_captured_at(
+        artifact.get("captured_at"), errors, lane_id=lane_id
+    )
 
     adapter_kind = artifact.get("adapter_kind")
     if not isinstance(adapter_kind, str) or adapter_kind not in VALID_ADAPTER_KINDS:
@@ -1062,7 +1092,8 @@ def _validate_cloud_artifact(
 
     evidence_hash = artifact.get("evidence_hash")
     if isinstance(evidence_hash, str) and (
-        len(evidence_hash) != 64 or any(char not in "0123456789abcdef" for char in evidence_hash)
+        len(evidence_hash) != 64
+        or any(char not in "0123456789abcdef" for char in evidence_hash)
     ):
         errors.append(
             {
@@ -1074,14 +1105,18 @@ def _validate_cloud_artifact(
     elif isinstance(evidence_hash, str):
         evidence_next_path = lane.get("evidence_next_verdict")
         if isinstance(evidence_next_path, str) and evidence_next_path:
-            resolved_evidence_next = (base_dir / evidence_next_path).resolve(strict=False)
+            resolved_evidence_next = (base_dir / evidence_next_path).resolve(
+                strict=False
+            )
             base_resolved = base_dir.resolve(strict=False)
             try:
                 resolved_evidence_next.relative_to(base_resolved)
             except ValueError:
                 resolved_evidence_next = None
             if resolved_evidence_next is not None and resolved_evidence_next.is_file():
-                actual_hash = hashlib.sha256(resolved_evidence_next.read_bytes()).hexdigest()
+                actual_hash = hashlib.sha256(
+                    resolved_evidence_next.read_bytes()
+                ).hexdigest()
                 if evidence_hash != actual_hash:
                     errors.append(
                         {
@@ -1093,7 +1128,9 @@ def _validate_cloud_artifact(
 
     boundary = artifact.get("boundary")
     if isinstance(boundary, dict):
-        summary["observed_external_facts_only"] = boundary.get("observed_external_facts_only")
+        summary["observed_external_facts_only"] = boundary.get(
+            "observed_external_facts_only"
+        )
         summary["attests_runtime_isolation"] = boundary.get("attests_runtime_isolation")
     if (
         not isinstance(boundary, dict)
@@ -1113,7 +1150,11 @@ def _validate_cloud_artifact(
 
     lane_start_commit = lane.get("start_commit")
     base_sha = artifact.get("base_sha")
-    if isinstance(lane_start_commit, str) and lane_start_commit and isinstance(base_sha, str):
+    if (
+        isinstance(lane_start_commit, str)
+        and lane_start_commit
+        and isinstance(base_sha, str)
+    ):
         if base_sha != lane_start_commit:
             errors.append(
                 {
@@ -1125,7 +1166,11 @@ def _validate_cloud_artifact(
 
     lane_end_commit = lane.get("end_commit")
     head_sha = artifact.get("head_sha")
-    if isinstance(lane_end_commit, str) and lane_end_commit and isinstance(head_sha, str):
+    if (
+        isinstance(lane_end_commit, str)
+        and lane_end_commit
+        and isinstance(head_sha, str)
+    ):
         if head_sha != lane_end_commit:
             errors.append(
                 {
@@ -1324,7 +1369,10 @@ def _validate_worktree_receipt(
         )
 
     for field in ("worktree", "branch", "base_commit", "head_commit", "evidence_dir"):
-        if not isinstance(receipt.get(field), str) or not str(receipt.get(field)).strip():
+        if (
+            not isinstance(receipt.get(field), str)
+            or not str(receipt.get(field)).strip()
+        ):
             errors.append(
                 {
                     "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_INVALID",
@@ -1387,7 +1435,9 @@ def _validate_worktree_receipt(
             }
         )
 
-    if isinstance(lane.get("start_commit"), str) and receipt.get("base_commit") != lane.get("start_commit"):
+    if isinstance(lane.get("start_commit"), str) and receipt.get(
+        "base_commit"
+    ) != lane.get("start_commit"):
         errors.append(
             {
                 "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_BASE_COMMIT_MISMATCH",
@@ -1395,7 +1445,9 @@ def _validate_worktree_receipt(
                 "lane_id": lane_id,
             }
         )
-    if isinstance(lane.get("end_commit"), str) and receipt.get("head_commit") != lane.get("end_commit"):
+    if isinstance(lane.get("end_commit"), str) and receipt.get(
+        "head_commit"
+    ) != lane.get("end_commit"):
         errors.append(
             {
                 "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_HEAD_COMMIT_MISMATCH",
@@ -1403,7 +1455,9 @@ def _validate_worktree_receipt(
                 "lane_id": lane_id,
             }
         )
-    if isinstance(lane.get("evidence_dir"), str) and receipt.get("evidence_dir") != lane.get("evidence_dir"):
+    if isinstance(lane.get("evidence_dir"), str) and receipt.get(
+        "evidence_dir"
+    ) != lane.get("evidence_dir"):
         errors.append(
             {
                 "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_EVIDENCE_DIR_MISMATCH",
@@ -1418,9 +1472,12 @@ def _validate_worktree_receipt(
         and all(isinstance(item, str) for item in lane_touched_files)
         and changed_files
     ):
-        normalized_touched = {PurePosixPath(item).as_posix() for item in lane_touched_files}
-        missing_touched = sorted(normalized_touched - set(changed_files))
-        if missing_touched:
+        normalized_touched = {
+            PurePosixPath(item).as_posix() for item in lane_touched_files
+        }
+        changed_set = set(changed_files)
+        extra_touched = sorted(normalized_touched - changed_set)
+        if extra_touched:
             errors.append(
                 {
                     "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_TOUCHED_FILES_MISMATCH",
@@ -1428,6 +1485,16 @@ def _validate_worktree_receipt(
                     "lane_id": lane_id,
                 }
             )
+        if required:
+            under_reported = sorted(changed_set - normalized_touched)
+            if under_reported:
+                errors.append(
+                    {
+                        "code": "ERR_TEAM_LEDGER_WORKTREE_RECEIPT_TOUCHED_FILES_UNDERREPORTED",
+                        "message": "passed lane touched_files must equal worktree_receipt changed_files",
+                        "lane_id": lane_id,
+                    }
+                )
     return summary
 
 
@@ -1556,7 +1623,18 @@ def _normalize_repo_relative_files(files: list[str]) -> list[str]:
     return sorted(set(normalized))
 
 
-def _find_overlapping_touched_files(lane_results: list[dict[str, Any]]) -> list[dict[str, Any]]:
+def _observed_overlap_files(lane: dict[str, Any]) -> list[Any]:
+    receipt = lane.get("worktree_receipt")
+    if isinstance(receipt, dict):
+        changed_files = receipt.get("changed_files")
+        if changed_files:
+            return list(changed_files)
+    return lane.get("touched_files", [])
+
+
+def _find_overlapping_touched_files(
+    lane_results: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
     owners_by_file: dict[str, list[dict[str, str]]] = {}
     for lane in lane_results:
         if lane["decision"] != "pass":
@@ -1566,7 +1644,7 @@ def _find_overlapping_touched_files(lane_results: list[dict[str, Any]]) -> list[
         owner = {"lane_id": lane_id}
         if isinstance(end_commit, str) and end_commit:
             owner["end_commit"] = end_commit
-        for touched_file in lane.get("touched_files", []):
+        for touched_file in _observed_overlap_files(lane):
             owners_by_file.setdefault(str(touched_file), []).append(owner)
 
     overlaps: list[dict[str, Any]] = []
@@ -1580,7 +1658,10 @@ def _find_overlapping_touched_files(lane_results: list[dict[str, Any]]) -> list[
                     if owner["lane_id"] in unique_lane_ids and "end_commit" in owner
                 }
             )
-            overlap: dict[str, Any] = {"path": touched_file, "lane_ids": unique_lane_ids}
+            overlap: dict[str, Any] = {
+                "path": touched_file,
+                "lane_ids": unique_lane_ids,
+            }
             if lane_commits:
                 overlap["lane_end_commits"] = lane_commits
             overlaps.append(overlap)
@@ -1711,7 +1792,9 @@ def _validate_merge_receipt(
         )
         return summary
 
-    if not required_files.issubset(set(receipt_files)) or not required_lanes.issubset(set(receipt_lanes)):
+    if not required_files.issubset(set(receipt_files)) or not required_lanes.issubset(
+        set(receipt_lanes)
+    ):
         errors.append(
             {
                 "code": "ERR_TEAM_LEDGER_MERGE_RECEIPT_COVERAGE_MISSING",
@@ -1764,7 +1847,10 @@ def _validate_team_merge_attempt_receipt(
         )
 
     cleanup = receipt.get("cleanup")
-    if not isinstance(cleanup, dict) or cleanup.get("attempt_worktree_removed") is not True:
+    if (
+        not isinstance(cleanup, dict)
+        or cleanup.get("attempt_worktree_removed") is not True
+    ):
         errors.append(
             {
                 "code": "ERR_TEAM_LEDGER_MERGE_RECEIPT_INVALID",
@@ -1806,7 +1892,9 @@ def _validate_team_merge_attempt_receipt(
         for commit in item.get("lane_end_commits", [])
         if isinstance(commit, str)
     }
-    if not required_files.issubset(set(merged_files)) or not required_commits.issubset(set(head_commits)):
+    if not required_files.issubset(set(merged_files)) or not required_commits.issubset(
+        set(head_commits)
+    ):
         errors.append(
             {
                 "code": "ERR_TEAM_LEDGER_MERGE_RECEIPT_COVERAGE_MISSING",
@@ -1819,7 +1907,9 @@ def _validate_team_merge_attempt_receipt(
 
 
 def _is_string_list(value: Any) -> bool:
-    return isinstance(value, list) and all(isinstance(item, str) and item for item in value)
+    return isinstance(value, list) and all(
+        isinstance(item, str) and item for item in value
+    )
 
 
 def build_sample_team_ledger(evidence_dir: str) -> dict[str, Any]:
@@ -1875,7 +1965,9 @@ def _self_test() -> None:
             encoding="utf-8",
         )
         ledger = build_sample_team_ledger("lane-evidence")
-        ledger["lanes"][0]["evidence_next_verdict"] = "lane-evidence/evidence-next-verdict.json"
+        ledger["lanes"][0]["evidence_next_verdict"] = (
+            "lane-evidence/evidence-next-verdict.json"
+        )
         verdict = build_team_ledger_verdict(ledger, base_dir=root)
         if verdict["decision"] != "pass":
             raise AssertionError("valid ledger must pass")
@@ -1909,15 +2001,21 @@ def _self_test() -> None:
             encoding="utf-8",
         )
         with_pr = build_sample_team_ledger("lane-evidence")
-        with_pr["lanes"][0]["evidence_next_verdict"] = "lane-evidence/evidence-next-verdict.json"
-        with_pr["lanes"][0]["pr_url"] = "https://github.com/Moonweave-Systems/Depone/pull/42"
+        with_pr["lanes"][0]["evidence_next_verdict"] = (
+            "lane-evidence/evidence-next-verdict.json"
+        )
+        with_pr["lanes"][0]["pr_url"] = (
+            "https://github.com/Moonweave-Systems/Depone/pull/42"
+        )
         with_pr["lanes"][0]["pr_artifact"] = "lane-evidence/pr-artifact.json"
         with_pr_verdict = build_team_ledger_verdict(with_pr, base_dir=root)
         if with_pr_verdict["decision"] != "pass":
             raise AssertionError("matching PR artifact must pass")
 
         bad_pr = build_sample_team_ledger("lane-evidence")
-        bad_pr["lanes"][0]["evidence_next_verdict"] = "lane-evidence/evidence-next-verdict.json"
+        bad_pr["lanes"][0]["evidence_next_verdict"] = (
+            "lane-evidence/evidence-next-verdict.json"
+        )
         bad_pr["lanes"][0]["pr_artifact"] = "lane-evidence/missing-pr-artifact.json"
         bad_pr_verdict = build_team_ledger_verdict(bad_pr, base_dir=root)
         if bad_pr_verdict["decision"] != "blocked":
@@ -1936,7 +2034,9 @@ def _self_test() -> None:
                     "base_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                     "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
                     "pr_url": "https://github.com/Moonweave-Systems/Depone/pull/42",
-                    "evidence_hash": hashlib.sha256(evidence_next.read_bytes()).hexdigest(),
+                    "evidence_hash": hashlib.sha256(
+                        evidence_next.read_bytes()
+                    ).hexdigest(),
                     "captured_at": "2026-06-30T07:30:00Z",
                     "boundary": {
                         "observed_external_facts_only": True,
@@ -1952,7 +2052,9 @@ def _self_test() -> None:
         cloud_lane = build_sample_team_ledger("lane-evidence")
         cloud_lane["lanes"][0]["env_kind"] = "cloud"
         cloud_lane["lanes"][0]["team_adapter_kind"] = "external"
-        cloud_lane["lanes"][0]["evidence_next_verdict"] = "lane-evidence/evidence-next-verdict.json"
+        cloud_lane["lanes"][0]["evidence_next_verdict"] = (
+            "lane-evidence/evidence-next-verdict.json"
+        )
         cloud_lane["lanes"][0]["cloud_artifact"] = "lane-evidence/cloud-artifact.json"
         cloud_verdict = build_team_ledger_verdict(cloud_lane, base_dir=root)
         if cloud_verdict["decision"] != "pass":
@@ -1960,7 +2062,9 @@ def _self_test() -> None:
 
         missing_cloud = build_sample_team_ledger("lane-evidence")
         missing_cloud["lanes"][0]["env_kind"] = "cloud"
-        missing_cloud["lanes"][0]["evidence_next_verdict"] = "lane-evidence/evidence-next-verdict.json"
+        missing_cloud["lanes"][0]["evidence_next_verdict"] = (
+            "lane-evidence/evidence-next-verdict.json"
+        )
         missing_cloud_verdict = build_team_ledger_verdict(missing_cloud, base_dir=root)
         if missing_cloud_verdict["decision"] != "blocked":
             raise AssertionError("passed cloud lane without cloud artifact must block")
@@ -1987,19 +2091,27 @@ def _self_test() -> None:
         )
         merged = build_sample_team_ledger("lane-evidence")
         merged["merge_receipt"] = "team-merge-receipt.json"
-        merged["lanes"][0]["evidence_next_verdict"] = "lane-evidence/evidence-next-verdict.json"
+        merged["lanes"][0]["evidence_next_verdict"] = (
+            "lane-evidence/evidence-next-verdict.json"
+        )
         merged["lanes"][0]["touched_files"] = ["depone/agent_fabric/team_ledger.py"]
         second_lane = dict(merged["lanes"][0])
         second_lane["lane_id"] = "lane-tests"
         second_lane["evidence_dir"] = "lane-evidence-2"
-        second_lane["evidence_next_verdict"] = "lane-evidence-2/evidence-next-verdict.json"
+        second_lane["evidence_next_verdict"] = (
+            "lane-evidence-2/evidence-next-verdict.json"
+        )
         merged["lanes"].append(second_lane)
         merged_verdict = build_team_ledger_verdict(merged, base_dir=root)
         if merged_verdict["decision"] != "pass":
-            raise AssertionError("overlapping passed lanes with a passing merge receipt must pass")
+            raise AssertionError(
+                "overlapping passed lanes with a passing merge receipt must pass"
+            )
 
         missing = build_sample_team_ledger("missing")
-        missing["lanes"][0]["evidence_next_verdict"] = "missing/evidence-next-verdict.json"
+        missing["lanes"][0]["evidence_next_verdict"] = (
+            "missing/evidence-next-verdict.json"
+        )
         missing_verdict = build_team_ledger_verdict(missing, base_dir=root)
         if missing_verdict["decision"] != "blocked":
             raise AssertionError("passed lane with missing evidence must block")
@@ -2009,7 +2121,9 @@ def _self_test() -> None:
         blocked["lanes"][0]["blocked_reason"] = "lane waiting on peer merge"
         blocked_verdict = build_team_ledger_verdict(blocked, base_dir=root)
         if blocked_verdict["decision"] != "blocked-explicit":
-            raise AssertionError("explicitly blocked lane must fan in as blocked-explicit")
+            raise AssertionError(
+                "explicitly blocked lane must fan in as blocked-explicit"
+            )
 
         invalid = build_sample_team_ledger("lane-evidence")
         invalid["lanes"][0]["env_kind"] = "bare-metal"
