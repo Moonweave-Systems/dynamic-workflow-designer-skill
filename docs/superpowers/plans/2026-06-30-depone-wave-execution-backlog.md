@@ -2,7 +2,14 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Give future agents a clean, current, wave-by-wave execution backlog for finishing Depone's evidence-first team and adapter layers.
+**Goal:** Give future agents a clean, current, wave-by-wave execution backlog
+for finishing Depone's evidence-first team and adapter layers.
+
+**Refresh note, 2026-07-01:** This plan is rebased on `origin/main` at
+`a3b9db5` after PR #57 (`team-pr-artifact`) and PR #55
+(`codex-local-capability`) landed. Wave 0 and Wave 1 are historical/completed
+context. New implementation PRs should start at Wave 2 or Wave 4 and should not
+remove the PR #57 or PR #55 files and tests.
 
 **Architecture:** Keep `docs/v125-direction-check-roadmap.md` as product-direction authority, `docs/depone-next-work-plan.md` as the operator backlog, and this file as the executable agent plan. Each wave is one PR-sized slice with exact files, commands, acceptance evidence, and stop rules.
 
@@ -15,12 +22,6 @@
 - Modify: `docs/depone-next-work-plan.md`
   - Maintains the current operator-facing backlog and wave order.
 - Create or modify per future wave:
-  - `depone/agent_fabric/team_pr_artifact.py`
-  - `depone/cli/team_pr_artifact.py`
-  - `tests/test_agent_fabric_team_pr_artifact.py`
-  - `tests/test_team_pr_artifact_cli.py`
-  - `docs/team-pr-artifact/README.md`
-  - `docs/team-pr-artifact/pr-artifact.json`
   - `depone/agent_fabric/team_merge_attempt.py`
   - `depone/cli/team_merge_attempt.py`
   - `tests/test_agent_fabric_team_merge_attempt.py`
@@ -34,6 +35,10 @@
   - `docs/depone-cloud-team-control.md`
 
 ## Wave 0: Repository Hygiene And PR Decision
+
+State: completed on 2026-07-01. PR #55 was independently revalidated from a
+clean worktree, commented with the verification output, and squash-merged as
+`a3b9db5`. Keep this section as audit history only.
 
 **Files:**
 - Modify: `docs/depone-next-work-plan.md`
@@ -52,7 +57,7 @@ PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_contract.py --tier changed
 PYTHONDONTWRITEBYTECODE=1 python3 scripts/dwm.py doctor
 ```
 
-Expected:
+Historical expected output:
 
 ```text
 Ran 15 tests
@@ -76,13 +81,13 @@ Expected for ready path:
 {"number":55,"isDraft":true,"mergeable":"MERGEABLE"}
 ```
 
-If verification passed and the PR is not superseded by `origin/main`, run:
+Historical ready path:
 
 ```bash
 gh pr ready 55
 ```
 
-If it is superseded, leave a closing comment with the exact command output and close it:
+Historical close path:
 
 ```bash
 gh pr close 55 --comment "Closed because origin/main already contains the equivalent capability receipt behavior. Verification evidence: <paste exact command summary>."
@@ -102,7 +107,7 @@ for pr in prs:
 PY
 ```
 
-Expected:
+Historical example:
 
 ```text
 #55 MERGEABLE codex/codex-capability-pass-readiness -> main :: Add Codex capability readiness probe
@@ -148,13 +153,17 @@ git commit -m "Refresh Depone wave backlog"
 
 ## Wave 1: Team PR Artifact Producer
 
+State: completed by PR #57 as `20caeff`. Keep this section as the implementation
+record and contract shape for future maintenance; do not reimplement it in a
+new branch.
+
 **Files:**
-- Create: `depone/agent_fabric/team_pr_artifact.py`
-- Create: `depone/cli/team_pr_artifact.py`
-- Create: `tests/test_agent_fabric_team_pr_artifact.py`
-- Create: `tests/test_team_pr_artifact_cli.py`
-- Create: `docs/team-pr-artifact/README.md`
-- Create: `docs/team-pr-artifact/pr-artifact.json`
+- Existing: `depone/agent_fabric/team_pr_artifact.py`
+- Existing: `depone/cli/team_pr_artifact.py`
+- Existing: `tests/test_agent_fabric_team_pr_artifact.py`
+- Existing: `tests/test_team_pr_artifact_cli.py`
+- Existing: `docs/team-pr-artifact/README.md`
+- Existing: `docs/team-pr-artifact/pr-artifact.json`
 - Modify: `depone/__main__.py`
 - Modify: `scripts/check_contract.py`
 - Modify: `docs/command-reference.md`
@@ -439,7 +448,7 @@ git commit -m "Add minimal local team loop"
 ## Wave 4: Coding Adapter Launch Receipt
 
 **Files:**
-- Modify or create after PR #55 is merged:
+- Modify or create now that PR #55 is merged:
   - `depone/agent_fabric/codex_local_capability.py`
   - `depone/cli/codex_local_capability.py`
   - `depone/agent_fabric/codex_lane_launch.py`
@@ -455,7 +464,7 @@ Run:
 
 ```bash
 git fetch -q origin
-git branch --contains origin/codex/codex-capability-pass-readiness || true
+git branch -r --contains a3b9db5 | grep origin/main
 python3 -m depone codex-local-capability --self-test
 ```
 
@@ -722,3 +731,17 @@ git show --stat --oneline HEAD
 
 Open a draft PR with the exact verification output and keep it draft until the
 committed artifacts can be revalidated from a clean checkout.
+
+## Current Next Slice Guidance
+
+For the next implementation wave, choose one of:
+
+- Wave 2 if the goal is stronger team fan-in evidence: `team-merge-attempt`
+  should derive merge/conflict facts from git rather than trusting operator
+  prose.
+- Wave 4 if the goal is adapter execution: `codex-lane-launch` should use the
+  landed Codex capability receipt and write a launch receipt without reading
+  secrets or claiming a new assurance rung.
+
+Do not combine Wave 2 and Wave 4 in one PR. Do not include stale PR cleanup in
+the implementation PR; keep that as a separate audit-only branch.

@@ -1,16 +1,20 @@
 # Depone Next Work Plan
 
-Status: refreshed native-team and evidence backlog after PR #54 merge and PR #55 draft.
-Date: 2026-06-30.
-Base: `origin/main` at `6ad42af` (`Document agent team wave backlog (#54)`).
-Current draft follow-up: PR #55, `codex/codex-capability-pass-readiness`.
+Status: refreshed native-team and evidence backlog after PR #57 and PR #55
+merged.
+Date: 2026-07-01.
+Base: `origin/main` at `a3b9db5` (`Add Codex capability readiness probe
+(#55)`), after `20caeff` (`Add Team PR artifact producer (#57)`).
+Current follow-up: PR #56, `codex/wave-backlog-refresh`, is this docs-only
+backlog refresh.
 
 ## Purpose
 
 This note is the current operator-facing work order for Depone. It consolidates
 the first A2 captures, signed evidence path, `evidence-next` / `advance`, Team
 Ledger v0, local team lane preparation, shell lane launch, cloud lane artifact
-validation, and the new Codex local capability PR into one sequence.
+validation, Team PR artifact production, and Codex local capability readiness
+into one sequence.
 
 It is not a public benchmark claim and it is not a new assurance rung. The goal
 is to keep the next agents moving through small, reviewable waves that improve
@@ -52,19 +56,24 @@ The executable wave checklist lives in:
   `cloud_artifact`, without claiming provider runtime attestation.
 - Source install readiness is covered by `scripts/install_smoke.py` in the
   changed-tier contract.
+- Team PR artifact production is implemented by PR #57:
+  `depone team-pr-artifact` validates saved or live GitHub PR facts and commits
+  a revalidatable artifact under `docs/team-pr-artifact/`.
+- Codex local capability readiness is implemented by PR #55:
+  `depone codex-local-capability` records `codex --version` readiness facts,
+  validates instruction-file hashes, and keeps the claim explicitly
+  capability-only.
 
 ### Active Draft Work
 
-PR #55 adds the next Codex local capability hardening slice:
+PR #56 is a docs-only backlog refresh:
 
-- PR: <https://github.com/Moonweave-Systems/Depone/pull/55>
-- Branch: `codex/codex-capability-pass-readiness`
-- State: draft, mergeable at refresh time.
-- Scope: records `codex --version` readiness facts, validates
-  `readiness.version_probe`, blocks on unproven local capability, and keeps the
-  claim explicitly capability-only.
-- Non-claim: it does not launch a live model, execute a coding task, schedule a
-  team, prove auth, or raise assurance.
+- PR: <https://github.com/Moonweave-Systems/Depone/pull/56>
+- Branch: `codex/wave-backlog-refresh`
+- Scope: update this work plan and the executable wave plan after PR #57 and
+  PR #55 landed.
+- Non-claim: it does not add a new assurance rung, run adapters, or change
+  evidence validation behavior.
 
 ### Weak Or Missing Layers
 
@@ -74,8 +83,8 @@ PR #55 adds the next Codex local capability hardening slice:
   or cloud adapters and collect full lane evidence end to end.
 - Cloud lanes are observed external facts, not provider runtime isolation
   attestations.
-- PR and check status are validated as local artifacts in Team Ledger, but
-  Depone does not yet have a first-class `gh pr view` receipt producer.
+- PR and check status can be captured by `team-pr-artifact`, but Team Ledger
+  integration still needs to be tightened around real merge attempts.
 - Merge receipts are still command-input artifacts, not derived from real git
   merge or conflict attempts.
 - Key-based signing is useful, but keyless identity and transparency-log
@@ -90,20 +99,19 @@ PR #55 adds the next Codex local capability hardening slice:
 
 The next useful order is:
 
-1. Finish PR #55 or close it with evidence if superseded.
+1. Keep using clean branches from `origin/main`; do not rely on divergent local
+   `main`.
 2. Audit and resolve stale PR stack state without force operations.
-3. Add a first-class PR artifact producer so external PR lanes can be captured
-   deterministically.
-4. Add a real git merge attempt receipt so fan-in can bind conflict evidence.
-5. Build a minimal local `depone team` loop over existing dry-run, preflight,
+3. Add a real git merge attempt receipt so fan-in can bind conflict evidence.
+4. Build a minimal local `depone team` loop over existing dry-run, preflight,
    worktree, shell-lane, ledger, and `next` commands.
-6. Add coding-adapter launch receipts one adapter at a time, starting with
-   Codex only after capability readiness passes.
-7. Add cloud adapter receipts from observed provider artifacts before owning
+5. Add coding-adapter launch receipts one adapter at a time, starting with
+   Codex now that capability readiness has landed.
+6. Add cloud adapter receipts from observed provider artifacts before owning
    cloud runtime provisioning.
-8. Tighten A3 signing ergonomics and keyless feasibility after evidence and team
+7. Tighten A3 signing ergonomics and keyless feasibility after evidence and team
    flows are useful enough to sign.
-9. Build a small benchmark harness only after the run, team, and receipt layers
+8. Build a small benchmark harness only after the run, team, and receipt layers
    can produce re-runnable artifacts.
 
 ## Wave Order
@@ -111,6 +119,10 @@ The next useful order is:
 ### Wave 0: Repository Hygiene
 
 Goal: make the repo safe for continued work without destructive history edits.
+
+State: completed for PR #55 on 2026-07-01. PR #55 was revalidated from a clean
+worktree and merged as `a3b9db5`. Older stacked PRs still need a separate
+close-or-rescue audit.
 
 Actions:
 
@@ -128,6 +140,8 @@ Acceptance:
 ### Wave 1: PR Artifact Producer
 
 Goal: turn GitHub PR state into a local JSON artifact consumable by Team Ledger.
+
+State: completed by PR #57 as `20caeff`.
 
 Actions:
 
@@ -191,7 +205,8 @@ execution.
 
 Actions:
 
-- Finish the Codex capability readiness PR first.
+- Use the landed Codex capability readiness receipt from PR #55 as the
+  precondition.
 - Add an explicit Codex launch receipt only after capability detection passes.
 - Keep command argv allowlisted and sandbox/approval policy recorded.
 - Do not read secrets, private auth files, or token-bearing config.
@@ -292,18 +307,22 @@ Acceptance:
 
 ## Immediate Next Action
 
-Finish Wave 0 first:
+Start the next implementation PR from fresh `origin/main` and pick exactly one
+slice:
+
+- Preferred evidence/team fan-in slice: Wave 2, `team-merge-attempt`.
+- Preferred adapter slice: Wave 4, Codex-only launch receipt.
+
+Recommended Wave 2 preflight:
 
 ```bash
 git fetch -q origin
-gh pr view 55 --json number,title,isDraft,mergeable,headRefName,baseRefName,url
-git switch --detach origin/codex/codex-capability-pass-readiness
-PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.test_agent_fabric_codex_local_capability tests.test_codex_local_capability_cli -v
-PYTHONDONTWRITEBYTECODE=1 python3 -m depone codex-local-capability --self-test
+git switch --create codex/team-merge-attempt origin/main
+PYTHONDONTWRITEBYTECODE=1 python3 -m depone team-pr-artifact --self-test
+PYTHONDONTWRITEBYTECODE=1 python3 -m depone team-ledger --self-test
 PYTHONDONTWRITEBYTECODE=1 python3 scripts/check_contract.py --tier changed
 PYTHONDONTWRITEBYTECODE=1 python3 scripts/dwm.py doctor
 ```
 
-If PR #55 remains green, mark it ready or request review. If it is superseded by
-origin/main, close it with the exact duplicate evidence. After that, run the
-stale PR inventory before starting Wave 1.
+Run the stale PR inventory separately; do not mix it into the Wave 2
+implementation PR.
