@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import tempfile
+from copy import deepcopy
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -20,10 +22,13 @@ from depone.agent_fabric.team_shell_lane_launch import (
     write_receipt,
 )
 from depone.agent_fabric.team_worktree_prep import build_team_worktree_prep
+from depone.agent_fabric.worktree_receipt import WorktreeReceiptError, build_worktree_lane_receipt
 from depone.cli.evidence_next import evaluate_evidence_dir
 
 TEAM_LOCAL_RUN_LEDGER_KIND = "depone-team-local-run-ledger"
 TEAM_LOCAL_SCHEMA_VERSION = "0.1"
+_ALLOWED_RUNTIME_TOKENS = frozenset({"repo_root", "worktree_path", "evidence_dir", "evidence_dir_abs", "lane_id"})
+_RUNTIME_TOKEN_PATTERN = re.compile(r"\{([^{}]+)\}")
 
 
 class TeamLocalError(ValueError):
@@ -109,6 +114,9 @@ def run_team_local(
             "blocking_reasons": [],
             "shell_receipt": None,
             "shell_transcript": None,
+            "shell_receipts": [],
+            "shell_transcripts": [],
+            "worktree_receipt": None,
             "evidence_next_verdict": None,
         }
         lane["verification_state"] = "blocked"
@@ -131,10 +139,11 @@ def run_team_local(
             continue
 
         plan_lane = plan_lanes.get(lane_id, {})
-        command_id = plan_lane.get("command_id")
-        if not isinstance(command_id, str) or not command_id.strip():
-            lane_record["blocking_reasons"].append("lane command_id is required")
-            lane["blocked_reason"] = "lane command_id is required"
+        try:
+            command_ids = _command_ids_for_lane(plan_lane)
+        except TeamLocalError as exc:
+            lane_record["blocking_reasons"].append(f"{exc.code}: {exc.message}")
+            lane["blocked_reason"] = lane_record["blocking_reasons"][0]
             lane_records.append(lane_record)
             stopped = True
             continue
@@ -149,30 +158,60 @@ def run_team_local(
             continue
 
         lane_dir = out_dir / lane_id
-        shell_receipt_path = lane_dir / "shell-receipt.json"
-        transcript_path = lane_dir / "shell-transcript.json"
+        commands_dir = lane_dir / "commands"
+        command_receipts: list[dict[str, Any]] = []
+        shell_receipt_paths: list[str] = []
+        shell_transcript_paths: list[str] = []
         try:
-            shell_receipt = run_shell_lane_command(
-                allowlist=allowlist,
-                command_id=command_id,
-                cwd=Path(worktree_path),
-                transcript_path=transcript_path,
-                timeout_seconds=timeout_seconds,
-                agent_role_id=agent_role_id,
+            runtime_allowlist = _expand_allowlist_runtime_tokens(
+                allowlist,
+                repo_root=repo_root,
+                worktree_path=Path(worktree_path),
+                evidence_dir=Path(lane_id),
+                evidence_dir_abs=lane_dir,
+                lane_id=lane_id,
             )
-            write_receipt(shell_receipt_path, shell_receipt)
-        except TeamShellLaneLaunchError as exc:
-            lane_record["blocking_reasons"].append(f"{exc.code}: {exc.message}")
+            for index, command_id in enumerate(command_ids):
+                receipt_path = commands_dir / f"{_command_artifact_stem(command_id)}-receipt.json"
+                transcript_path = commands_dir / f"{_command_artifact_stem(command_id)}-transcript.json"
+                shell_receipt = run_shell_lane_command(
+                    allowlist=runtime_allowlist,
+                    command_id=command_id,
+                    cwd=Path(worktree_path),
+                    transcript_path=transcript_path,
+                    timeout_seconds=timeout_seconds,
+                    agent_role_id=agent_role_id,
+                )
+                write_receipt(receipt_path, shell_receipt)
+                command_receipts.append(shell_receipt)
+                shell_receipt_paths.append(receipt_path.as_posix())
+                shell_transcript_paths.append(transcript_path.as_posix())
+                if index == 0:
+                    legacy_receipt_path = lane_dir / "shell-receipt.json"
+                    legacy_transcript_path = lane_dir / "shell-transcript.json"
+                    write_receipt(legacy_receipt_path, shell_receipt)
+                    legacy_transcript_path.write_text(
+                        transcript_path.read_text(encoding="utf-8"),
+                        encoding="utf-8",
+                    )
+                    lane_record["shell_receipt"] = legacy_receipt_path.as_posix()
+                    lane_record["shell_transcript"] = legacy_transcript_path.as_posix()
+                if shell_receipt.get("decision") != "pass":
+                    lane_record["blocking_reasons"].append(f"shell command {command_id} did not pass")
+                    break
+        except (TeamShellLaneLaunchError, TeamLocalError) as exc:
+            code = getattr(exc, "code", exc.__class__.__name__)
+            message = getattr(exc, "message", str(exc))
+            lane_record["blocking_reasons"].append(f"{code}: {message}")
             lane["blocked_reason"] = lane_record["blocking_reasons"][0]
             lane_records.append(lane_record)
             stopped = True
             continue
 
-        lane_record["shell_receipt"] = shell_receipt_path.as_posix()
-        lane_record["shell_transcript"] = transcript_path.as_posix()
-        if shell_receipt.get("decision") != "pass":
-            lane_record["blocking_reasons"].append("shell command did not pass")
-            lane["blocked_reason"] = "shell command did not pass"
+        lane_record["shell_receipts"] = shell_receipt_paths
+        lane_record["shell_transcripts"] = shell_transcript_paths
+        if lane_record["blocking_reasons"]:
+            lane["blocked_reason"] = lane_record["blocking_reasons"][0]
             lane_records.append(lane_record)
             stopped = True
             continue
@@ -183,12 +222,31 @@ def run_team_local(
         _write_json(evidence_next_path, evidence_next)
         lane_record["evidence_next_verdict"] = evidence_next_path.as_posix()
         lane["evidence_next_verdict"] = f"{lane_id}/evidence-next-verdict.json"
-        lane["verification_artifacts"] = ["team-shell-lane-launch", "evidence-next"]
+        lane["verification_artifacts"] = ["team-shell-lane-launch", "evidence-next", "worktree-lane-receipt"]
         lane["touched_files"] = _repo_relative_list(plan_lane.get("touched_files"))
         if evidence_next.get("decision") == "continue" and not evidence_next.get("blocking_reasons"):
-            lane["verification_state"] = "pass"
-            lane.pop("blocked_reason", None)
-            lane_record["decision"] = "pass"
+            try:
+                worktree_receipt = build_worktree_lane_receipt(
+                    worktree=Path(worktree_path),
+                    base_commit=effective_base_commit,
+                    evidence_dir=Path(lane_id),
+                    commands=command_receipts,
+                )
+            except WorktreeReceiptError as exc:
+                lane_record["blocking_reasons"].append(f"{exc.code}: {exc.message}")
+                lane["blocked_reason"] = lane_record["blocking_reasons"][0]
+                stopped = True
+            else:
+                worktree_receipt_path = lane_dir / "worktree-receipt.json"
+                _write_json(worktree_receipt_path, worktree_receipt)
+                lane_record["worktree_receipt"] = worktree_receipt_path.as_posix()
+                lane["worktree_receipt"] = f"{lane_id}/worktree-receipt.json"
+                lane["end_commit"] = str(worktree_receipt.get("head_commit") or lane.get("end_commit") or "")
+                if not lane["touched_files"]:
+                    lane["touched_files"] = _repo_relative_list(worktree_receipt.get("changed_files"))
+                lane["verification_state"] = "pass"
+                lane.pop("blocked_reason", None)
+                lane_record["decision"] = "pass"
         else:
             reasons = evidence_next.get("blocking_reasons")
             if isinstance(reasons, list) and reasons:
@@ -197,6 +255,8 @@ def run_team_local(
                 lane_record["blocking_reasons"].append("evidence-next did not continue")
             lane["blocked_reason"] = "; ".join(lane_record["blocking_reasons"])
             stopped = True
+        if lane_record["blocking_reasons"] and lane_record["decision"] != "pass":
+            lane["blocked_reason"] = "; ".join(lane_record["blocking_reasons"])
         lane_records.append(lane_record)
         if stopped:
             break
@@ -331,7 +391,7 @@ def validate_team_local_run_ledger(
                 continue
             if lane.get("decision") not in {"pass", "blocked"}:
                 errors.append(f"lanes[{index}].decision must be pass or blocked")
-            for key in ("shell_receipt", "shell_transcript", "evidence_next_verdict"):
+            for key in ("shell_receipt", "shell_transcript", "evidence_next_verdict", "worktree_receipt"):
                 raw_path = lane.get(key)
                 if raw_path is None:
                     continue
@@ -343,8 +403,107 @@ def validate_team_local_run_ledger(
                     errors.append(f"lanes[{index}].{key} must be repo-relative")
                 elif not (base_dir / artifact_path).is_file():
                     errors.append(f"lanes[{index}].{key} file is missing")
+            for key in ("shell_receipts", "shell_transcripts"):
+                raw_paths = lane.get(key)
+                if raw_paths is None:
+                    continue
+                if not isinstance(raw_paths, list) or not all(isinstance(item, str) for item in raw_paths):
+                    errors.append(f"lanes[{index}].{key} must be a list of strings")
+                    continue
+                for item_index, raw_path in enumerate(raw_paths, start=1):
+                    artifact_path = _validated_artifact_path(raw_path)
+                    if artifact_path is None:
+                        errors.append(f"lanes[{index}].{key}[{item_index}] must be repo-relative")
+                    elif not (base_dir / artifact_path).is_file():
+                        errors.append(f"lanes[{index}].{key}[{item_index}] file is missing")
 
     return errors
+
+
+def _command_ids_for_lane(plan_lane: dict[str, Any]) -> list[str]:
+    command_id = plan_lane.get("command_id")
+    command_ids = plan_lane.get("command_ids")
+    has_command_id = isinstance(command_id, str) and bool(command_id.strip())
+    has_command_ids = command_ids is not None
+    if has_command_id and has_command_ids:
+        raise TeamLocalError(
+            "ERR_TEAM_LOCAL_COMMAND_IDS_INVALID",
+            "lane must not set both command_id and command_ids",
+        )
+    if has_command_id:
+        return [_normalize_command_id(command_id)]
+    if not isinstance(command_ids, list) or not command_ids:
+        raise TeamLocalError(
+            "ERR_TEAM_LOCAL_COMMAND_IDS_INVALID",
+            "lane command_ids must be a non-empty list or command_id must be set",
+        )
+    return [_normalize_command_id(item) for item in command_ids]
+
+
+def _normalize_command_id(value: object) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise TeamLocalError(
+            "ERR_TEAM_LOCAL_COMMAND_ID_INVALID",
+            "command ids must be non-empty strings",
+        )
+    command_id = value.strip()
+    path = PurePosixPath(command_id)
+    if path.is_absolute() or ".." in path.parts or len(path.parts) != 1:
+        raise TeamLocalError(
+            "ERR_TEAM_LOCAL_COMMAND_ID_INVALID",
+            "command ids must be path-safe names",
+        )
+    return command_id
+
+
+def _command_artifact_stem(command_id: str) -> str:
+    return _normalize_command_id(command_id)
+
+
+def _expand_allowlist_runtime_tokens(
+    allowlist: dict[str, object],
+    *,
+    repo_root: Path,
+    worktree_path: Path,
+    evidence_dir: Path,
+    evidence_dir_abs: Path,
+    lane_id: str,
+) -> dict[str, object]:
+    replacements = {
+        "repo_root": repo_root.resolve(strict=False).as_posix(),
+        "worktree_path": worktree_path.resolve(strict=False).as_posix(),
+        "evidence_dir": evidence_dir.as_posix(),
+        "evidence_dir_abs": evidence_dir_abs.resolve(strict=False).as_posix(),
+        "lane_id": lane_id,
+    }
+    expanded = deepcopy(allowlist)
+    commands = expanded.get("commands")
+    if not isinstance(commands, list):
+        return expanded
+    for command in commands:
+        if not isinstance(command, dict):
+            continue
+        argv = command.get("argv")
+        if not isinstance(argv, list):
+            continue
+        command["argv"] = [
+            _expand_runtime_tokens(part, replacements) if isinstance(part, str) else part
+            for part in argv
+        ]
+    return expanded
+
+
+def _expand_runtime_tokens(value: str, replacements: dict[str, str]) -> str:
+    def replace(match: re.Match[str]) -> str:
+        token = match.group(1)
+        if token not in _ALLOWED_RUNTIME_TOKENS:
+            raise TeamLocalError(
+                "ERR_TEAM_LOCAL_TOKEN_INVALID",
+                f"runtime token {{{token}}} is not allowed",
+            )
+        return replacements[token]
+
+    return _RUNTIME_TOKEN_PATTERN.sub(replace, value)
 
 
 def _plan_lanes_by_id(plan: dict[str, Any]) -> dict[str, dict[str, Any]]:
