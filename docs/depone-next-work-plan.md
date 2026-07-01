@@ -5,8 +5,8 @@ merged.
 Date: 2026-07-01.
 Base: `origin/main` at `a3b9db5` (`Add Codex capability readiness probe
 (#55)`), after `20caeff` (`Add Team PR artifact producer (#57)`).
-Current follow-up: PR #56, `codex/wave-backlog-refresh`, is this docs-only
-backlog refresh.
+Current follow-up: open a new implementation PR from `origin/main` for exactly
+one of the next slices below.
 
 ## Purpose
 
@@ -66,14 +66,15 @@ The executable wave checklist lives in:
 
 ### Active Draft Work
 
-PR #56 is a docs-only backlog refresh:
+No active draft is tracked by this document after PR #56 landed. The next branch
+should choose exactly one implementation slice:
 
-- PR: <https://github.com/Moonweave-Systems/Depone/pull/56>
-- Branch: `codex/wave-backlog-refresh`
-- Scope: update this work plan and the executable wave plan after PR #57 and
-  PR #55 landed.
-- Non-claim: it does not add a new assurance rung, run adapters, or change
-  evidence validation behavior.
+- Wave 2: `team-merge-attempt`, if the priority is stronger team fan-in
+  evidence.
+- Wave 4: Codex-only launch receipt, if the priority is adapter execution.
+
+Either slice must stay honest: no new assurance rung, no secret reads, and no
+provider/runtime claims without machine-verifiable evidence.
 
 ### Weak Or Missing Layers
 
