@@ -196,20 +196,21 @@ def resolve_toolbelt(
             if stripped and stripped not in allowed_tools:
                 allowed_tools.append(stripped)
 
-    # Forbidden: all tools the harness supports minus those in allowed set
+    # Forbidden: the harness's concrete tool universe minus the concrete allowed
+    # set. Deriving from concrete tools (not abstract labels) keeps allowed and
+    # forbidden disjoint even when several labels map to a shared tool like Bash.
     harness_map = TOOL_MAPPINGS.get(harness_name, {})
-    supported_labels = set(harness_map.keys())
-    required_labels = set(abstract_tools)
-    # The "forbidden" abstract labels are those the harness supports but this role doesn't need
-    forbidden_labels = supported_labels - required_labels
-    forbidden_tools: list[str] = []
-    for label in sorted(forbidden_labels):
+    allowed_set = set(allowed_tools)
+    concrete_universe: list[str] = []
+    for label in sorted(harness_map.keys()):
         info = harness_map.get(label)
-        if info:
-            for part in info["tool_name"].split("/"):
-                stripped = part.strip()
-                if stripped and stripped not in forbidden_tools:
-                    forbidden_tools.append(stripped)
+        if not info:
+            continue
+        for part in info["tool_name"].split("/"):
+            stripped = part.strip()
+            if stripped and stripped not in concrete_universe:
+                concrete_universe.append(stripped)
+    forbidden_tools = [tool for tool in concrete_universe if tool not in allowed_set]
 
     return {
         "allowed_tools": allowed_tools,

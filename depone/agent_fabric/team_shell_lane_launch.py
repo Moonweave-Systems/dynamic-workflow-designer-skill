@@ -4,9 +4,11 @@ from __future__ import annotations
 
 import hashlib
 import json
+import re
 import subprocess
 import sys
 import tempfile
+from collections.abc import Iterator
 from pathlib import Path
 
 from depone.agent_fabric.agent_operating_contract import (
@@ -21,6 +23,27 @@ TEAM_SHELL_LANE_LAUNCH_SCHEMA_VERSION = "0.1"
 ROLE_REGISTRY_PATH = DWM_ROLES_PATH
 DEFAULT_AGENT_ROLE_ID = V22_WORKER_ROLE_ID
 PROHIBITED_EXECUTABLES = frozenset({"codex", "claude", "claude-code", "opencode"})
+SHELL_INTERPRETERS = frozenset(
+    {"bash", "sh", "dash", "zsh", "ksh", "csh", "tcsh", "fish"}
+)
+# Split each argv token into candidate words so prohibited executables cannot hide
+# inside interpreter (`bash -c "codex ..."`) or wrapper (`env codex`) payloads.
+_ARGV_WORD_SPLIT = re.compile(r"""[\s;&|()<>{}\[\]'"=,]+""")
+
+
+def _argv_words(argv: list[str]) -> Iterator[str]:
+    for token in argv:
+        for word in _ARGV_WORD_SPLIT.split(token):
+            if word:
+                yield word
+
+
+def _scan_argv_for_prohibited_agent(argv: list[str]) -> str | None:
+    for word in _argv_words(argv):
+        name = Path(word).name.lower()
+        if name in PROHIBITED_EXECUTABLES:
+            return name
+    return None
 
 
 class TeamShellLaneLaunchError(Exception):
@@ -94,9 +117,10 @@ def run_shell_lane_command(
         "agent_contract_hash": agent_contract["agent_contract_hash"],
         "agent_contract": agent_contract,
         "boundary": {
-            "uses_shell": False,
+            "uses_shell": Path(argv[0]).name.lower() in SHELL_INTERPRETERS,
             "uses_argv_allowlist": True,
             "executes_commands": True,
+            # False is an argv-scan fact: prohibited agents are blocked before execution.
             "launches_agents": False,
             "calls_live_models": False,
             "raises_assurance": False,
@@ -185,10 +209,14 @@ def write_receipt(path: Path, receipt: dict[str, object]) -> None:
     """Write a shell lane launch receipt."""
 
     path.parent.mkdir(parents=True, exist_ok=True)
-    path.write_text(json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    path.write_text(
+        json.dumps(receipt, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
 
 
-def _resolve_allowlisted_argv(allowlist: dict[str, object], command_id: str) -> list[str]:
+def _resolve_allowlisted_argv(
+    allowlist: dict[str, object], command_id: str
+) -> list[str]:
     if not command_id.strip():
         raise TeamShellLaneLaunchError(
             "ERR_TEAM_SHELL_LANE_COMMAND_ID_REQUIRED",
@@ -216,17 +244,22 @@ def _resolve_allowlisted_argv(allowlist: dict[str, object], command_id: str) -> 
             "command_id is not present in allowlist",
         )
     argv = selected.get("argv")
-    if not isinstance(argv, list) or not argv or not all(isinstance(part, str) and part for part in argv):
+    if (
+        not isinstance(argv, list)
+        or not argv
+        or not all(isinstance(part, str) and part for part in argv)
+    ):
         raise TeamShellLaneLaunchError(
             "ERR_TEAM_SHELL_LANE_ARGV_INVALID",
             "allowlisted argv must be a non-empty list of non-empty strings",
         )
     normalized = list(argv)
-    executable = Path(normalized[0]).name.lower()
-    if executable in PROHIBITED_EXECUTABLES:
+    blocked = _scan_argv_for_prohibited_agent(normalized)
+    if blocked is not None:
         raise TeamShellLaneLaunchError(
             "ERR_TEAM_SHELL_LANE_AGENT_EXECUTABLE_BLOCKED",
-            "Codex, Claude, Claude Code, and OpenCode executables are not permitted in shell lane launch",
+            f"prohibited agent executable '{blocked}' is not permitted anywhere in shell lane argv "
+            "(including interpreter -c and wrapper trampolines)",
         )
     return normalized
 
@@ -235,7 +268,9 @@ def _resolve_cwd(cwd: Path) -> Path:
     try:
         resolved = cwd.resolve(strict=True)
     except OSError as exc:
-        raise TeamShellLaneLaunchError("ERR_TEAM_SHELL_LANE_CWD_INVALID", str(exc)) from exc
+        raise TeamShellLaneLaunchError(
+            "ERR_TEAM_SHELL_LANE_CWD_INVALID", str(exc)
+        ) from exc
     if not resolved.is_dir():
         raise TeamShellLaneLaunchError(
             "ERR_TEAM_SHELL_LANE_CWD_INVALID",

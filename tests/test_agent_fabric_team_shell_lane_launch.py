@@ -44,7 +44,10 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
             self.assertIn("stderr_sha256", receipt)
             self.assertEqual(receipt["allowlist_sha256"], _canonical_hash(allowlist))
             self.assertIsInstance(receipt["agent_contract_hash"], str)
-            self.assertEqual(receipt["agent_contract_hash"], receipt["agent_contract"]["agent_contract_hash"])
+            self.assertEqual(
+                receipt["agent_contract_hash"],
+                receipt["agent_contract"]["agent_contract_hash"],
+            )
             self.assertEqual(receipt["agent_contract"]["role_id"], "worker")
             self.assertEqual(
                 receipt["agent_contract"]["role_registry_path"],
@@ -55,7 +58,9 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
             self.assertTrue(receipt["boundary"]["uses_argv_allowlist"])
             self.assertFalse(receipt["boundary"]["allows_arbitrary_shell_string"])
             self.assertFalse(receipt["boundary"]["raises_assurance"])
-            transcript = json.loads(Path(str(receipt["transcript_path"])).read_text(encoding="utf-8"))
+            transcript = json.loads(
+                Path(str(receipt["transcript_path"])).read_text(encoding="utf-8")
+            )
             self.assertEqual(transcript["stdout_text"], "hello shell lane\n")
             self.assertEqual(
                 receipt["stdout_sha256"],
@@ -102,9 +107,17 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
                 role_registry_path=registry_path,
             )
 
-            self.assertEqual(receipt["agent_contract_hash"], contract["agent_contract_hash"])
-            self.assertEqual(receipt["agent_contract"]["agent_contract_hash"], contract["agent_contract_hash"])
-            self.assertEqual(receipt["agent_contract"]["role_registry_sha256"], contract["role_registry"]["sha256"])
+            self.assertEqual(
+                receipt["agent_contract_hash"], contract["agent_contract_hash"]
+            )
+            self.assertEqual(
+                receipt["agent_contract"]["agent_contract_hash"],
+                contract["agent_contract_hash"],
+            )
+            self.assertEqual(
+                receipt["agent_contract"]["role_registry_sha256"],
+                contract["role_registry"]["sha256"],
+            )
             self.assertEqual(receipt["agent_contract"]["role_id"], "worker")
 
     def test_invalid_agent_contract_is_blocked_before_execution(self) -> None:
@@ -112,7 +125,9 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
             root = Path(tmp)
             contract_path = root / "contract.json"
             registry_path = root / "roles.json"
-            contract_path.write_text(json.dumps({"contract_id": "missing identity"}), encoding="utf-8")
+            contract_path.write_text(
+                json.dumps({"contract_id": "missing identity"}), encoding="utf-8"
+            )
             registry_path.write_text(
                 json.dumps(
                     {
@@ -133,7 +148,11 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
 
             with self.assertRaises(TeamShellLaneLaunchError) as raised:
                 run_shell_lane_command(
-                    allowlist={"commands": [{"id": "hello", "argv": [sys.executable, "--version"]}]},
+                    allowlist={
+                        "commands": [
+                            {"id": "hello", "argv": [sys.executable, "--version"]}
+                        ]
+                    },
                     command_id="hello",
                     cwd=root,
                     transcript_path=root / "transcript.json",
@@ -142,7 +161,9 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
                     role_registry_path=registry_path,
                 )
 
-            self.assertEqual(raised.exception.code, "ERR_TEAM_SHELL_LANE_AGENT_CONTRACT_INVALID")
+            self.assertEqual(
+                raised.exception.code, "ERR_TEAM_SHELL_LANE_AGENT_CONTRACT_INVALID"
+            )
             self.assertFalse((root / "transcript.json").exists())
 
     def test_unknown_agent_role_is_blocked_before_execution(self) -> None:
@@ -159,13 +180,7 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
                 "trust_boundary": "untrusted until reviewed",
             }
             registry_path.write_text(
-                json.dumps(
-                    {
-                        "roles": [
-                            worker_role
-                        ]
-                    }
-                ),
+                json.dumps({"roles": [worker_role]}),
                 encoding="utf-8",
             )
             contract_path.write_text(
@@ -175,7 +190,11 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
 
             with self.assertRaises(TeamShellLaneLaunchError) as raised:
                 run_shell_lane_command(
-                    allowlist={"commands": [{"id": "hello", "argv": [sys.executable, "--version"]}]},
+                    allowlist={
+                        "commands": [
+                            {"id": "hello", "argv": [sys.executable, "--version"]}
+                        ]
+                    },
                     command_id="hello",
                     cwd=root,
                     transcript_path=root / "transcript.json",
@@ -184,20 +203,28 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
                     role_registry_path=registry_path,
                 )
 
-            self.assertEqual(raised.exception.code, "ERR_TEAM_SHELL_LANE_AGENT_ROLE_INVALID")
+            self.assertEqual(
+                raised.exception.code, "ERR_TEAM_SHELL_LANE_AGENT_ROLE_INVALID"
+            )
             self.assertFalse((root / "transcript.json").exists())
 
     def test_unknown_command_id_is_blocked_before_execution(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             with self.assertRaises(TeamShellLaneLaunchError) as raised:
                 run_shell_lane_command(
-                    allowlist={"commands": [{"id": "known", "argv": [sys.executable, "--version"]}]},
+                    allowlist={
+                        "commands": [
+                            {"id": "known", "argv": [sys.executable, "--version"]}
+                        ]
+                    },
                     command_id="missing",
                     cwd=Path(tmp),
                     transcript_path=Path(tmp) / "transcript.json",
                 )
 
-            self.assertEqual(raised.exception.code, "ERR_TEAM_SHELL_LANE_COMMAND_NOT_ALLOWED")
+            self.assertEqual(
+                raised.exception.code, "ERR_TEAM_SHELL_LANE_COMMAND_NOT_ALLOWED"
+            )
             self.assertFalse((Path(tmp) / "transcript.json").exists())
 
     def test_agent_executables_are_blocked_even_when_allowlisted(self) -> None:
@@ -224,6 +251,48 @@ class AgentFabricTeamShellLaneLaunchTests(unittest.TestCase):
                         "ERR_TEAM_SHELL_LANE_AGENT_EXECUTABLE_BLOCKED",
                     )
                     self.assertFalse((Path(tmp) / "transcript.json").exists())
+
+    def test_interpreter_and_wrapper_trampolines_cannot_smuggle_agents(self) -> None:
+        bypass_argvs = [
+            ["bash", "-c", "codex --version"],
+            ["sh", "-c", "codex exec do-work"],
+            [sys.executable, "-c", "import os; os.system('codex')"],
+            ["env", "codex", "--version"],
+            ["npx", "codex", "--version"],
+        ]
+        for argv in bypass_argvs:
+            with self.subTest(argv=argv):
+                with tempfile.TemporaryDirectory() as tmp:
+                    with self.assertRaises(TeamShellLaneLaunchError) as raised:
+                        run_shell_lane_command(
+                            allowlist={"commands": [{"id": "bypass", "argv": argv}]},
+                            command_id="bypass",
+                            cwd=Path(tmp),
+                            transcript_path=Path(tmp) / "transcript.json",
+                        )
+
+                    self.assertEqual(
+                        raised.exception.code,
+                        "ERR_TEAM_SHELL_LANE_AGENT_EXECUTABLE_BLOCKED",
+                    )
+                    self.assertFalse((Path(tmp) / "transcript.json").exists())
+
+    def test_receipt_binds_uses_shell_to_actual_argv(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            receipt = run_shell_lane_command(
+                allowlist={
+                    "commands": [{"id": "sh", "argv": ["bash", "-c", "printf hi"]}]
+                },
+                command_id="sh",
+                cwd=root,
+                transcript_path=root / "transcript.json",
+                timeout_seconds=30,
+            )
+
+            self.assertEqual(receipt["decision"], "pass")
+            self.assertTrue(receipt["boundary"]["uses_shell"])
+            self.assertFalse(receipt["boundary"]["launches_agents"])
 
 
 if __name__ == "__main__":

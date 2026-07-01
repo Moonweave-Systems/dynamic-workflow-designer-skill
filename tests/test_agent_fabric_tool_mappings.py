@@ -8,6 +8,7 @@ import unittest
 from pathlib import Path
 
 from depone.compile.tool_mappings import (
+    HARNESS_CLAUDE_CODE,
     HARNESS_CODEX,
     HARNESS_OPENCODE,
     HARNESS_SHELL,
@@ -77,7 +78,9 @@ class AgentFabricToolMappingTests(unittest.TestCase):
         self.assertIn("ls", toolbelt["allowed_tools"])
         self.assertIn("rg", toolbelt["allowed_tools"])
 
-    def test_real_role_pack_planner_gets_rg_without_inspect_tools_on_shell(self) -> None:
+    def test_real_role_pack_planner_gets_rg_without_inspect_tools_on_shell(
+        self,
+    ) -> None:
         from depone.compile.agent_fabric import compile_agent_fabric
 
         bundle = compile_agent_fabric(_profile("planner"), HARNESS_SHELL, _role_pack())
@@ -97,6 +100,25 @@ class AgentFabricToolMappingTests(unittest.TestCase):
         self.assertIn("Glob", opencode["allowed_tools"])
         self.assertIn("codegraph", opencode["allowed_tools"])
         self.assertNotIn("rg", opencode["allowed_tools"])
+
+    def test_resolved_toolbelt_allowed_and_forbidden_are_disjoint(self) -> None:
+        for harness in (
+            HARNESS_CODEX,
+            HARNESS_CLAUDE_CODE,
+            HARNESS_OPENCODE,
+            HARNESS_SHELL,
+        ):
+            with self.subTest(harness=harness):
+                toolbelt = resolve_toolbelt(
+                    harness, ["read", "search", "inspect", "test"]
+                )
+                allowed = set(toolbelt["allowed_tools"])
+                forbidden = set(toolbelt["forbidden_tools"])
+                self.assertEqual(
+                    allowed & forbidden,
+                    set(),
+                    f"concrete tool appears as both allowed and forbidden for {harness}",
+                )
 
     def test_compile_cli_writes_agent_fabric_bundle_with_shell_tools(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
