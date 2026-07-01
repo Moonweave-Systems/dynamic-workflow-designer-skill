@@ -112,8 +112,9 @@ def build_team_merge_attempt_receipt(
             captured_at=captured_at,
         )
 
-    cleanup = {"attempt_worktree_removed": False}
+    cleanup = {"attempt_worktree_removed": False, "attempt_worktree_restored": False}
     temp_dir: tempfile.TemporaryDirectory[str] | None = None
+    original_ref: str | None = None
     if disposable:
         temp_dir = tempfile.TemporaryDirectory(prefix="depone-merge-attempt-")
         worktree = Path(temp_dir.name) / "worktree"
@@ -133,6 +134,7 @@ def build_team_merge_attempt_receipt(
             )
     else:
         worktree = repo
+        original_ref = _current_checkout(worktree)
         checkout_result = _run_git(worktree, ["checkout", "--detach", base_commit])
         if checkout_result.returncode != 0:
             return _blocked_receipt(
@@ -163,8 +165,26 @@ def build_team_merge_attempt_receipt(
         if temp_dir is not None:
             temp_dir.cleanup()
         cleanup["attempt_worktree_removed"] = not worktree.exists() and remove_result.returncode == 0
+        if not cleanup["attempt_worktree_removed"]:
+            decision = "blocked"
+            errors.append(
+                _error(
+                    "ERR_TEAM_MERGE_ATTEMPT_CLEANUP_FAILED",
+                    _stderr_or_stdout(remove_result) or "attempt worktree was not removed",
+                )
+            )
     else:
         cleanup["attempt_worktree_removed"] = False
+        restore_result = _run_git(worktree, ["checkout", original_ref or "-"])
+        cleanup["attempt_worktree_restored"] = restore_result.returncode == 0
+        if restore_result.returncode != 0:
+            decision = "blocked"
+            errors.append(
+                _error(
+                    "ERR_TEAM_MERGE_ATTEMPT_RESTORE_FAILED",
+                    _stderr_or_stdout(restore_result) or "target worktree was not restored",
+                )
+            )
 
     receipt = {
         "kind": TEAM_MERGE_ATTEMPT_KIND,
@@ -215,19 +235,43 @@ def validate_team_merge_attempt_receipt(receipt: dict[str, Any]) -> list[dict[st
         errors.append(_error("ERR_TEAM_MERGE_ATTEMPT_EXIT_CODE_INVALID", "exit_code must be an integer"))
     if not _is_string_list(receipt.get("merged_files")) or not _is_string_list(receipt.get("conflict_files")):
         errors.append(_error("ERR_TEAM_MERGE_ATTEMPT_FILES_INVALID", "merged_files and conflict_files must be string lists"))
+    _validate_captured_at(receipt.get("captured_at"), errors)
+    if not _is_string_list(receipt.get("source_command")):
+        errors.append(_error("ERR_TEAM_MERGE_ATTEMPT_SOURCE_COMMAND_INVALID", "source_command must be a non-empty string list"))
+    _validate_error_records(receipt.get("errors"), errors)
     cleanup = receipt.get("cleanup")
     if not isinstance(cleanup, dict) or not isinstance(cleanup.get("attempt_worktree_removed"), bool):
         errors.append(_error("ERR_TEAM_MERGE_ATTEMPT_CLEANUP_INVALID", "cleanup.attempt_worktree_removed must be a boolean"))
+    elif "attempt_worktree_restored" in cleanup and not isinstance(cleanup.get("attempt_worktree_restored"), bool):
+        errors.append(_error("ERR_TEAM_MERGE_ATTEMPT_CLEANUP_INVALID", "cleanup.attempt_worktree_restored must be a boolean"))
     if receipt.get("decision") == "pass":
         if receipt.get("exit_code") != 0:
             errors.append(_error("ERR_TEAM_MERGE_ATTEMPT_PASS_INVALID", "passing receipt must have exit_code 0"))
         if receipt.get("conflict_files"):
             errors.append(_error("ERR_TEAM_MERGE_ATTEMPT_PASS_INVALID", "passing receipt must not list conflicts"))
-        if isinstance(cleanup, dict) and cleanup.get("attempt_worktree_removed") is not True:
-            errors.append(_error("ERR_TEAM_MERGE_ATTEMPT_CLEANUP_INVALID", "passing disposable receipt must remove attempt worktree"))
+        if isinstance(cleanup, dict) and not (
+            cleanup.get("attempt_worktree_removed") is True or cleanup.get("attempt_worktree_restored") is True
+        ):
+            errors.append(
+                _error(
+                    "ERR_TEAM_MERGE_ATTEMPT_CLEANUP_INVALID",
+                    "passing receipt must remove or restore the attempt worktree",
+                )
+            )
     boundary = receipt.get("boundary")
-    if not isinstance(boundary, dict) or boundary.get("approves_merge") is not False or boundary.get("raises_assurance") is not False:
-        errors.append(_error("ERR_TEAM_MERGE_ATTEMPT_BOUNDARY_INVALID", "boundary must not approve merges or raise assurance"))
+    if not isinstance(boundary, dict):
+        errors.append(_error("ERR_TEAM_MERGE_ATTEMPT_BOUNDARY_INVALID", "boundary must be an object"))
+    else:
+        expected_boundary = {
+            "executes_git_merge_attempt": True,
+            "launches_agents": False,
+            "calls_live_models": False,
+            "approves_merge": False,
+            "raises_assurance": False,
+        }
+        for key, expected in expected_boundary.items():
+            if boundary.get(key) is not expected:
+                errors.append(_error("ERR_TEAM_MERGE_ATTEMPT_BOUNDARY_INVALID", f"boundary.{key} must be {expected}"))
     return errors
 
 
@@ -295,6 +339,16 @@ def _is_dirty(repo: Path) -> bool:
     return bool(result.stdout.strip()) or result.returncode != 0
 
 
+def _current_checkout(repo: Path) -> str | None:
+    branch = _run_git(repo, ["symbolic-ref", "--quiet", "--short", "HEAD"])
+    if branch.returncode == 0 and branch.stdout.strip():
+        return branch.stdout.strip()
+    commit = _run_git(repo, ["rev-parse", "--verify", "HEAD"])
+    if commit.returncode == 0 and commit.stdout.strip():
+        return commit.stdout.strip()
+    return None
+
+
 def _run_git(repo: Path, args: list[str]) -> subprocess.CompletedProcess[str]:
     return subprocess.run(["git", "-C", str(repo), *args], capture_output=True, text=True, check=False)
 
@@ -312,6 +366,42 @@ def _stderr_or_stdout(result: subprocess.CompletedProcess[str]) -> str:
 
 def _is_string_list(value: Any) -> bool:
     return isinstance(value, list) and all(isinstance(item, str) and item for item in value)
+
+
+def _validate_captured_at(value: Any, errors: list[dict[str, str]]) -> None:
+    if not isinstance(value, str) or not value.strip():
+        errors.append(
+            _error(
+                "ERR_TEAM_MERGE_ATTEMPT_CAPTURED_AT_INVALID",
+                "captured_at must be a non-empty ISO timestamp",
+            )
+        )
+        return
+    try:
+        datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        errors.append(
+            _error(
+                "ERR_TEAM_MERGE_ATTEMPT_CAPTURED_AT_INVALID",
+                "captured_at must be parseable as ISO",
+            )
+        )
+
+
+def _validate_error_records(value: Any, errors: list[dict[str, str]]) -> None:
+    if not isinstance(value, list):
+        errors.append(_error("ERR_TEAM_MERGE_ATTEMPT_ERRORS_INVALID", "errors must be a list"))
+        return
+    for item in value:
+        if not isinstance(item, dict):
+            errors.append(_error("ERR_TEAM_MERGE_ATTEMPT_ERRORS_INVALID", "errors entries must be objects"))
+            return
+        if not isinstance(item.get("code"), str) or not item.get("code"):
+            errors.append(_error("ERR_TEAM_MERGE_ATTEMPT_ERRORS_INVALID", "errors entries must include code"))
+            return
+        if not isinstance(item.get("message"), str) or not item.get("message"):
+            errors.append(_error("ERR_TEAM_MERGE_ATTEMPT_ERRORS_INVALID", "errors entries must include message"))
+            return
 
 
 def _validate_sha_field(receipt: dict[str, Any], key: str, errors: list[dict[str, str]]) -> None:

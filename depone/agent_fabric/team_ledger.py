@@ -15,6 +15,10 @@ from pathlib import Path, PurePosixPath
 from typing import Any
 
 from depone.agent_fabric.claim_gate import canonical_hash
+from depone.agent_fabric.team_merge_attempt import (
+    TEAM_MERGE_ATTEMPT_KIND,
+    validate_team_merge_attempt_receipt,
+)
 from depone.agent_fabric.worktree_receipt import (
     WORKTREE_LANE_RECEIPT_KIND,
     WORKTREE_LANE_RECEIPT_SCHEMA_VERSION,
@@ -25,7 +29,7 @@ TEAM_LEDGER_SCHEMA_VERSION = "0.1"
 TEAM_LEDGER_VERDICT_KIND = "depone-team-ledger-verdict"
 TEAM_LEDGER_PR_ARTIFACT_KIND = "depone-team-ledger-pr-artifact"
 TEAM_LEDGER_CLOUD_ARTIFACT_KIND = "depone-team-ledger-cloud-artifact"
-TEAM_LEDGER_MERGE_ATTEMPT_KIND = "depone-team-merge-attempt"
+TEAM_LEDGER_MERGE_ATTEMPT_KIND = TEAM_MERGE_ATTEMPT_KIND
 TEAM_LEDGER_SUBJECT_COMMIT_SEMANTICS = "observed_subject_commit"
 VALID_ENV_KINDS = frozenset({"local", "container", "cloud"})
 VALID_ADAPTER_KINDS = frozenset(
@@ -1722,6 +1726,14 @@ def _validate_team_merge_attempt_receipt(
     overlapping_touched_files: list[dict[str, Any]],
     errors: list[dict[str, str]],
 ) -> None:
+    producer_errors = validate_team_merge_attempt_receipt(receipt)
+    errors.extend(
+        {
+            "code": "ERR_TEAM_LEDGER_MERGE_RECEIPT_INVALID",
+            "message": f"team-merge-attempt invalid: {error['code']}: {error['message']}",
+        }
+        for error in producer_errors
+    )
     if receipt.get("schema_version") != TEAM_LEDGER_SCHEMA_VERSION:
         errors.append(
             {

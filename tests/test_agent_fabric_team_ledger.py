@@ -120,7 +120,13 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
                     "captured_at": "2026-07-01T00:00:00Z",
                     "source_command": ["git", "merge", "--no-commit"],
                     "errors": [],
-                    "boundary": {"approves_merge": False, "raises_assurance": False},
+                    "boundary": {
+                        "executes_git_merge_attempt": True,
+                        "launches_agents": False,
+                        "calls_live_models": False,
+                        "approves_merge": False,
+                        "raises_assurance": False,
+                    },
                 },
                 indent=2,
                 sort_keys=True,
@@ -1009,6 +1015,43 @@ class AgentFabricTeamLedgerTests(unittest.TestCase):
             cleanup_removed=False,
             head_commits=["b" * 40, "c" * 40],
         )
+        ledger["lanes"][1]["end_commit"] = "c" * 40
+        for lane in ledger["lanes"]:
+            lane["touched_files"] = ["depone/agent_fabric/team_ledger.py"]
+
+        verdict = build_team_ledger_verdict(ledger, base_dir=self.root)
+
+        self.assertEqual(verdict["decision"], "blocked")
+        self.assertIn(
+            "ERR_TEAM_LEDGER_MERGE_RECEIPT_INVALID",
+            {error["code"] for error in verdict["errors"]},
+        )
+
+    def test_team_merge_attempt_receipt_reuses_producer_validation(self) -> None:
+        ledger = self._ledger_with_evidence_next()
+        self._add_second_passing_lane(ledger)
+        receipt_path = self.root / "team-merge-attempt.json"
+        receipt_path.write_text(
+            json.dumps(
+                {
+                    "kind": "depone-team-merge-attempt",
+                    "schema_version": "0.1",
+                    "decision": "pass",
+                    "head_commits": ["b" * 40, "c" * 40],
+                    "dirty_target_refused": False,
+                    "exit_code": 0,
+                    "merged_files": ["depone/agent_fabric/team_ledger.py"],
+                    "conflict_files": [],
+                    "cleanup": {"attempt_worktree_removed": True},
+                    "boundary": {"approves_merge": False, "raises_assurance": False},
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
+        ledger["merge_receipt"] = "team-merge-attempt.json"
         ledger["lanes"][1]["end_commit"] = "c" * 40
         for lane in ledger["lanes"]:
             lane["touched_files"] = ["depone/agent_fabric/team_ledger.py"]

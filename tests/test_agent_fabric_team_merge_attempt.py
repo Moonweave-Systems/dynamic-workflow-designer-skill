@@ -106,6 +106,25 @@ class AgentFabricTeamMergeAttemptTests(unittest.TestCase):
         self.assertTrue(receipt["dirty_target_refused"])
         self.assertIn("ERR_TEAM_MERGE_ATTEMPT_DIRTY_TARGET", {error["code"] for error in receipt["errors"]})
 
+    def test_in_place_attempt_restores_original_checkout(self) -> None:
+        base = self._branch_with_file("base-lane", "base-only.txt", "base lane\n")
+        head = self._branch_with_file("head-lane", "head-only.txt", "head lane\n")
+        self._git("checkout", "head-lane")
+
+        receipt = build_team_merge_attempt_receipt(
+            repo=self.repo,
+            base=base,
+            heads=[head],
+            disposable=False,
+            captured_at="2026-07-01T00:00:00Z",
+        )
+
+        self.assertEqual(receipt["decision"], "pass")
+        self.assertFalse(receipt["cleanup"]["attempt_worktree_removed"])
+        self.assertTrue(receipt["cleanup"]["attempt_worktree_restored"])
+        self.assertEqual(self._git("branch", "--show-current").stdout.strip(), "head-lane")
+        self.assertEqual(validate_team_merge_attempt_receipt(receipt), [])
+
     def test_missing_base_commit_blocks(self) -> None:
         head = self._branch_with_file("head-lane", "head-only.txt", "head lane\n")
 
@@ -129,7 +148,43 @@ class AgentFabricTeamMergeAttemptTests(unittest.TestCase):
             "captured_at": "2026-07-01T00:00:00Z",
             "source_command": ["git", "merge", "--no-commit"],
             "errors": [],
-            "boundary": {"approves_merge": False, "raises_assurance": False},
+            "boundary": {
+                "executes_git_merge_attempt": True,
+                "launches_agents": False,
+                "calls_live_models": False,
+                "approves_merge": False,
+                "raises_assurance": False,
+            },
+        }
+
+        self.assertIn(
+            "ERR_TEAM_MERGE_ATTEMPT_CLEANUP_INVALID",
+            {error["code"] for error in validate_team_merge_attempt_receipt(receipt)},
+        )
+
+    def test_pass_receipt_requires_removed_or_restored_attempt_worktree(self) -> None:
+        receipt = {
+            "kind": TEAM_MERGE_ATTEMPT_KIND,
+            "schema_version": TEAM_MERGE_ATTEMPT_SCHEMA_VERSION,
+            "decision": "pass",
+            "base_commit": "a" * 40,
+            "head_commits": ["b" * 40],
+            "attempt_worktree": "/tmp/depone-merge-attempt",
+            "dirty_target_refused": False,
+            "exit_code": 0,
+            "merged_files": ["depone/agent_fabric/team_ledger.py"],
+            "conflict_files": [],
+            "cleanup": {"attempt_worktree_removed": False},
+            "captured_at": "2026-07-01T00:00:00Z",
+            "source_command": ["git", "merge", "--no-commit"],
+            "errors": [],
+            "boundary": {
+                "executes_git_merge_attempt": True,
+                "launches_agents": False,
+                "calls_live_models": False,
+                "approves_merge": False,
+                "raises_assurance": False,
+            },
         }
 
         self.assertIn(
