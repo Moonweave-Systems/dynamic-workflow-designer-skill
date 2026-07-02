@@ -387,6 +387,13 @@ def validate_runner_receipt(receipt: dict[str, Any]) -> list[str]:
         isinstance(item, str) for item in receipt.get("touched_files", [])
     ):
         errors.append("touched_files must be a list of strings")
+    source_hashes = receipt.get("source_hashes")
+    if not isinstance(source_hashes, dict):
+        errors.append("source_hashes must be an object")
+    elif source_hashes.get("receipt") != canonical_hash(
+        {key: value for key, value in receipt.items() if key != "source_hashes"}
+    ):
+        errors.append("source_hashes.receipt mismatch")
     return errors
 
 

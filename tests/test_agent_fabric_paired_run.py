@@ -93,6 +93,25 @@ class AgentFabricPairedRunTests(unittest.TestCase):
         self.assertIn("transcript_path must be a non-empty string", errors)
         self.assertIn("arm must be one of ['direct', 'governed']", errors)
 
+    def test_runner_receipt_rejects_source_hash_mismatch(self) -> None:
+        receipt = build_runner_receipt(
+            runner_kind="codex-cli",
+            arm="governed",
+            task_id="task",
+            worktree="worktree",
+            invocation=["codex", "run"],
+            transcript_path="transcript.log",
+            exit_code=0,
+            touched_files=["task.txt"],
+            started_at=now_utc(),
+            ended_at=now_utc(),
+        )
+        receipt["source_hashes"]["receipt"] = "0" * 64
+
+        errors = validate_runner_receipt(receipt)
+
+        self.assertIn("source_hashes.receipt mismatch", errors)
+
     def test_paired_run_report_blocks_failed_governed_verification(self) -> None:
         direct_runner = build_runner_receipt(
             runner_kind="codex-cli",
@@ -143,7 +162,18 @@ class AgentFabricPairedRunTests(unittest.TestCase):
 
         governed_observer["test_output"]["status"] = "passed"
         governed_observer["touched_files"] = ["result.txt"]
-        governed_runner["touched_files"] = ["result.txt"]
+        governed_runner = build_runner_receipt(
+            runner_kind="codex-cli",
+            arm="governed",
+            task_id="task",
+            worktree="governed",
+            invocation=["codex", "exec"],
+            transcript_path="governed.log",
+            exit_code=0,
+            touched_files=["result.txt"],
+            started_at=now_utc(),
+            ended_at=now_utc(),
+        )
         ready = build_paired_run_report(
             task_id="task",
             direct_runner=direct_runner,

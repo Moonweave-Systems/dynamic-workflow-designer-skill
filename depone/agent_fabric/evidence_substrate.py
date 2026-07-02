@@ -433,6 +433,8 @@ def validate_external_otel_spans(spans: Any) -> list[str]:
         if not isinstance(attributes, dict):
             errors.append(f"{prefix}.attributes must be an object")
             continue
+        if any(str(key).startswith("gen_ai.usage.") for key in attributes):
+            errors.append(f"{prefix}.attributes.gen_ai.usage.* must be omitted")
         operation = attributes.get("gen_ai.operation.name")
         if operation is not None and not isinstance(operation, str):
             errors.append(

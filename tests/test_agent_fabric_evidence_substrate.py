@@ -13,11 +13,29 @@ from depone.agent_fabric.evidence_substrate import (
     DIGEST_MODE_CANONICAL_JSON,
     evaluate_external_statement_subjects,
     ingest_external_evidence,
+    validate_external_otel_spans,
     validate_statement_for_capture,
 )
 
 
 class AgentFabricEvidenceSubstrateTests(unittest.TestCase):
+    def test_external_otel_spans_reject_unobserved_usage_fields(self) -> None:
+        spans = [
+            {
+                "trace_id": "trace",
+                "span_id": "span",
+                "name": "invoke_agent",
+                "attributes": {
+                    "gen_ai.operation.name": "invoke_agent",
+                    "gen_ai.usage.output_tokens": 123,
+                },
+            }
+        ]
+
+        errors = validate_external_otel_spans(spans)
+
+        self.assertIn("otel_spans[0].attributes.gen_ai.usage.* must be omitted", errors)
+
     def _capture(self) -> dict[str, object]:
         return json.loads(
             Path(
