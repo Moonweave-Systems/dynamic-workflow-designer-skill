@@ -1,0 +1,63 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  unit:
+    name: unit (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ['3.10', '3.12']
+    steps:
+      - name: Checkout Depone
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Run unit tests
+        run: python3 -m unittest discover -s tests -p 'test_*.py'
+
+  contract:
+    name: contract gates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Depone
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Run changed contract gate
+        run: python3 scripts/check_contract.py --tier changed
+
+      - name: Run DWM doctor
+        run: python3 scripts/dwm.py doctor
+
+  conformance:
+    name: witnessd reverse conformance
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Depone
+        uses: actions/checkout@v4
+
+      - name: Clone witnessd
+        run: git clone --depth=1 https://github.com/Moonweave-Systems/witnessd.git "$RUNNER_TEMP/witnessd"
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Re-derive witnessd W1 fixture with this Depone
+        working-directory: ${{ runner.temp }}/witnessd
+        run: PYTHONPATH="$GITHUB_WORKSPACE" python3 scripts/revalidate_w1.py
