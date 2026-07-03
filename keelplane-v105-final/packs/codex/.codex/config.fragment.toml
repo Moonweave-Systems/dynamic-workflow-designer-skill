@@ -1,4 +1,0 @@
-# Manual merge fragment. Do not overwrite an existing .codex/config.toml.
-[agents]
-max_threads = 4
-max_depth = 1
